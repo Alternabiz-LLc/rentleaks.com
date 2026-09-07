@@ -1707,6 +1707,204 @@
     return DATA.getOperator(listing.operatorId);
   }
 
+
+  /* ---------------------------------------------------------------------
+   * Reusable listing browser
+   * -------------------------------------------------------------------
+   * One search / filter / sort / grid-list surface, mounted anywhere a set
+   * of homes is shown — an operator's boutique, a city page, a stay type.
+   * The scope fixes what it can ever show ({operatorId} | {cityId} | {type});
+   * the controls only ever narrow within that scope, and only offer facets
+   * that actually exist in it.
+   *
+   * Progressive enhancement: the host already contains server-rendered cards
+   * for crawlers and no-JS visitors. Mounting replaces them.
+   * ------------------------------------------------------------------- */
+  function scopedListings(scope) {
+    let rows = (DATA.listings || []).filter((l) => l.type !== 'sale');
+    if (scope.operatorId) rows = rows.filter((l) => l.operatorId === scope.operatorId);
+    if (scope.cityId) rows = rows.filter((l) => l.cityId === scope.cityId);
+    if (scope.type) rows = rows.filter((l) => l.housingType === scope.type);
+    return rows;
+  }
+
+  function mountListingBrowser(host, scope, opts) {
+    if (!host) return;
+    const options = opts || {};
+    const all = scopedListings(scope);
+    if (!all.length) return;
+
+    const st = { q: '', city: '', type: '', max: null, sort: 'price-asc', view: 'grid', page: 1, must: '' };
+    const PER = options.pageSize || 12;
+
+    // Only offer facets that exist inside this scope.
+    const cityIds = [];
+    const typeIds = [];
+    all.forEach((l) => {
+      if (cityIds.indexOf(l.cityId) === -1) cityIds.push(l.cityId);
+      if (typeIds.indexOf(l.housingType) === -1) typeIds.push(l.housingType);
+    });
+    const showCity = !scope.cityId && cityIds.length > 1;
+    const showType = !scope.type && typeIds.length > 1;
+
+    host.innerHTML = `
+      <div class="rl-browser" data-browser>
+        <form class="search-card rl-browser__search" role="search" onsubmit="return false">
+          <div class="search-form__row">
+            <div class="search-field">
+              <input type="search" data-b="q" placeholder="Search this portfolio" aria-label="Search this portfolio" title="Search within ${escapeHtml(options.label || 'these homes')}" autocomplete="off">
+            </div>
+            ${showCity ? `<div class="search-field"><select data-b="city" aria-label="City">
+              <option value="">All cities</option>
+              ${cityIds.map((id) => { const c = cityMeta(id); return c ? '<option value="' + c.id + '">' + escapeHtml(c.name) + '</option>' : ''; }).join('')}
+            </select></div>` : ''}
+            ${showType ? `<div class="search-field"><select data-b="type" aria-label="Stay type">
+              <option value="">All stay types</option>
+              ${typeIds.map((t) => '<option value="' + t + '">' + escapeHtml(typeMeta(t).label) + '</option>').join('')}
+            </select></div>` : ''}
+            <div class="search-field"><input type="number" data-b="max" min="0" placeholder="Any" aria-label="All-in max"></div>
+          </div>
+        </form>
+
+        <div class="rl-chips">
+          <button type="button" class="rl-chip" data-b-must="furnished">Furnished</button>
+          <button type="button" class="rl-chip" data-b-must="privateBath">Private bath</button>
+          <button type="button" class="rl-chip" data-b-must="workspace">Workspace</button>
+          <button type="button" class="rl-chip" data-b-must="noFee">No fee</button>
+          <button type="button" class="rl-chip" data-b-must="pets">Pets ok</button>
+        </div>
+
+        <div class="listings__top">
+          <h2 class="listings__count" data-b-count></h2>
+          <div class="rl-view" role="group" aria-label="View">
+            <button type="button" data-b-view="grid" class="is-on">Grid</button>
+            <button type="button" data-b-view="list">List</button>
+          </div>
+          <div class="listings__sort">
+            <label>Sort</label>
+            <select data-b="sort">
+              <option value="price-asc">All-in: low to high</option>
+              <option value="price-desc">All-in: high to low</option>
+              <option value="move-in">Soonest move-in</option>
+              <option value="newest">Newest</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="listings__grid" data-b-results></div>
+        <div class="listings__empty" data-b-empty hidden></div>
+        <div class="rl-pager" data-b-pager hidden></div>
+      </div>`;
+
+    const $b = (sel) => host.querySelector(sel);
+    const results = $b('[data-b-results]');
+    const countEl = $b('[data-b-count]');
+    const empty = $b('[data-b-empty]');
+    const pager = $b('[data-b-pager]');
+
+    function match() {
+      let rows = all.slice();
+      const q = st.q.trim().toLowerCase();
+      if (q) {
+        rows = rows.filter((l) =>
+          (l.title || '').toLowerCase().includes(q) ||
+          (l.neighborhood || '').toLowerCase().includes(q) ||
+          (l.cityName || '').toLowerCase().includes(q) ||
+          (l.location || '').toLowerCase().includes(q));
+      }
+      if (st.city) rows = rows.filter((l) => l.cityId === st.city);
+      if (st.type) rows = rows.filter((l) => l.housingType === st.type);
+      if (st.max) rows = rows.filter((l) => allInDisplay(l) <= Number(st.max));
+      if (st.must === 'furnished') rows = rows.filter((l) => l.furnishedLevel === 'fully');
+      if (st.must === 'privateBath') rows = rows.filter((l) => l.privateBath);
+      if (st.must === 'workspace') rows = rows.filter((l) => l.workplaceReady);
+      if (st.must === 'noFee') rows = rows.filter((l) => l.noFee);
+      if (st.must === 'pets') rows = rows.filter((l) => l.pets && l.pets !== 'none');
+
+      if (st.sort === 'price-asc') rows.sort((a, b) => allInDisplay(a) - allInDisplay(b));
+      else if (st.sort === 'price-desc') rows.sort((a, b) => allInDisplay(b) - allInDisplay(a));
+      else if (st.sort === 'move-in') rows.sort((a, b) => String(a.availableFrom).localeCompare(String(b.availableFrom)));
+      else rows.sort((a, b) => new Date(b.postedAt) - new Date(a.postedAt));
+      return rows;
+    }
+
+    function paint() {
+      const rows = match();
+      const shown = Math.min(rows.length, PER * st.page);
+      countEl.textContent = rows.length.toLocaleString() + ' of ' + all.length +
+        ' ' + (all.length === 1 ? 'home' : 'homes');
+      results.className = 'listings__grid' + (st.view === 'list' ? ' is-list' : '');
+      results.innerHTML = rows.slice(0, shown).map(renderListing).join('');
+      results.hidden = rows.length === 0;
+      empty.hidden = rows.length > 0;
+      if (!rows.length) {
+        empty.innerHTML = '<h3>Nothing here matches</h3><p>Widen the budget or drop a must-have to see the rest of this portfolio.</p><button type="button" class="btn btn--outline" data-b-clear>Clear filters</button>';
+      }
+      if (rows.length > shown) {
+        pager.hidden = false;
+        pager.innerHTML = '<p class="rl-pager__count">Showing <strong>' + shown + '</strong> of <strong>' + rows.length + '</strong></p>' +
+          '<button type="button" class="btn btn--outline" data-b-more>Show ' + Math.min(PER, rows.length - shown) + ' more</button>';
+      } else {
+        pager.hidden = true;
+      }
+      host.querySelectorAll('[data-b-must]').forEach((b) => b.classList.toggle('is-on', b.dataset.bMust === st.must));
+      host.querySelectorAll('[data-b-view]').forEach((b) => b.classList.toggle('is-on', b.dataset.bView === st.view));
+      setupScrollAnimations();
+    }
+
+    let t;
+    host.addEventListener('input', (e) => {
+      const k = e.target.dataset.b;
+      if (!k) return;
+      clearTimeout(t);
+      t = setTimeout(() => {
+        st[k] = e.target.value;
+        if (k === 'max') st.max = e.target.value ? Number(e.target.value) : null;
+        st.page = 1;
+        paint();
+      }, 180);
+    });
+    host.addEventListener('change', (e) => {
+      const k = e.target.dataset.b;
+      if (!k || k === 'q' || k === 'max') return;
+      st[k] = e.target.value;
+      st.page = 1;
+      paint();
+    });
+    host.addEventListener('click', (e) => {
+      const m = e.target.closest('[data-b-must]');
+      if (m) { st.must = st.must === m.dataset.bMust ? '' : m.dataset.bMust; st.page = 1; paint(); return; }
+      const v = e.target.closest('[data-b-view]');
+      if (v) { st.view = v.dataset.bView; paint(); return; }
+      if (e.target.closest('[data-b-more]')) { st.page += 1; paint(); return; }
+      if (e.target.closest('[data-b-clear]')) {
+        st.q = ''; st.city = ''; st.type = ''; st.max = null; st.must = ''; st.page = 1;
+        host.querySelectorAll('[data-b]').forEach((el) => { if (el.tagName !== 'SELECT' || el.dataset.b !== 'sort') el.value = ''; });
+        paint();
+      }
+    });
+    document.addEventListener('rl:currency', paint);
+
+    decorateSearchFields();
+    paint();
+  }
+
+  /** Mount browsers onto any pre-rendered page that declares a scope. */
+  function mountScopedBrowsers() {
+    $$('[data-browse-scope]').forEach((host) => {
+      const kind = host.dataset.browseScope;
+      const value = host.dataset.browseValue || '';
+      if (kind === 'operator') {
+        const op = DATA.getOperator ? DATA.getOperator(value) : null;
+        if (op) mountListingBrowser(host, { operatorId: op.id }, { label: op.name, pageSize: 12 });
+      } else if (kind === 'city') {
+        mountListingBrowser(host, { cityId: value }, { label: (cityMeta(value) || {}).name, pageSize: 12 });
+      } else if (kind === 'type') {
+        mountListingBrowser(host, { type: value }, { label: typeMeta(value).label, pageSize: 12 });
+      }
+    });
+  }
+
   /* --- Operator directory: search, filter, sort, grid/list ------------- */
   const opState = { q: '', kind: '', country: '', verified: false, minHomes: 0, sort: 'homes', view: 'grid' };
 
@@ -1928,12 +2126,14 @@
         ${typeChips ? '<div class="rl-chips rl-block">' + typeChips + '</div>' : ''}
 
         <section class="rl-block">
-          <div class="listings__top">
-            <h2 class="listings__count">${o.count} ${o.count === 1 ? 'home' : 'homes'} from ${escapeHtml(o.name)}</h2>
-          </div>
-          <div class="listings__grid">${homes.map(renderListing).join('')}</div>
+          <div class="section-head"><div class="section-head__text">
+            <span class="section-head__eyebrow">Portfolio</span>
+            <h2>${o.count} ${o.count === 1 ? 'home' : 'homes'} from ${escapeHtml(o.name)}</h2>
+          </div></div>
+          <div data-browse-scope="operator" data-browse-value="${escapeHtml(o.slug)}"></div>
         </section>
       </div>`;
+    mountScopedBrowsers();
     setupScrollAnimations();
   }
 
@@ -2907,6 +3107,7 @@
     document.addEventListener('rl:meta', () => markLiveState(true));
     document.addEventListener('rl:data-offline', () => markLiveState(false));
     markLiveState(false);
+    mountScopedBrowsers();
     bindEvents();
     if (params().get('modal') === 'auth') openModal('auth');
     setupScrollAnimations();

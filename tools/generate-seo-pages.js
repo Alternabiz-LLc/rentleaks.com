@@ -353,7 +353,9 @@ ${chrome(1, "", `
   </section>
   <section class="listings-section"><div class="container">
     <h2>${subset.length} homes in ${esc(city.name)}</h2>
-    <div class="listings__grid">${subset.map((l) => card(l, 1)).join("")}</div>
+    <div data-browse-scope="city" data-browse-value="${esc(city.id)}">
+      <div class="listings__grid">${subset.map((l) => card(l, 1)).join("")}</div>
+    </div>
   </div></section>`)}`;
     fs.writeFileSync(path.join(dir, city.slug + ".html"), html);
   });
@@ -839,8 +841,13 @@ function writeOperatorPages() {
           <article class="rl-stat"><span>Typical reply</span><strong>${o.responseHours}h</strong><em>to a first message</em></article>
         </div>
         <section class="rl-block">
-          <div class="listings__top"><h2 class="listings__count">${o.count} ${o.count === 1 ? "home" : "homes"} from ${esc(o.name)}</h2></div>
-          <div class="listings__grid">${cards}</div>
+          <div class="section-head"><div class="section-head__text">
+            <span class="section-head__eyebrow">Portfolio</span>
+            <h2>${o.count} ${o.count === 1 ? "home" : "homes"} from ${esc(o.name)}</h2>
+          </div></div>
+          <div data-browse-scope="operator" data-browse-value="${esc(o.slug)}">
+            <div class="listings__grid">${cards}</div>
+          </div>
         </section>
         <section class="rl-block">
           <h2>Where ${esc(o.name)} operates</h2>

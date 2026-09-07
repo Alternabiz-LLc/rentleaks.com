@@ -2468,3 +2468,13 @@ body.rl-live .hero-proof__dot { background: var(--success); }
   .rl-op-row__col:first-of-type { display: none; }
   .rl-op-row__main em { white-space: normal; }
 }
+
+/* --------------------------------------------------------------------------
+   47. SCOPED LISTING BROWSER
+   -------------------------------------------------------------------------- */
+
+.rl-browser { display: grid; gap: 0; }
+.rl-browser__search { margin-bottom: var(--s-4); }
+.rl-browser .rl-chips { margin-bottom: var(--s-2); }
+.rl-browser .listings__top { margin-bottom: var(--s-5); }
+.rl-browser .rl-pager { margin-top: var(--s-8); padding-top: var(--s-6); }
