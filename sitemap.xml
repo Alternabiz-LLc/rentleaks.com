@@ -8,6 +8,7 @@
   <url><loc>https://rentleaks.com/lease-break.html</loc><lastmod>2026-09-07</lastmod><changefreq>daily</changefreq><priority>0.95</priority></url>
   <url><loc>https://rentleaks.com/rent.html</loc><lastmod>2026-09-07</lastmod><changefreq>daily</changefreq><priority>0.9</priority></url>
   <url><loc>https://rentleaks.com/cities.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://rentleaks.com/operators.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
   <url><loc>https://rentleaks.com/match.html</loc><lastmod>2026-09-07</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://rentleaks.com/list.html</loc><lastmod>2026-09-07</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://rentleaks.com/professionals.html</loc><lastmod>2026-09-07</lastmod><changefreq>monthly</changefreq><priority>0.75</priority></url>
@@ -96,6 +97,95 @@
   <url><loc>https://rentleaks.com/cities/winnipeg.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
   <url><loc>https://rentleaks.com/cities/hamilton.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
   <url><loc>https://rentleaks.com/cities/halifax.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://rentleaks.com/operators/alder-property-group.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/marlow-and-co.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/halcyon-housing.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/copperline-residences.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/kinship.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/outpost-house.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/fielder-and-sons.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/commonline.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/harbor-and-hall.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/relay-living.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/jordan-nguyen-nyc.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/ava-okafor-la.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/milo-moreau-chicago.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/ava-patel-philadelphia.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/elena-kim-san-diego.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/milo-garcia-austin.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/milo-moreau-san-jose.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/elena-kim-sf.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/kai-moreau-seattle.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/marcus-nguyen-denver.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/marcus-ross-nashville.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/amara-lee-dc.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/elena-kim-boston.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/leo-moreau-portland.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/amara-lee-miami.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/milo-moreau-london.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/leo-moreau-edinburgh.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/kai-garcia-dublin.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/elena-lee-paris.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/amara-lee-madrid.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/sofia-okafor-barcelona.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/leo-garcia-amsterdam.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/ava-okafor-zurich.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/jordan-nguyen-berlin.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/elena-kim-rome.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/ava-okafor-milan.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/ava-okafor-toronto.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/leo-garcia-montreal.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/elena-kim-vancouver.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/nina-okafor-calgary.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/jordan-nguyen-houston.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/amara-kim-phoenix.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/amara-lee-san-antonio.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/nina-patel-dallas.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/sofia-patel-jacksonville.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/owen-ross-fort-worth.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/leo-garcia-columbus.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/kai-garcia-charlotte.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/amara-kim-indianapolis.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/jordan-ross-oklahoma-city.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/sofia-patel-el-paso.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/amara-lee-las-vegas.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/priya-lee-detroit.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/ava-patel-memphis.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/owen-nguyen-louisville.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/ava-patel-baltimore.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/leo-garcia-manchester.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/milo-moreau-birmingham.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/priya-lee-leeds.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/amara-lee-bristol.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/jordan-ross-liverpool.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/jordan-ross-glasgow.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/elena-kim-cork.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/sofia-patel-galway.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/milo-moreau-lyon.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/owen-ross-marseille.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/jordan-nguyen-toulouse.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/priya-kim-nice.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/sofia-patel-valencia.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/kai-moreau-seville.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/marcus-ross-rotterdam.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/kai-moreau-the-hague.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/ava-okafor-utrecht.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/owen-nguyen-geneva.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/amara-kim-basel.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/amara-lee-bern.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/jordan-ross-munich.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/milo-garcia-hamburg.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/amara-lee-frankfurt.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/nina-patel-cologne.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/jordan-ross-florence.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/priya-lee-naples.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/kai-moreau-turin.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/jordan-ross-ottawa.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/milo-moreau-edmonton.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/priya-kim-quebec-city.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/amara-kim-winnipeg.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/jordan-ross-hamilton.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://rentleaks.com/operators/elena-kim-halifax.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
   <url><loc>https://rentleaks.com/listings/sunny-private-room-in-bushwick-share-nyc-room-1.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://rentleaks.com/listings/private-room-bath-in-financial-district-nyc-room-2.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://rentleaks.com/listings/private-room-bath-in-crown-heights-nyc-room-3.html</loc><lastmod>2026-09-07</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>

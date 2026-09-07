@@ -481,6 +481,7 @@ function writeFeeds() {
     ["/lease-break.html", "0.95", "daily"],
     ["/rent.html", "0.9", "daily"],
     ["/cities.html", "0.9", "weekly"],
+    ["/operators.html", "0.85", "weekly"],
     ["/match.html", "0.8", "monthly"],
     ["/list.html", "0.8", "monthly"],
     ["/professionals.html", "0.75", "monthly"],
@@ -493,6 +494,7 @@ function writeFeeds() {
   ];
   pages.forEach(([u, p, f]) => url(u, p, f));
   DATA.cities.forEach((c) => url("/cities/" + c.slug + ".html", "0.85", "weekly"));
+  (DATA.operators || []).forEach((o) => url("/operators/" + o.slug + ".html", "0.7", "weekly"));
   listings.forEach((l) => url("/" + l.path, "0.8", "weekly"));
 
   fs.writeFileSync(path.join(ROOT, "sitemap.xml"), `<?xml version="1.0" encoding="UTF-8"?>
@@ -658,6 +660,8 @@ ${imageUrls.join("\n")}
   fs.writeFileSync(path.join(ROOT, ".well-known/ai.txt"), aiTxt);
   fs.writeFileSync(path.join(ROOT, "humans.txt"), `/* TEAM */\nSite: RentLeaks\nFocus: Rooms, co-living, furnished apartments, 1-month+ stays, lease-breaks\nMarkets: United States + UK, Ireland, France, Spain, Netherlands, Switzerland, Germany, Italy\n\n/* SITE */\nStandards: HTML5, CSS3, JSON-LD, Open Graph, RSS, llms.txt, ai.txt\nLast update: ${lastmod}\nLanguage: English (US)\n`);
 
+  const operatorCount = writeOperatorPages();
+
   writeRobots();
   writeCoreHeads();
 
@@ -665,6 +669,7 @@ ${imageUrls.join("\n")}
     types: 5,
     cities: DATA.cities.length,
     listings: listings.length,
+    operators: operatorCount,
     sitemapUrls: urls.length,
     imageUrls: listings.length,
   });
@@ -755,6 +760,118 @@ function applyDocumentHead(relPath, meta) {
   const i = html.search(/<body\b/i);
   if (i < 0) return;
   fs.writeFileSync(file, head(meta) + "\n" + html.slice(i));
+}
+
+
+function writeOperatorPages() {
+  const dir = path.join(ROOT, "operators");
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  const ops = DATA.operators || [];
+
+  ops.forEach((o) => {
+    const homes = DATA.listings.filter((l) => l.operatorId === o.id);
+    const cities = o.cityIds.map((id) => (DATA.getCity ? DATA.getCity(id) : null)).filter(Boolean);
+    const cityNames = cities.map((c) => c.name);
+    const kind = { coliving: "Co-living operator", portfolio: "Furnished operator", landlord: "Independent landlord" }[o.kind] || "Operator";
+    const desc = `${o.name} — ${kind.toLowerCase()} with ${o.count} ${o.count === 1 ? "home" : "homes"} on RentLeaks across ${cityNames.slice(0, 4).join(", ")}${cityNames.length > 4 ? " and more" : ""}. ${o.tagline} All-in pricing, 30-day minimum, replies in about ${o.responseHours} hours.`;
+
+    const meta = {
+      title: `${o.name} — ${o.count} flexible ${o.count === 1 ? "home" : "homes"} | RentLeaks`,
+      description: desc,
+      keywords: `${o.name}, ${kind}, ${cityNames.slice(0, 3).join(", ")} furnished rental, co-living operator, flexible housing`,
+      canonical: `${SITE}/operators/${o.slug}.html`,
+      extra: cssNested + jsonLd({
+        "@context": "https://schema.org",
+        "@type": o.kind === "landlord" ? "RealEstateAgent" : "Organization",
+        name: o.name,
+        description: o.tagline,
+        url: `${SITE}/operators/${o.slug}.html`,
+        areaServed: cityNames.map((n) => ({ "@type": "City", name: n })),
+        makesOffer: homes.slice(0, 25).map((l) => ({
+          "@type": "Offer",
+          name: l.title,
+          price: l.allIn,
+          priceCurrency: l.currency || "USD",
+          url: `${SITE}/${l.path}`,
+        })),
+      }),
+    };
+
+    const cards = homes.map((l) => `
+      <article class="listing-card">
+        <div class="listing-card__img-wrap"><div class="listing-card__img">
+          <img class="listing-card__photo" src="${esc(l.image)}" alt="${esc(l.imageAlt)}" width="1400" height="933" loading="lazy" decoding="async">
+          <span class="listing-card__badge">${esc(typeLabelOf(l.housingType))}</span>
+        </div></div>
+        <div class="listing-card__body">
+          <p class="listing-card__price">${money(l.allIn, l.currency)}<span class="listing-card__period">all-in /mo</span></p>
+          <h3 class="listing-card__title"><a class="listing-card__link" href="../${l.path}">${esc(l.title)}</a></h3>
+          <p class="listing-card__address">${esc(l.location)}</p>
+          <p class="listing-card__specs">${esc(l.specs)}</p>
+        </div>
+      </article>`).join("");
+
+    const body = `<body class="tahoe-body" data-page="operator" data-operator="${esc(o.slug)}" data-static="1">
+  <div class="tahoe-bg" aria-hidden="true"><div class="tahoe-orb tahoe-orb--1"></div><div class="tahoe-orb tahoe-orb--2"></div><div class="tahoe-noise"></div></div>
+  <a href="#main" class="skip-link">Skip to main content</a>
+  <div class="tahoe-content">
+    <div id="rl-header"></div>
+    <main id="main">
+      <div class="container">
+        <nav class="rl-crumb" aria-label="Breadcrumb"><a href="../index.html">Home</a> / <a href="../operators.html">Operators</a> / ${esc(o.name)}</nav>
+        <header class="rl-op-hero">
+          <span class="rl-op-hero__mark" aria-hidden="true">${esc(initials(o.name))}</span>
+          <div class="rl-op-hero__text">
+            <span class="rl-kicker">${esc(kind)}${o.since ? " · since " + o.since : ""}</span>
+            <h1>${esc(o.name)}</h1>
+            <p class="rl-lead">${esc(o.tagline)}</p>
+            <div class="rl-badges">
+              ${o.verified ? '<span class="rl-badge rl-badge--safe">All homes verified</span>' : ""}
+              ${o.noFeeAll ? '<span class="rl-badge">No broker fee</span>' : ""}
+              <span class="rl-badge">Replies in ~${o.responseHours}h</span>
+            </div>
+          </div>
+        </header>
+        <div class="rl-pulse">
+          <article class="rl-stat"><span>Homes listed</span><strong>${o.count}</strong><em>across this portfolio</em></article>
+          <article class="rl-stat"><span>Markets</span><strong>${o.cityIds.length}</strong><em>${esc(cityNames.slice(0, 3).join(", "))}</em></article>
+          <article class="rl-stat"><span>From</span><strong>${money(o.fromAllIn, o.currency)}</strong><em>all-in${o.multiCurrency ? " · cheapest of " + o.countries.length + " countries" : " per month"}</em></article>
+          <article class="rl-stat"><span>Typical reply</span><strong>${o.responseHours}h</strong><em>to a first message</em></article>
+        </div>
+        <section class="rl-block">
+          <div class="listings__top"><h2 class="listings__count">${o.count} ${o.count === 1 ? "home" : "homes"} from ${esc(o.name)}</h2></div>
+          <div class="listings__grid">${cards}</div>
+        </section>
+        <section class="rl-block">
+          <h2>Where ${esc(o.name)} operates</h2>
+          <div class="amenity-chips">${cities.map((c) => `<a class="amenity-chip" href="../cities/${esc(c.slug)}.html">${esc(c.name)}</a>`).join("")}</div>
+        </section>
+      </div>
+    </main>
+    <div id="rl-footer"></div>
+  </div>
+  <script src="../data.js"></script>
+  <script src="../data-source.js"></script>
+  <script src="../script.js"></script>
+</body>
+</html>`;
+
+    fs.writeFileSync(path.join(dir, `${o.slug}.html`), head(meta) + "\n" + body);
+  });
+
+  return ops.length;
+}
+
+function typeLabelOf(id) {
+  return (DATA.housingTypes.find((t) => t.id === id) || { label: id }).label;
+}
+
+function initials(name) {
+  // Skip connectives and punctuation so "Harbor & Hall" is HH, not H&.
+  const skip = { and: 1, the: 1, of: 1, group: 1, co: 1 };
+  const words = String(name || "?").split(/[\s.]+/)
+    .filter((w) => /^[a-z0-9]/i.test(w) && !skip[w.toLowerCase()]);
+  return words.slice(0, 2).map((w) => w[0].toUpperCase()).join("") || "?";
 }
 
 function writeCoreHeads() {

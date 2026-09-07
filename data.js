@@ -491,6 +491,92 @@
     return (HOUSING_TYPES.find((t) => t.id === type) || { label: type }).label;
   }
 
+
+  /* ---------------------------------------------------------------------
+   * Operators
+   * -------------------------------------------------------------------
+   * Anyone listing here can hold more than one home and gets a boutique — a
+   * branded storefront at /operators/<slug>.html carrying their whole
+   * portfolio. Three kinds, because they behave differently:
+   *
+   *   coliving   national brands running purpose-built buildings
+   *   portfolio  furnished / mid-term operators, regional
+   *   landlord   individuals renting rooms, scoped to one city
+   *
+   * Lease-breaks are deliberately excluded: the person leaving is not an
+   * operator and should not get a storefront.
+   * ------------------------------------------------------------------- */
+  const PORTFOLIO_BRANDS = [
+    { name: 'Marlow & Co', tagline: 'Furnished homes for people in motion.', since: 2016 },
+    { name: 'Northbound Stays', tagline: 'Mid-term apartments, no hotel nonsense.', since: 2018 },
+    { name: 'Copperline Residences', tagline: 'Design-led furnished living, month to month.', since: 2015 },
+    { name: 'Halcyon Housing', tagline: 'Calm, complete, move-in ready.', since: 2019 },
+    { name: 'Fielder & Sons', tagline: 'A family portfolio, kept properly.', since: 2004 },
+    { name: 'Alder Property Group', tagline: 'Long-term care for short-term stays.', since: 2011 }
+  ];
+
+  const COLIVING_TAGLINES = {
+    'Commonline': 'Buildings that feel like a neighbourhood.',
+    'Outpost House': 'Land somewhere that already works.',
+    'Kinship': 'Rooms with people worth knowing.',
+    'Harbor & Hall': 'Considered co-living, quietly run.',
+    'Relay Living': 'Move in Friday, belong by Sunday.'
+  };
+
+  const LANDLORD_BIOS = [
+    'Rents a handful of rooms in the neighbourhood and answers messages personally.',
+    'Keeps a small portfolio nearby and handles every viewing themselves.',
+    'A local owner who prefers long relationships to quick turnovers.',
+    'Manages a few homes on the same few streets, and lives close by.'
+  ];
+
+  function operatorSlugOf(name) {
+    return slugify(name);
+  }
+
+  /** Deterministic operator for a listing. Returns null for lease-breaks. */
+  function operatorFor(city, type, seed, building) {
+    if (type === 'lease-break') return null;
+
+    if (type === 'coliving' && building && building.brand) {
+      return {
+        id: 'op-' + operatorSlugOf(building.brand),
+        name: building.brand,
+        kind: 'coliving',
+        tagline: COLIVING_TAGLINES[building.brand] || 'Purpose-built co-living.',
+        since: 2014 + (hash(building.brand) % 8),
+        scope: 'national'
+      };
+    }
+
+    if (type === 'furnished' || type === 'short-term') {
+      const brand = PORTFOLIO_BRANDS[hash(city.group + '|' + type) % PORTFOLIO_BRANDS.length];
+      return {
+        id: 'op-' + operatorSlugOf(brand.name),
+        name: brand.name,
+        kind: 'portfolio',
+        tagline: brand.tagline,
+        since: brand.since,
+        scope: 'regional'
+      };
+    }
+
+    // Rooms: a small number of individual landlords per city.
+    const perCity = 1;
+    const n = seed % perCity;
+    const first = pick(FIRST, hash(city.id + 'landlord') + n * 7);
+    const last = pick(['Lee', 'Nguyen', 'Patel', 'Garcia', 'Kim', 'Ross', 'Okafor', 'Moreau'], hash(city.id) + n * 3);
+    const name = first + ' ' + last;
+    return {
+      id: 'op-' + operatorSlugOf(name) + '-' + city.id,
+      name: name,
+      kind: 'landlord',
+      tagline: LANDLORD_BIOS[(hash(name) + n) % LANDLORD_BIOS.length],
+      since: 2012 + ((hash(name) + n) % 12),
+      scope: city.name
+    };
+  }
+
   function buildListing(city, type, index) {
     const seed = hash(city.id + '-' + type + '-' + index);
     const nhood = pick(city.neighborhoods, seed);
@@ -656,6 +742,8 @@
     const addressLine = num + ' ' + street + ', #' + unit + ', ' + city.name + ', ' + city.state;
     description += ' Address: ' + addressLine + '. ' + specs + '. Available ' + availableFrom + '. All-in $' + allIn + '/mo. 30-day minimum.';
 
+    const operator = operatorFor(city, type, seed, building);
+
     return {
       id: city.id + '-' + type + '-' + (index + 1),
       type: 'rent',
@@ -746,8 +834,12 @@
       typePath: TYPE_FILES[type] || 'rent.html',
       imageAlt: title + ' — ' + typeLabel(type) + ' for rent in ' + nhood + ', ' + city.name + ', ' + city.state + '. All-in from ' + fmt(allIn, currencyForCountry(city.country || 'US')) + '/mo.',
       building,
+      operatorId: operator ? operator.id : null,
+      operatorName: operator ? operator.name : null,
+      operatorKind: operator ? operator.kind : null,
+      operatorMeta: operator ? { tagline: operator.tagline, since: operator.since, scope: operator.scope } : null,
       host: {
-        name: hostType === 'operator' ? (building && building.brand) : pick(FIRST, seed + 19) + ' ' + pick(['Lee', 'Nguyen', 'Patel', 'Garcia', 'Kim', 'Ross'], seed),
+        name: operator ? operator.name : pick(FIRST, seed + 19) + ' ' + pick(['Lee', 'Nguyen', 'Patel', 'Garcia', 'Kim', 'Ross'], seed),
         type: hostType,
         responseHours: 1 + (seed % 8)
       },
@@ -765,6 +857,55 @@
       for (let i = 0; i < count; i++) listings.push(buildListing(city, type, i));
     });
   });
+
+
+  /* Build the operator registry from the listings that reference them. */
+  const operators = (function () {
+    const byId = {};
+    listings.forEach(function (l) {
+      if (!l.operatorId) return;
+      var o = byId[l.operatorId];
+      if (!o) {
+        var meta = l.operatorMeta || {};
+        o = byId[l.operatorId] = {
+          id: l.operatorId,
+          slug: l.operatorId.replace(/^op-/, ''),
+          name: l.operatorName,
+          kind: l.operatorKind,
+          tagline: meta.tagline || '',
+          since: meta.since || null,
+          scope: meta.scope || '',
+          listingIds: [],
+          cityIds: [],
+          countries: [],
+          types: []
+        };
+      }
+      o.listingIds.push(l.id);
+      if (o.cityIds.indexOf(l.cityId) === -1) o.cityIds.push(l.cityId);
+      if (o.countries.indexOf(l.countryName) === -1) o.countries.push(l.countryName);
+      if (o.types.indexOf(l.housingType) === -1) o.types.push(l.housingType);
+    });
+    return Object.keys(byId).map(function (k) {
+      var o = byId[k];
+      var homes = listings.filter(function (l) { return l.operatorId === o.id; });
+      o.count = homes.length;
+      o.verified = homes.filter(function (l) { return l.verified; }).length === homes.length;
+      o.noFeeAll = homes.every(function (l) { return l.noFee; });
+      o.responseHours = Math.max(1, Math.round(
+        homes.reduce(function (a, l) { return a + ((l.host && l.host.responseHours) || 4); }, 0) / homes.length));
+      // A portfolio can span currencies, so "from" must be picked on the
+      // normalised figure and carried with the currency it was priced in.
+      var cheapest = homes.slice().sort(function (a, b) { return a.allInUsd - b.allInUsd; })[0];
+      o.currency = cheapest.currency;
+      o.fromAllIn = cheapest.allIn;
+      o.fromAllInUsd = cheapest.allInUsd;
+      o.fromCityId = cheapest.cityId;
+      o.multiCurrency = homes.some(function (l) { return l.currency !== cheapest.currency; });
+      o.path = 'operators/' + o.slug + '.html';
+      return o;
+    }).sort(function (a, b) { return b.count - a.count; });
+  })();
 
   const userListings = [];
   try {
@@ -795,6 +936,11 @@
     fxPerUsd: FX_PER_USD,
     fxUpdated: FX_UPDATED,
     cities: CITIES,
+    operators,
+    getOperator(id) {
+      const q = String(id || '').toLowerCase().replace(/^op-/, '');
+      return operators.find((o) => o.slug === q || o.id === id) || null;
+    },
     listings: userListings.concat(listings),
     typeLabel,
     typeFiles: TYPE_FILES,

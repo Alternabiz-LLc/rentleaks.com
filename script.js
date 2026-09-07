@@ -799,6 +799,7 @@
                 ${navLink(base + 'short-term.html', '1-month+', 'short-term')}
                 ${navLink(base + 'lease-break.html', 'Lease-break', 'lease-break')}
                 ${navLink(base + 'cities.html', 'Cities', 'cities')}
+                ${navLink(base + 'operators.html', 'Operators', 'operators')}
                 ${navLink(base + 'match.html', 'Stay DNA', 'match')}
               </ul>
             </nav>
@@ -858,6 +859,7 @@
                   <li><a href="${base}list.html?kind=lease-break">Post a lease-break free</a></li>
                   <li><a href="${base}list.html?kind=room">List a room</a></li>
                   <li><a href="${base}list.html?kind=coliving">Co-living operators</a></li>
+                  <li><a href="${base}operators.html">Operator boutiques</a></li>
                   <li><a href="${base}professionals.html">Plans &amp; tools</a></li>
                 </ul></div>
                 <div class="footer__col"><h4>Company</h4><ul>
@@ -1681,6 +1683,120 @@
       '</div>';
   }
 
+
+  /* ---------------------------------------------------------------------
+   * Operator boutiques
+   * ------------------------------------------------------------------- */
+  const OPERATOR_KIND_LABEL = { coliving: 'Co-living operator', portfolio: 'Furnished operator', landlord: 'Independent landlord' };
+
+  function operatorHref(o) {
+    if (!o) return assetBase() + 'operators.html';
+    return assetBase() + 'operators/' + (o.slug || String(o.id || '').replace(/^op-/, '')) + '.html';
+  }
+
+  function operatorInitials(name) {
+    // Skip connectives and punctuation so "Harbor & Hall" is HH, not H&.
+    const skip = { and: 1, the: 1, of: 1, group: 1, co: 1 };
+    const words = String(name || '?').split(/[\s.]+/)
+      .filter((w) => /^[a-z0-9]/i.test(w) && !skip[w.toLowerCase()]);
+    return (words.slice(0, 2).map((w) => w[0].toUpperCase()).join('') || '?');
+  }
+
+  function operatorOf(listing) {
+    if (!listing || !listing.operatorId || !DATA.getOperator) return null;
+    return DATA.getOperator(listing.operatorId);
+  }
+
+  function renderOperatorsDirectory() {
+    const host = $('#rl-operators');
+    if (!host) return;
+    const all = (DATA.operators || []).slice();
+    const groups = [
+      { kind: 'coliving', title: 'Co-living operators', blurb: 'Purpose-built buildings with shared space, cleaning and community built in.' },
+      { kind: 'portfolio', title: 'Furnished & mid-term operators', blurb: 'Portfolios of move-in-ready homes across several markets.' },
+      { kind: 'landlord', title: 'Independent landlords', blurb: 'Local owners renting a handful of rooms, answering messages themselves.' }
+    ];
+    host.innerHTML = groups.map((g) => {
+      const rows = all.filter((o) => o.kind === g.kind);
+      if (!rows.length) return '';
+      return `
+        <section class="rl-block">
+          <div class="section-head">
+            <div class="section-head__text">
+              <span class="section-head__eyebrow">${rows.length} ${rows.length === 1 ? 'operator' : 'operators'}</span>
+              <h2>${g.title}</h2>
+              <p>${g.blurb}</p>
+            </div>
+          </div>
+          <div class="rl-op-grid">
+            ${rows.map((o) => `
+              <a class="rl-op-card" href="${operatorHref(o)}">
+                <span class="rl-op-card__mark" aria-hidden="true">${escapeHtml(operatorInitials(o.name))}</span>
+                <span class="rl-op-card__body">
+                  <strong>${escapeHtml(o.name)}</strong>
+                  <em>${escapeHtml(o.tagline)}</em>
+                  <span class="rl-op-card__meta">${o.count} ${o.count === 1 ? 'home' : 'homes'} · ${o.cityIds.length} ${o.cityIds.length === 1 ? 'city' : 'cities'}${o.verified ? ' · Verified' : ''}</span>
+                </span>
+              </a>`).join('')}
+          </div>
+        </section>`;
+    }).join('');
+  }
+
+  function renderOperatorPage() {
+    const root = $('#rl-operator');
+    if (!root) return;
+    const slug = document.body.dataset.operator ||
+      (location.pathname.match(/\/operators\/([^/]+)\.html/) || [])[1] ||
+      params().get('op') || '';
+    const o = DATA.getOperator ? DATA.getOperator(decodeURIComponent(slug)) : null;
+
+    if (!o) {
+      root.innerHTML = '<div class="container rl-empty"><h1>Operator not found</h1><p>This boutique may have been removed.</p><a class="btn btn--primary" href="' + assetBase() + 'operators.html">All operators</a></div>';
+      return;
+    }
+
+    const homes = (DATA.listings || []).filter((l) => l.operatorId === o.id);
+    const cities = o.cityIds.map((id) => (cityMeta(id) || {}).name).filter(Boolean);
+    const typeChips = o.types.map((t) => '<a class="rl-chip" href="' + assetBase() + 'rent.html?type=' + t + '">' + escapeHtml(typeMeta(t).label) + '</a>').join('');
+
+    root.innerHTML = `
+      <div class="container">
+        <nav class="rl-crumb" aria-label="Breadcrumb"><a href="${assetBase()}index.html">Home</a> / <a href="${assetBase()}operators.html">Operators</a> / ${escapeHtml(o.name)}</nav>
+
+        <header class="rl-op-hero">
+          <span class="rl-op-hero__mark" aria-hidden="true">${escapeHtml(operatorInitials(o.name))}</span>
+          <div class="rl-op-hero__text">
+            <span class="rl-kicker">${escapeHtml(OPERATOR_KIND_LABEL[o.kind] || 'Operator')}${o.since ? ' · since ' + o.since : ''}</span>
+            <h1>${escapeHtml(o.name)}</h1>
+            <p class="rl-lead">${escapeHtml(o.tagline)}</p>
+            <div class="rl-badges">
+              ${o.verified ? '<span class="rl-badge rl-badge--safe">All homes verified</span>' : ''}
+              ${o.noFeeAll ? '<span class="rl-badge">No broker fee</span>' : ''}
+              <span class="rl-badge">Replies in ~${o.responseHours}h</span>
+            </div>
+          </div>
+        </header>
+
+        <div class="rl-pulse">
+          <article class="rl-stat"><span>Homes listed</span><strong>${o.count}</strong><em>across this portfolio</em></article>
+          <article class="rl-stat"><span>Markets</span><strong>${o.cityIds.length}</strong><em>${escapeHtml(cities.slice(0, 3).join(', '))}${cities.length > 3 ? ' +' + (cities.length - 3) : ''}</em></article>
+          <article class="rl-stat"><span>From</span><strong>${money(o.fromAllIn, o.currency)}</strong><em>all-in${o.multiCurrency ? ' · cheapest of ' + o.countries.length + ' countries' : ' per month'}</em></article>
+          <article class="rl-stat"><span>Typical reply</span><strong>${o.responseHours}h</strong><em>to a first message</em></article>
+        </div>
+
+        ${typeChips ? '<div class="rl-chips rl-block">' + typeChips + '</div>' : ''}
+
+        <section class="rl-block">
+          <div class="listings__top">
+            <h2 class="listings__count">${o.count} ${o.count === 1 ? 'home' : 'homes'} from ${escapeHtml(o.name)}</h2>
+          </div>
+          <div class="listings__grid">${homes.map(renderListing).join('')}</div>
+        </section>
+      </div>`;
+    setupScrollAnimations();
+  }
+
   function renderHome() {
     const listings = DATA.listings || [];
     const cities = DATA.cities || [];
@@ -1914,7 +2030,15 @@
                 <li><span>Broker fee</span><strong>${fees.broker ? money(fees.broker, l) + ' one-time' : 'None'}</strong></li>
                 <li><span>Deposit</span><strong>${money(l.deposit, l)}</strong></li>
               </ul>
-              <p class="rl-host">Host ${escapeHtml(l.host.name)} · replies in ~${l.host.responseHours}h · ${escapeHtml(l.host.type)}</p>
+              ${(function () {
+                const op = operatorOf(l);
+                if (!op) return '<p class="rl-host">Listed by ' + escapeHtml(l.host.name) + ' · replies in ~' + l.host.responseHours + 'h · current tenant</p>';
+                return '<a class="rl-host rl-host--link" href="' + operatorHref(op) + '">' +
+                  '<span class="rl-host__mark" aria-hidden="true">' + escapeHtml(operatorInitials(op.name)) + '</span>' +
+                  '<span class="rl-host__text"><strong>' + escapeHtml(op.name) + '</strong>' +
+                  '<span>' + op.count + ' ' + (op.count === 1 ? 'home' : 'homes') + ' · replies in ~' + op.responseHours + 'h</span></span>' +
+                  '<span class="rl-host__go" aria-hidden="true">→</span></a>';
+              })()}
               <a class="btn btn--primary btn--lg" href="${assetBase()}apply.html?id=${encodeURIComponent(l.id)}">Apply with passport</a>
               <div class="rl-price-card__actions">
                 <button type="button" class="btn btn--outline" data-save="${escapeHtml(l.id)}">${saved ? 'Saved' : 'Save'}</button>
@@ -2625,6 +2749,8 @@
     else if (page === 'list') renderListWizard();
     else if (page === 'compare') renderComparePage();
     else if (page === 'professionals') renderProfessionalsCopy();
+    else if (page === 'operators') renderOperatorsDirectory();
+    else if (page === 'operator') renderOperatorPage();
     if ($('#listings-grid') && page !== 'home' && page !== 'listing' && page !== 'saved' && page !== 'match') {
       // city page already rendered
     }
