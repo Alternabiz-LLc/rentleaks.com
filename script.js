@@ -235,6 +235,24 @@
     if (max && document.activeElement !== max) max.value = state.priceMax || '';
   }
 
+  /* ---------- live data bridge ---------- */
+  // Server-side results, when the API answered. null means "use the baked
+  // catalog", which is also what we fall back to on any failure.
+  let liveResult = null;
+
+  function apiEnabled() {
+    return !!(window.RLData && window.RLData.enabled);
+  }
+
+  function markLiveState(isLive) {
+    document.body.classList.toggle('rl-live', !!isLive);
+    const dot = $('#rl-live-badge');
+    if (dot) {
+      dot.textContent = isLive ? 'Live' : 'Cached';
+      dot.classList.toggle('is-stale', !isLive);
+    }
+  }
+
   /* ---------- pagination ---------- */
   function renderPager(shown, total) {
     let pager = $('#rl-pager');
@@ -1143,14 +1161,38 @@
 
 
   function renderListings() {
+    // When the API is reachable, filtering/sorting/paging happen in Postgres
+    // rather than over a 482-item array in the browser. The baked catalog
+    // still renders first so there is never an empty frame.
+    if (apiEnabled() && $('#listings-grid')) {
+      const token = (renderListings._token = (renderListings._token || 0) + 1);
+      window.RLData.query(state, state.page, PAGE_SIZE)
+        .then((r) => {
+          if (token !== renderListings._token) return; // a newer query won
+          liveResult = r;
+          markLiveState(true);
+          paintListings();
+        })
+        .catch(() => {
+          liveResult = null;
+          markLiveState(false);
+          paintListings();
+        });
+    }
+    paintListings();
+  }
+
+  function paintListings() {
     const grid = $('#listings-grid');
     const empty = $('#listings-empty');
     const countEl = $('#listings-count');
-    const list = filterListings();
+    const usingLive = !!liveResult;
+    const list = usingLive ? liveResult.items : filterListings();
     const city = state.city ? (cityMeta(state.city) || {}).name : '';
     const type = state.type ? typeMeta(state.type).label : 'flexible homes';
     const where = city || state.location || 'the U.S. + Europe';
-    if (countEl) countEl.textContent = list.length.toLocaleString() + ' ' + type.toLowerCase() + ' in ' + where;
+    const total = usingLive ? liveResult.total : list.length;
+    if (countEl) countEl.textContent = total.toLocaleString() + ' ' + type.toLowerCase() + ' in ' + where;
     const rc = $('#trust-rent-count');
     const cc = $('#trust-city-count');
     if (rc) rc.textContent = (DATA.listings || []).length.toLocaleString();
@@ -1167,15 +1209,27 @@
       grid.innerHTML = skeletonCards(6);
       grid.dataset.painted = '1';
     }
-    const shown = Math.min(list.length, PAGE_SIZE * state.page);
-    grid.innerHTML = list.slice(0, shown).map(renderListing).join('');
-    grid.hidden = list.length === 0;
-    renderPager(shown, list.length);
-    renderBrowseMap(list);
+    let shown;
+    if (usingLive) {
+      // The API returns one page; accumulate them so "Show more" appends
+      // instead of replacing.
+      const acc = (paintListings._acc = state.page === 1 ? [] : (paintListings._acc || []));
+      const merged = state.page === 1 ? list : acc.concat(list);
+      paintListings._acc = merged;
+      grid.innerHTML = merged.map(renderListing).join('');
+      shown = merged.length;
+      grid.hidden = merged.length === 0;
+    } else {
+      shown = Math.min(list.length, PAGE_SIZE * state.page);
+      grid.innerHTML = list.slice(0, shown).map(renderListing).join('');
+      grid.hidden = list.length === 0;
+    }
+    renderPager(shown, total);
+    renderBrowseMap(usingLive ? (paintListings._acc || list) : list);
     renderRoomsShowcase();
 
     if (empty) {
-      empty.hidden = list.length > 0;
+      empty.hidden = total > 0;
       empty.innerHTML = '<h3>Nothing matches — yet</h3>' +
         '<p>Try a longer stay window, a wider all-in budget, or drop a must-have. Rooms and lease-breaks move fast, so alerts beat refreshing.</p>' +
         '<button type="button" class="btn btn--outline" data-chip="__all">Clear all filters</button> ' +
@@ -1183,7 +1237,7 @@
     }
     const suggest = $('#rl-suggest');
     if (suggest) {
-      const alts = list.length ? filterListings({ city: state.city, type: '', priceMax: state.priceMax }).slice(0, 3) : [];
+      const alts = total ? filterListings({ city: state.city, type: '', priceMax: state.priceMax }).slice(0, 3) : [];
       if (alts.length && state.type) {
         suggest.hidden = false;
         suggest.innerHTML = '<div class="section-head"><div class="section-head__text"><span class="section-head__eyebrow">Widen the net</span>' +
@@ -1194,7 +1248,7 @@
       }
     }
     setupScrollAnimations();
-    injectListingsSchema(list);
+    injectListingsSchema(usingLive ? (paintListings._acc || list) : list);
   }
 
   function setupScrollAnimations() {
@@ -1407,7 +1461,7 @@
       proof.innerHTML = `
         <div class="hero-proof__head">
           <span class="hero-proof__title">Market pulse</span>
-          <span class="hero-proof__live"><span class="hero-proof__dot"></span>Live</span>
+          <span class="hero-proof__live"><span class="hero-proof__dot"></span><span id="rl-live-badge">Cached</span></span>
         </div>
         <div class="hero-proof__row"><span class="hero-proof__k">Homes listed right now</span><span class="hero-proof__v">${listings.length.toLocaleString()}</span></div>
         <div class="hero-proof__row"><span class="hero-proof__k">Markets covered</span><span class="hero-proof__v">${cities.length}</span></div>
@@ -2289,6 +2343,9 @@
     if ($('#listings-grid') && page !== 'home' && page !== 'listing' && page !== 'saved' && page !== 'match') {
       // city page already rendered
     }
+    document.addEventListener('rl:meta', () => markLiveState(true));
+    document.addEventListener('rl:data-offline', () => markLiveState(false));
+    markLiveState(false);
     bindEvents();
     if (params().get('modal') === 'auth') openModal('auth');
     setupScrollAnimations();

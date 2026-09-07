@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { CITIES, buildSeedListings } from "../src/lib/catalog";
+import { loadCatalog, toDbCity, toDbListing } from "../src/lib/catalog-source";
 import { hashPassword } from "../src/lib/password";
 
 const prisma = new PrismaClient();
@@ -49,66 +49,35 @@ async function main() {
     },
   });
 
-  for (const city of CITIES) {
+  // Root data.js is the single source of truth for both front ends.
+  const catalog = loadCatalog();
+
+  for (const city of catalog.cities) {
+    const data = toDbCity(city);
+    const { id, ...rest } = data;
     await prisma.city.upsert({
-      where: { id: city.id },
-      update: {
-        name: city.name,
-        state: city.state,
-        rank: city.rank,
-        lat: city.lat,
-        lng: city.lng,
-        walk: city.walk,
-        transit: city.transit,
-        featured: city.featured,
-      },
-      create: {
-        id: city.id,
-        name: city.name,
-        state: city.state,
-        rank: city.rank,
-        lat: city.lat,
-        lng: city.lng,
-        walk: city.walk,
-        transit: city.transit,
-        featured: city.featured,
-      },
+      where: { id },
+      update: rest,
+      create: data,
     });
   }
 
-  const listings = buildSeedListings();
-  for (const listing of listings) {
+  let count = 0;
+  for (const listing of catalog.listings) {
+    // The static catalog carries a few non-rental rows; the marketplace only
+    // serves rentals.
+    if (listing.type && listing.type !== "rent") continue;
+    const data = toDbListing(listing, host.id);
+    const { id, ...rest } = data;
     await prisma.listing.upsert({
-      where: { id: listing.id },
-      update: {
-        title: listing.title,
-        address: listing.address,
-        neighborhood: listing.neighborhood,
-        price: listing.price,
-        allIn: listing.allIn,
-        deposit: listing.deposit,
-        beds: listing.beds,
-        baths: listing.baths,
-        sqft: listing.sqft,
-        lat: listing.lat,
-        lng: listing.lng,
-        image: listing.image,
-        description: listing.description,
-        minStayMonths: listing.minStayMonths,
-        availableFrom: listing.availableFrom,
-        furnishedLevel: listing.furnishedLevel,
-        amenitiesJson: listing.amenitiesJson,
-      },
-      create: {
-        ...listing,
-        hostId: host.id,
-        verified: true,
-        noFee: true,
-      },
+      where: { id },
+      update: rest,
+      create: data,
     });
+    count += 1;
   }
 
-  console.log(`Seeded ${CITIES.length} cities, ${listings.length} listings, host ${host.email}`);
+  console.log(`Seeded ${catalog.cities.length} cities, ${count} listings, host ${host.email}`);
 }
 
 main()

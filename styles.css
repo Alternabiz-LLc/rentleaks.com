@@ -2093,3 +2093,15 @@ textarea { min-height: 118px; resize: vertical; }
 .rl-range input:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-ring); }
 .rl-range input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
+
+/* --------------------------------------------------------------------------
+   42. LIVE DATA STATE
+   -------------------------------------------------------------------------- */
+
+/* The market-pulse dot is honest: green + pulsing only when the API answered. */
+.hero-proof__live #rl-live-badge.is-stale { color: var(--ink-4); }
+.hero-proof__live:has(#rl-live-badge.is-stale) { color: var(--ink-4); }
+.hero-proof__live:has(#rl-live-badge.is-stale) .hero-proof__dot {
+  background: var(--ink-4); animation: none;
+}
+body.rl-live .hero-proof__dot { background: var(--success); }

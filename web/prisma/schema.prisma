@@ -68,9 +68,22 @@ model City {
   walk      Int
   transit   Int
   featured  Boolean   @default(false)
+
+  // Market context — powers the Leak Score (all-in vs local median)
+  avgRoom       Int     @default(0)
+  avgFurnished  Int     @default(0)
+  country       String  @default("US")
+  countryName   String  @default("United States")
+  group         String  @default("United States")
+  slug          String  @default("")
+  // string[] of neighbourhood names
+  neighborhoods Json    @default("[]")
+
   listings  Listing[]
 
   @@index([rank])
+  @@index([slug])
+  @@index([country])
 }
 
 model Listing {
@@ -99,6 +112,26 @@ model Listing {
   verified        Boolean  @default(true)
   noFee           Boolean  @default(true)
   amenitiesJson   String
+
+  // --- Filterable/sortable columns (kept as real columns so the API can
+  //     index and query them rather than filtering in application code) ---
+  maxStayMonths   Int      @default(12)
+  privateBath     Boolean  @default(false)
+  workplaceReady  Boolean  @default(false)
+  petsPolicy      String   @default("none")
+  utilitiesIncl   Boolean  @default(false)
+  scamShield      Boolean  @default(true)
+  featured        Boolean  @default(false)
+  remainingMonths Int?
+  leaseEnd        String?
+  takeoverType    String?
+  postedAt        DateTime @default(now())
+
+  // --- Presentational detail. One JSON column rather than ~15 sparse
+  //     columns nothing ever filters on: fees, housemates, furniture,
+  //     images, specs, neighborhoodScores, host, building, commuteNote. ---
+  detail          Json     @default("{}")
+
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -109,6 +142,10 @@ model Listing {
   @@index([cityId])
   @@index([housingType])
   @@index([hostId])
+  @@index([allIn])
+  @@index([availableFrom])
+  @@index([featured])
+  @@index([housingType, cityId])
 }
 
 model Conversation {
