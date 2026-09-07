@@ -1484,6 +1484,203 @@
   }
 
 
+
+  /* ---------------------------------------------------------------------
+   * Hero carousel — featured photos and video tours
+   * -------------------------------------------------------------------
+   * Slides are drawn from featured listings across different cities so the
+   * hero shows real inventory rather than stock decoration. Media is loaded
+   * lazily (only the active slide and its neighbour), video plays only while
+   * its slide is active and on screen, and autoplay yields to
+   * prefers-reduced-motion, hover, focus and hidden tabs.
+   * ------------------------------------------------------------------- */
+  const HERO_SLIDE_MS = 6000;
+
+  function heroSlidePicks(limit) {
+    const featured = (DATA.listings || []).filter((l) => l.featured && l.image);
+    const pool = featured.length ? featured : (DATA.listings || []);
+    const seenCity = {};
+    const seenType = {};
+    const picks = [];
+    // One per city first, spreading housing types, so the reel feels curated.
+    pool.forEach((l) => {
+      if (picks.length >= limit) return;
+      if (seenCity[l.cityId]) return;
+      if ((seenType[l.housingType] || 0) >= 2) return;
+      seenCity[l.cityId] = 1;
+      seenType[l.housingType] = (seenType[l.housingType] || 0) + 1;
+      picks.push(l);
+    });
+    for (let i = 0; picks.length < limit && i < pool.length; i += 1) {
+      if (picks.indexOf(pool[i]) === -1) picks.push(pool[i]);
+    }
+    return picks.slice(0, limit);
+  }
+
+  function renderHeroCarousel() {
+    const host = $('#rl-hero-carousel');
+    if (!host) return;
+    const slides = heroSlidePicks(6);
+    if (!slides.length) { host.hidden = true; return; }
+
+    host.innerHTML = `
+      <div class="rl-hero-car" role="group" aria-roledescription="carousel" aria-label="Featured homes">
+        <div class="rl-hero-car__stage">
+          ${slides.map((l, i) => {
+            const isVideo = i % 3 === 1 && l.video && l.video.src;
+            const t = typeMeta(l.housingType);
+            const media = isVideo
+              ? `<video class="rl-hero-car__media" muted playsinline loop preload="none"
+                        poster="${escapeHtml(l.video.poster || l.image)}"
+                        data-src="${escapeHtml(l.video.src)}"
+                        aria-label="${escapeHtml(l.title)} video tour"></video>
+                 <span class="rl-hero-car__kind">Video tour</span>`
+              : `<img class="rl-hero-car__media" alt="${escapeHtml(l.imageAlt || l.title)}"
+                      ${i === 0 ? 'src="' + escapeHtml(l.image) + '" fetchpriority="high"' : 'data-src="' + escapeHtml(l.image) + '" loading="lazy"'}
+                      decoding="async" width="1400" height="1750">`;
+            return `
+              <figure class="rl-hero-car__slide${i === 0 ? ' is-active' : ''}" data-slide="${i}" ${i === 0 ? '' : 'aria-hidden="true"'}>
+                ${media}
+                <span class="rl-hero-car__shade" aria-hidden="true"></span>
+                <figcaption class="rl-hero-car__cap">
+                  <span class="rl-hero-car__badge">${escapeHtml(t.short)} · ${escapeHtml(l.cityName)}</span>
+                  <a class="rl-hero-car__title" href="${listingHref(l)}" tabindex="${i === 0 ? '0' : '-1'}">${escapeHtml(l.title)}</a>
+                  <span class="rl-hero-car__price">${money(allIn(l), l)}<em>all-in /mo</em></span>
+                </figcaption>
+              </figure>`;
+          }).join('')}
+        </div>
+
+        <button type="button" class="rl-hero-car__nav rl-hero-car__nav--prev" aria-label="Previous home">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        <button type="button" class="rl-hero-car__nav rl-hero-car__nav--next" aria-label="Next home">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+        </button>
+
+        <div class="rl-hero-car__dots" role="tablist" aria-label="Choose a featured home">
+          ${slides.map((l, i) => `<button type="button" class="rl-hero-car__dot${i === 0 ? ' is-on' : ''}" role="tab"
+              aria-selected="${i === 0}" data-goto="${i}" aria-label="${escapeHtml(l.cityName)} — ${escapeHtml(l.title)}"><i></i></button>`).join('')}
+        </div>
+        <p class="sr-only" aria-live="polite" id="rl-hero-car-status"></p>
+      </div>`;
+
+    startHeroCarousel(host, slides);
+  }
+
+  function startHeroCarousel(host, slides) {
+    const stage = host.querySelector('.rl-hero-car__stage');
+    const figures = $$('.rl-hero-car__slide', host);
+    const dots = $$('.rl-hero-car__dot', host);
+    const status = host.querySelector('#rl-hero-car-status');
+    const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let index = 0;
+    let timer = null;
+    let paused = false;
+    let visible = true;
+
+    function loadMediaFor(i) {
+      [i, (i + 1) % figures.length].forEach((n) => {
+        const el = figures[n] && figures[n].querySelector('[data-src]');
+        if (el && !el.getAttribute('src')) {
+          el.setAttribute('src', el.dataset.src);
+          el.removeAttribute('data-src');
+        }
+      });
+    }
+
+    function show(next) {
+      index = (next + figures.length) % figures.length;
+      loadMediaFor(index);
+      figures.forEach((f, i) => {
+        const on = i === index;
+        f.classList.toggle('is-active', on);
+        if (on) f.removeAttribute('aria-hidden'); else f.setAttribute('aria-hidden', 'true');
+        const link = f.querySelector('.rl-hero-car__title');
+        if (link) link.tabIndex = on ? 0 : -1;
+        const vid = f.querySelector('video');
+        if (vid) {
+          if (on && !reduced && visible) { const pr = vid.play(); if (pr && pr.catch) pr.catch(() => {}); }
+          else { try { vid.pause(); } catch (e) { /* ignore */ } }
+        }
+      });
+      dots.forEach((d, i) => {
+        d.classList.toggle('is-on', i === index);
+        d.setAttribute('aria-selected', String(i === index));
+      });
+      const l = slides[index];
+      if (status && l) status.textContent = l.title + ', ' + l.cityName + ' — slide ' + (index + 1) + ' of ' + figures.length;
+    }
+
+    function stop() { if (timer) { clearInterval(timer); timer = null; } }
+    function play() {
+      stop();
+      if (reduced || paused || !visible || figures.length < 2) return;
+      timer = setInterval(() => show(index + 1), HERO_SLIDE_MS);
+    }
+
+    host.querySelector('.rl-hero-car__nav--prev').onclick = () => { show(index - 1); play(); };
+    host.querySelector('.rl-hero-car__nav--next').onclick = () => { show(index + 1); play(); };
+    dots.forEach((d) => { d.onclick = () => { show(Number(d.dataset.goto)); play(); }; });
+
+    host.addEventListener('mouseenter', () => { paused = true; stop(); });
+    host.addEventListener('mouseleave', () => { paused = false; play(); });
+    host.addEventListener('focusin', () => { paused = true; stop(); });
+    host.addEventListener('focusout', () => {
+      if (!host.contains(document.activeElement)) { paused = false; play(); }
+    });
+    host.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') { e.preventDefault(); show(index - 1); }
+      if (e.key === 'ArrowRight') { e.preventDefault(); show(index + 1); }
+    });
+
+    // Swipe on touch devices.
+    let x0 = null;
+    stage.addEventListener('touchstart', (e) => { x0 = e.touches[0].clientX; }, { passive: true });
+    stage.addEventListener('touchend', (e) => {
+      if (x0 === null) return;
+      const dx = e.changedTouches[0].clientX - x0;
+      if (Math.abs(dx) > 40) show(index + (dx < 0 ? 1 : -1));
+      x0 = null;
+    }, { passive: true });
+
+    document.addEventListener('visibilitychange', () => {
+      visible = !document.hidden;
+      if (visible) play(); else stop();
+    });
+
+    if (typeof IntersectionObserver !== 'undefined') {
+      new IntersectionObserver((entries) => {
+        entries.forEach((en) => { visible = en.isIntersecting; if (visible) play(); else stop(); });
+      }, { threshold: 0.25 }).observe(host);
+    }
+
+    show(0);
+    play();
+  }
+
+
+  /** Popular entry points — fills the hero column and gives crawlers real links. */
+  function renderHeroQuick() {
+    const host = $('#rl-hero-quick');
+    if (!host) return;
+    const listings = DATA.listings || [];
+    const count = (fn) => listings.filter(fn).length;
+    const picks = [
+      { label: 'Rooms in New York', href: 'rent.html?type=room&city=nyc', n: count((l) => l.housingType === 'room' && l.cityId === 'nyc') },
+      { label: 'Co-living in Berlin', href: 'rent.html?type=coliving&city=berlin', n: count((l) => l.housingType === 'coliving' && l.cityId === 'berlin') },
+      { label: 'Lease-breaks in Toronto', href: 'rent.html?type=lease-break&city=toronto', n: count((l) => l.housingType === 'lease-break' && l.cityId === 'toronto') },
+      { label: 'Furnished in London', href: 'rent.html?type=furnished&city=london', n: count((l) => l.housingType === 'furnished' && l.cityId === 'london') },
+      { label: '1-month+ in Paris', href: 'rent.html?type=short-term&city=paris', n: count((l) => l.housingType === 'short-term' && l.cityId === 'paris') }
+    ].filter((p) => p.n > 0);
+
+    host.innerHTML = '<span class="hero__quick-label">Popular right now</span>' +
+      '<div class="hero__quick-row">' +
+      picks.map((p) => '<a class="hero__quick-chip" href="' + p.href + '">' + escapeHtml(p.label) +
+        '<b>' + p.n + '</b></a>').join('') +
+      '</div>';
+  }
+
   function renderHome() {
     const listings = DATA.listings || [];
     const cities = DATA.cities || [];
@@ -1523,7 +1720,7 @@
     const pulse = $('#rl-pulse');
     if (pulse) {
       pulse.innerHTML = `
-        <article class="rl-stat"><span>Live inventory</span><strong>${listings.length.toLocaleString()}</strong><em>across ${cities.length} markets</em></article>
+        <article class="rl-stat"><span>Live inventory <b id="rl-live-badge" class="rl-live-tag">Cached</b></span><strong>${listings.length.toLocaleString()}</strong><em>across ${cities.length} markets</em></article>
         <article class="rl-stat"><span>Typical room all-in</span><strong>${money(avgRoom)}</strong><em>fees already counted</em></article>
         <article class="rl-stat"><span>Lease Clock</span><strong>${avgBreak} mo</strong><em>average time left on takeovers</em></article>
         <article class="rl-stat"><span>No broker fee</span><strong>${noFeePct}%</strong><em>of every home we list</em></article>`;
@@ -1551,6 +1748,9 @@
           <p class="hero-proof__note" style="margin-top:.35rem">${cheapest ? money(allIn(cheapest), cheapest) + ' all-in vs ' + money(bench) + ' typical' : 'All-in pricing on every card'}</p>
         </div>`;
     }
+
+    renderHeroCarousel();
+    renderHeroQuick();
 
     const grid = $('#listings-grid');
     if (grid) {

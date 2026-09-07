@@ -2127,3 +2127,155 @@ body.rl-live .hero-proof__dot { background: var(--success); }
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%237D959C' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
 }
 @media (max-width: 620px) { .cur-select { display: none; } }
+
+/* --------------------------------------------------------------------------
+   44. HERO CAROUSEL
+   -------------------------------------------------------------------------- */
+
+.rl-hero-carousel { align-self: start; }
+
+.rl-hero-car {
+  position: relative;
+  border-radius: var(--r-xl);
+  overflow: hidden;
+  background: var(--surface-3);
+  box-shadow: var(--shadow-lg);
+  aspect-ratio: 4 / 5;
+}
+
+.rl-hero-car__stage { position: absolute; inset: 0; }
+
+.rl-hero-car__slide {
+  position: absolute; inset: 0; margin: 0;
+  opacity: 0; visibility: hidden;
+  transform: scale(1.04);
+  transition: opacity 700ms var(--ease-out), transform 900ms var(--ease-out), visibility 0s linear 700ms;
+}
+.rl-hero-car__slide.is-active {
+  opacity: 1; visibility: visible; transform: none;
+  transition: opacity 700ms var(--ease-out), transform 6.5s linear, visibility 0s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .rl-hero-car__slide, .rl-hero-car__slide.is-active { transition: opacity 200ms linear; transform: none; }
+}
+
+.rl-hero-car__media { width: 100%; height: 100%; object-fit: cover; display: block; background: var(--surface-3); }
+
+.rl-hero-car__shade {
+  position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(180deg, rgba(9,22,27,0.30) 0%, rgba(9,22,27,0.05) 32%, rgba(9,22,27,0.55) 72%, rgba(9,22,27,0.88) 100%);
+}
+
+.rl-hero-car__kind {
+  position: absolute; top: var(--s-4); right: var(--s-4); z-index: 3;
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px var(--s-3); border-radius: var(--r-full);
+  background: rgba(9,22,27,0.55); color: #fff;
+  backdrop-filter: blur(10px);
+  font-size: var(--text-micro); font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
+.rl-hero-car__kind::before {
+  content: ""; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--celeste-300); animation: pulse-dot 2.4s ease-out infinite;
+}
+
+.rl-hero-car__cap {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 2;
+  display: grid; gap: 6px;
+  padding: var(--s-6) var(--s-6) calc(var(--s-6) + 26px);
+  color: #fff;
+}
+.rl-hero-car__badge {
+  font-size: var(--text-micro); font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: rgba(255,255,255,0.78);
+}
+.rl-hero-car__title {
+  font-family: var(--font-display);
+  font-size: clamp(1.125rem, 1.6vw, 1.5rem); font-weight: 600;
+  letter-spacing: -0.02em; line-height: 1.2; color: #fff;
+  text-wrap: balance;
+}
+.rl-hero-car__title:hover { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
+.rl-hero-car__title::after { content: ""; position: absolute; inset: 0; }
+.rl-hero-car__price {
+  display: flex; align-items: baseline; gap: 5px;
+  font-family: var(--font-display); font-size: 1.25rem; font-weight: 600;
+  letter-spacing: -0.02em; color: #fff; font-variant-numeric: tabular-nums;
+}
+.rl-hero-car__price em {
+  font-family: var(--font-sans); font-style: normal;
+  font-size: var(--text-xs); font-weight: 600; color: rgba(255,255,255,0.72);
+}
+
+.rl-hero-car__nav {
+  position: absolute; top: 50%; transform: translateY(-50%); z-index: 4;
+  width: 36px; height: 36px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: rgba(255,255,255,0.16); color: #fff;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.24);
+  opacity: 0; transition: opacity var(--t), background var(--t-fast);
+}
+.rl-hero-car__nav svg { width: 17px; height: 17px; }
+.rl-hero-car__nav:hover { background: rgba(255,255,255,0.3); }
+.rl-hero-car__nav--prev { left: var(--s-4); }
+.rl-hero-car__nav--next { right: var(--s-4); }
+.rl-hero-car:hover .rl-hero-car__nav,
+.rl-hero-car:focus-within .rl-hero-car__nav { opacity: 1; }
+@media (hover: none) { .rl-hero-car__nav { opacity: 1; } }
+
+.rl-hero-car__dots {
+  position: absolute; left: var(--s-6); right: var(--s-6); bottom: var(--s-5); z-index: 5;
+  display: flex; gap: 6px;
+}
+.rl-hero-car__dot {
+  flex: 1; height: 18px; display: grid; align-items: center;
+  background: none; border: 0; cursor: pointer;
+}
+.rl-hero-car__dot i {
+  display: block; height: 3px; border-radius: 2px;
+  background: rgba(255,255,255,0.34);
+  transition: background var(--t-fast);
+}
+.rl-hero-car__dot:hover i { background: rgba(255,255,255,0.6); }
+.rl-hero-car__dot.is-on i { background: #fff; }
+.rl-hero-car__dot:focus-visible { outline: 2px solid #fff; outline-offset: 2px; border-radius: var(--r-xs); }
+
+/* Live/cached tag now lives on the stat rail */
+.rl-live-tag {
+  display: inline-block; margin-left: 6px; padding: 1px 6px;
+  border-radius: var(--r-xs); font-size: 9px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  background: var(--success-soft); color: var(--success);
+  vertical-align: 1px;
+}
+.rl-live-tag.is-stale { background: var(--surface-3); color: var(--ink-4); }
+
+@media (max-width: 940px) {
+  .rl-hero-carousel { order: 3; }
+  .rl-hero-car { aspect-ratio: 16 / 10; }
+}
+
+/* Hero quick links */
+.hero__quick { margin-top: var(--s-2); }
+.hero__quick-label {
+  display: block; margin-bottom: var(--s-3);
+  font-size: var(--text-micro); font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-4);
+}
+.hero__quick-row { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+.hero__quick-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px var(--s-4); border-radius: var(--r-full);
+  border: 1px solid var(--line); background: var(--surface);
+  font-size: var(--text-xs); font-weight: 600; color: var(--ink-2);
+  transition: border-color var(--t-fast), color var(--t-fast), transform var(--t-fast);
+}
+.hero__quick-chip b {
+  font-size: 10px; font-weight: 700; color: var(--ink-4);
+  font-variant-numeric: tabular-nums;
+}
+.hero__quick-chip:hover { border-color: var(--ink-3); color: var(--ink); transform: translateY(-1px); }
+.hero__quick-chip:hover b { color: var(--brand); }
