@@ -8,7 +8,7 @@
  * any render code.
  */
 import type { NextRequest } from "next/server";
-import type { City, Listing } from "@prisma/client";
+import type { City, Listing, Operator } from "@prisma/client";
 
 const ALLOWED = (process.env.API_ALLOWED_ORIGINS ||
   "https://rentleaks.com,https://www.rentleaks.com,https://altech237.github.io,http://localhost:8123,http://localhost:8080,http://localhost:8765")
@@ -52,7 +52,7 @@ export function preflight(req: NextRequest) {
 type Detail = Record<string, unknown>;
 
 /** A listing row with its city joined in, as every route below queries it. */
-export type ListingRow = Listing & { city?: City | null };
+export type ListingRow = Listing & { city?: City | null; operator?: Operator | null };
 
 export function serializeListing(l: ListingRow) {
   const d = ((l.detail as unknown) as Detail) || {};
@@ -110,6 +110,10 @@ export function serializeListing(l: ListingRow) {
     neighborhoodScores: d.neighborhoodScores ?? {},
     host: d.host ?? {},
     building: d.building ?? null,
+    operatorId: l.operatorId,
+    operatorName: l.operator?.name ?? (d.operatorName as string) ?? null,
+    operatorSlug: l.operator?.slug ?? null,
+    operatorKind: l.operator?.kind ?? null,
     featured: l.featured,
     postedAt: l.postedAt instanceof Date ? l.postedAt.toISOString() : l.postedAt,
     path: (d.path as string) ?? null,

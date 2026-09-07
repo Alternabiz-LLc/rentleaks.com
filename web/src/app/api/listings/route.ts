@@ -21,6 +21,9 @@ export async function GET(req: NextRequest) {
   const type = p.get("type");
   if (type) where.housingType = type;
 
+  const operator = p.get("operator");
+  if (operator) where.operator = { is: { slug: operator } };
+
   // Free-text across the fields the client-side search covers.
   const q = (p.get("q") || "").trim();
   if (q) {
@@ -80,7 +83,7 @@ export async function GET(req: NextRequest) {
         orderBy,
         skip: (page - 1) * pageSize,
         take: pageSize,
-        include: { city: true },
+        include: { city: true, operator: true },
       }),
     ]);
 

@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { loadCatalog, toDbCity, toDbListing } from "../src/lib/catalog-source";
+import { loadCatalog, toDbCity, toDbListing, toDbOperator } from "../src/lib/catalog-source";
 import { hashPassword } from "../src/lib/password";
 
 const prisma = new PrismaClient();
@@ -62,6 +62,12 @@ async function main() {
     });
   }
 
+  for (const op of catalog.operators || []) {
+    const data = toDbOperator(op);
+    const { id, ...rest } = data;
+    await prisma.operator.upsert({ where: { id }, update: rest, create: data });
+  }
+
   let count = 0;
   for (const listing of catalog.listings) {
     // The static catalog carries a few non-rental rows; the marketplace only
@@ -77,7 +83,7 @@ async function main() {
     count += 1;
   }
 
-  console.log(`Seeded ${catalog.cities.length} cities, ${count} listings, host ${host.email}`);
+  console.log(`Seeded ${catalog.cities.length} cities, ${(catalog.operators || []).length} operators, ${count} listings, host ${host.email}`);
 }
 
 main()

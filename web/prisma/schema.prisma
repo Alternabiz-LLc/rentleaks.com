@@ -93,6 +93,8 @@ model Listing {
   city            City     @relation(fields: [cityId], references: [id])
   hostId          String
   host            User     @relation(fields: [hostId], references: [id])
+  operatorId      String?
+  operator        Operator? @relation(fields: [operatorId], references: [id])
   housingType     String
   title           String
   address         String
@@ -147,10 +149,32 @@ model Listing {
   @@index([cityId])
   @@index([housingType])
   @@index([hostId])
+  @@index([operatorId])
   @@index([allInUsd])
   @@index([availableFrom])
   @@index([featured])
   @@index([housingType, cityId])
+}
+
+/// A landlord, portfolio or co-living brand. Holds identity only — counts,
+/// price floors, verification and reply times are derived from the listings
+/// at query time so they cannot go stale.
+model Operator {
+  id        String @id
+  slug      String @unique
+  name      String
+  /// coliving | portfolio | landlord
+  kind      String
+  tagline   String  @default("")
+  since     Int?
+  scope     String  @default("")
+
+  listings  Listing[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([kind])
 }
 
 model Conversation {

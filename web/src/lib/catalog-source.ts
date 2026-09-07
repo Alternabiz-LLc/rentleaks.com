@@ -32,6 +32,7 @@ export interface SourceListing {
   allIn?: number;
   currency?: string;
   allInUsd?: number;
+  operatorId?: string | null;
   deposit?: number;
   beds?: number;
   baths?: number;
@@ -95,9 +96,20 @@ export interface SourceCity {
   neighborhoods?: string[];
 }
 
+export interface SourceOperator {
+  id: string;
+  slug: string;
+  name: string;
+  kind: string;
+  tagline?: string;
+  since?: number | null;
+  scope?: string;
+}
+
 export interface Catalog {
   listings: SourceListing[];
   cities: SourceCity[];
+  operators: SourceOperator[];
   housingTypes: Array<{ id: string; label: string; short: string; href: string; blurb: string }>;
 }
 
@@ -164,6 +176,7 @@ export function toDbListing(l: SourceListing, hostId: string) {
     leaseEnd: l.leaseEnd ?? null,
     takeoverType: l.takeoverType ?? null,
     postedAt: l.postedAt ? new Date(l.postedAt) : new Date(),
+    operatorId: l.operatorId ?? null,
     amenitiesJson: JSON.stringify(l.amenities ?? []),
     detail: {
       fees: l.fees ?? {},
@@ -206,5 +219,17 @@ export function toDbCity(c: SourceCity) {
     slug: c.slug ?? "",
     neighborhoods: c.neighborhoods ?? [],
     currency: c.currency ?? "USD",
+  };
+}
+
+export function toDbOperator(o: SourceOperator) {
+  return {
+    id: o.id,
+    slug: o.slug,
+    name: o.name,
+    kind: o.kind,
+    tagline: o.tagline ?? "",
+    since: o.since ?? null,
+    scope: o.scope ?? "",
   };
 }

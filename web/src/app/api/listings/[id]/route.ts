@@ -13,14 +13,14 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
   try {
     const listing = await prisma.listing.findUnique({
       where: { id },
-      include: { city: true },
+      include: { city: true, operator: true },
     });
     if (!listing) return json(req, { error: "not_found" }, { status: 404, maxAge: 0 });
 
     const similar = await prisma.listing.findMany({
       where: { cityId: listing.cityId, housingType: listing.housingType, NOT: { id } },
       take: 3,
-      include: { city: true },
+      include: { city: true, operator: true },
     });
 
     return json(req, {
