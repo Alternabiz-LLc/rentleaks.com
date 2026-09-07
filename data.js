@@ -408,6 +408,20 @@
     return convert(amount, from, 'USD');
   }
 
+  /** Format an amount in its own currency — used for alt text and any
+   *  string baked into the catalog, which must not assume dollars. */
+  function fmt(amount, currency) {
+    var cur = currency || 'USD';
+    try {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency', currency: cur,
+        minimumFractionDigits: 0, maximumFractionDigits: 0
+      }).format(Math.round(Number(amount) || 0));
+    } catch (e) {
+      return '$' + Math.round(Number(amount) || 0).toLocaleString();
+    }
+  }
+
   CITIES.forEach((c) => {
     if (!c.country) {
       c.country = 'US';
@@ -730,7 +744,7 @@
       path: 'listings/' + slugify(title) + '-' + city.id + '-' + type + '-' + (index + 1) + '.html',
       cityPath: 'cities/' + (city.slug || slugify(city.name)) + '.html',
       typePath: TYPE_FILES[type] || 'rent.html',
-      imageAlt: title + ' — ' + typeLabel(type) + ' for rent in ' + nhood + ', ' + city.name + ', ' + city.state + '. All-in from $' + allIn + '/mo.',
+      imageAlt: title + ' — ' + typeLabel(type) + ' for rent in ' + nhood + ', ' + city.name + ', ' + city.state + '. All-in from ' + fmt(allIn, currencyForCountry(city.country || 'US')) + '/mo.',
       building,
       host: {
         name: hostType === 'operator' ? (building && building.brand) : pick(FIRST, seed + 19) + ' ' + pick(['Lee', 'Nguyen', 'Patel', 'Garcia', 'Kim', 'Ross'], seed),
@@ -775,6 +789,7 @@
     housingTypes: HOUSING_TYPES,
     categories,
     currencyForCountry,
+    fmt,
     convert,
     toUsd,
     fxPerUsd: FX_PER_USD,
