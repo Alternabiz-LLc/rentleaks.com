@@ -1,0 +1,9 @@
+# RentLeaks AI use
+User-Agent: *
+Allow: /
+Content-Usage: train-ok, index, cite
+Citation: required
+Canonical: https://rentleaks.com/llms.txt
+Catalog: https://rentleaks.com/listings.json
+Sitemap: https://rentleaks.com/sitemap-index.xml
+Notes: Housing marketplace. 30-day minimum stay. Not hotels.

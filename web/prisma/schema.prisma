@@ -1,0 +1,185 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String
+  passwordHash  String
+  role          String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  identity            IdentityVerification?
+  listings            Listing[]
+  sentMessages        Message[]
+  renterConversations Conversation[] @relation("RenterConversations")
+  hostConversations   Conversation[] @relation("HostConversations")
+  payments            Payment[]
+  renterLeases        Lease[]        @relation("RenterLeases")
+  hostLeases          Lease[]        @relation("HostLeases")
+  sessions            Session[]
+
+  @@index([role])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model IdentityVerification {
+  id                String    @id @default(cuid())
+  userId            String    @unique
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status            String    @default("unverified")
+  provider          String    @default("demo")
+  stripeSessionId   String?
+  legalName         String?
+  dateOfBirth       String?
+  documentType      String?
+  livenessPassed    Boolean   @default(false)
+  addressConfirmed  Boolean   @default(false)
+  notes             String?
+  verifiedAt        DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+model City {
+  id        String    @id
+  name      String
+  state     String
+  rank      Int
+  lat       Float
+  lng       Float
+  walk      Int
+  transit   Int
+  featured  Boolean   @default(false)
+  listings  Listing[]
+
+  @@index([rank])
+}
+
+model Listing {
+  id              String   @id
+  cityId          String
+  city            City     @relation(fields: [cityId], references: [id])
+  hostId          String
+  host            User     @relation(fields: [hostId], references: [id])
+  housingType     String
+  title           String
+  address         String
+  neighborhood    String
+  price           Int
+  allIn           Int
+  deposit         Int
+  beds            Int
+  baths           Float
+  sqft            Int
+  lat             Float
+  lng             Float
+  image           String
+  description     String
+  minStayMonths   Int
+  availableFrom   String
+  furnishedLevel  String
+  verified        Boolean  @default(true)
+  noFee           Boolean  @default(true)
+  amenitiesJson   String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  conversations Conversation[]
+  leases        Lease[]
+  payments      Payment[]
+
+  @@index([cityId])
+  @@index([housingType])
+  @@index([hostId])
+}
+
+model Conversation {
+  id            String    @id @default(cuid())
+  listingId     String
+  listing       Listing   @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  renterId      String
+  hostId        String
+  renter        User      @relation("RenterConversations", fields: [renterId], references: [id], onDelete: Cascade)
+  host          User      @relation("HostConversations", fields: [hostId], references: [id], onDelete: Cascade)
+  lastMessageAt DateTime  @default(now())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  messages      Message[]
+
+  @@unique([listingId, renterId])
+  @@index([renterId])
+  @@index([hostId])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  body           String
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId])
+}
+
+model Payment {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listingId       String?
+  listing         Listing? @relation(fields: [listingId], references: [id])
+  kind            String
+  amount          Int
+  currency        String   @default("usd")
+  status          String   @default("pending")
+  stripeSessionId String?  @unique
+  planId          String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Lease {
+  id              String    @id @default(cuid())
+  listingId       String
+  listing         Listing   @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  renterId        String
+  hostId          String
+  renter          User      @relation("RenterLeases", fields: [renterId], references: [id], onDelete: Cascade)
+  host            User      @relation("HostLeases", fields: [hostId], references: [id], onDelete: Cascade)
+  status          String    @default("draft")
+  startDate       String
+  endDate         String
+  monthlyAllIn    Int
+  deposit         Int
+  terms           String
+  renterSignature String?
+  renterSignedAt  DateTime?
+  hostSignature   String?
+  hostSignedAt    DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([renterId])
+  @@index([hostId])
+}

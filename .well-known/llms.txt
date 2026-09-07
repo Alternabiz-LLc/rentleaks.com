@@ -1,0 +1,6 @@
+# RentLeaks
+
+Canonical: https://rentleaks.com/llms.txt
+Full index: https://rentleaks.com/llms-full.txt
+Catalog: https://rentleaks.com/listings.json
+Sitemap: https://rentleaks.com/sitemap-index.xml

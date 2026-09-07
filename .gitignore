@@ -1,0 +1,26 @@
+.DS_Store
+.backup/
+.snapshots/
+*.zip
+*.pem
+
+# secrets
+.env
+.env.*
+!.env.example
+web/.env
+web/.env.*
+!web/.env.example
+
+# deps and build
+node_modules/
+web/node_modules/
+web/.next/
+web/out/
+web/.vercel/
+.vercel/
+
+# local db
+*.db
+*.db-journal
+web/prisma/dev.db

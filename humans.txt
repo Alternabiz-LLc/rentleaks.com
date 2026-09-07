@@ -1,0 +1,9 @@
+/* TEAM */
+Site: RentLeaks
+Focus: Rooms, co-living, furnished apartments, 1-month+ stays, lease-breaks
+Markets: United States + UK, Ireland, France, Spain, Netherlands, Switzerland, Germany, Italy
+
+/* SITE */
+Standards: HTML5, CSS3, JSON-LD, Open Graph, RSS, llms.txt, ai.txt
+Last update: 2026-09-07
+Language: English (US)
