@@ -967,22 +967,80 @@ main > section:first-child:not(.hero):not(.rl-detail) { padding-top: 0; }
   display: grid; grid-template-columns: repeat(auto-fill, minmax(288px, 1fr));
   gap: clamp(1.25rem, 2.2vw, 2rem) clamp(1rem, 1.8vw, 1.5rem);
 }
-.listings__grid.is-list { grid-template-columns: 1fr; gap: var(--s-4); }
+/* --------------------------------------------------------------------------
+   18b. LIST VIEW — full-width horizontal rows
+   --------------------------------------------------------------------------
+   Media left, detail centre, price and actions right. Declared after the
+   browse-page grid override below so it wins at equal specificity.
+   -------------------------------------------------------------------------- */
+
+.listings__grid.is-list,
+[data-page="browse"] .listings__grid.is-list,
+.rl-browse--map .listings__grid.is-list {
+  grid-template-columns: 1fr;
+  gap: var(--s-4);
+}
+
 .listings__grid.is-list .listing-card {
-  display: grid; grid-template-columns: 260px 1fr; align-items: stretch;
-  border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden;
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  align-items: stretch;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  overflow: hidden;
   background: var(--surface);
 }
-.listings__grid.is-list .listing-card:hover { transform: none; box-shadow: var(--shadow-md); }
-.listings__grid.is-list .listing-card__img-wrap { border-radius: 0; }
-.listings__grid.is-list .listing-card__img { aspect-ratio: auto; height: 100%; min-height: 182px; }
-.listings__grid.is-list .listing-card__body { padding: var(--s-5); }
-.listings__grid.is-list .listing-card__save { top: var(--s-3); right: auto; left: 218px; }
-.listings__grid.is-list .rl-compare-btn { position: absolute; right: var(--s-5); bottom: var(--s-5); margin: 0; }
-@media (max-width: 700px) {
+.listings__grid.is-list .listing-card:hover {
+  transform: none;
+  border-color: var(--ink-3);
+  box-shadow: var(--shadow-md);
+}
+.listings__grid.is-list .listing-card__img-wrap { border-radius: 0; height: 100%; }
+.listings__grid.is-list .listing-card__img { aspect-ratio: auto; height: 100%; min-height: 208px; }
+.listings__grid.is-list .listing-card__save { top: var(--s-3); right: auto; left: 238px; }
+
+/* Detail and price sit side by side rather than stacking. */
+.listings__grid.is-list .listing-card__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto auto 1fr;
+  align-content: start;
+  column-gap: var(--s-8);
+  row-gap: 2px;
+  padding: var(--s-5) var(--s-6);
+}
+.listings__grid.is-list .listing-card__title  { grid-column: 1; grid-row: 1; margin-top: 0; font-size: var(--text-lg); -webkit-line-clamp: 1; }
+.listings__grid.is-list .listing-card__address { grid-column: 1; grid-row: 2; }
+.listings__grid.is-list .listing-card__specs   { grid-column: 1; grid-row: 3; }
+.listings__grid.is-list .rl-card-meta {
+  grid-column: 1; grid-row: 4; align-self: end;
+  margin-top: var(--s-4); border-top: 0; padding-top: 0;
+}
+.listings__grid.is-list .listing-card__price {
+  grid-column: 2; grid-row: 1; justify-self: end; align-self: start;
+  font-size: 1.5rem;
+}
+.listings__grid.is-list .rl-allin-live { grid-column: 2; grid-row: 2; justify-self: end; }
+.listings__grid.is-list .rl-compare-btn {
+  grid-column: 2; grid-row: 4;
+  justify-self: end; align-self: end;
+  position: static; margin: var(--s-4) 0 0;
+}
+
+@media (max-width: 860px) {
+  .listings__grid.is-list .listing-card { grid-template-columns: 200px minmax(0, 1fr); }
+  .listings__grid.is-list .listing-card__save { left: 158px; }
+  .listings__grid.is-list .listing-card__body { column-gap: var(--s-4); padding: var(--s-4); }
+  .listings__grid.is-list .listing-card__price { font-size: 1.25rem; }
+}
+@media (max-width: 620px) {
   .listings__grid.is-list .listing-card { grid-template-columns: 1fr; }
+  .listings__grid.is-list .listing-card__img { min-height: 0; aspect-ratio: 16 / 10; }
   .listings__grid.is-list .listing-card__save { left: auto; right: var(--s-3); }
-  .listings__grid.is-list .rl-compare-btn { position: static; margin-top: var(--s-3); }
+  .listings__grid.is-list .listing-card__body { grid-template-columns: 1fr; grid-template-rows: none; }
+  .listings__grid.is-list .listing-card__body > * { grid-column: 1 !important; grid-row: auto !important; justify-self: start !important; }
+  .listings__grid.is-list .listing-card__price { order: -2; }
+  .listings__grid.is-list .rl-allin-live { order: -1; }
 }
 
 /* --------------------------------------------------------------------------
