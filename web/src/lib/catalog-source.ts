@@ -13,8 +13,84 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { runInNewContext } from "node:vm";
 
-export type SourceListing = Record<string, any>;
-export type SourceCity = Record<string, any>;
+/** Anything that survives a round-trip through JSON — what Prisma's Json columns accept. */
+export type JsonSafe = string | number | boolean | null | JsonSafe[] | { [key: string]: JsonSafe };
+
+/**
+ * The shape data.js actually produces. Every field is optional because this
+ * is external, hand-maintained data — the mappers below supply defaults.
+ */
+export interface SourceListing {
+  id: string;
+  cityId: string;
+  housingType: string;
+  title: string;
+  type?: string;
+  address?: string;
+  neighborhood?: string;
+  price?: number;
+  allIn?: number;
+  deposit?: number;
+  beds?: number;
+  baths?: number;
+  sqft?: number;
+  lat?: number;
+  lng?: number;
+  image?: string;
+  images?: string[];
+  description?: string;
+  minStayMonths?: number;
+  maxStayMonths?: number;
+  availableFrom?: string;
+  furnishedLevel?: string;
+  verified?: boolean;
+  noFee?: boolean;
+  scamShield?: boolean;
+  featured?: boolean;
+  privateBath?: boolean;
+  workplaceReady?: boolean;
+  pets?: string;
+  utilitiesIncluded?: string[];
+  fees?: Record<string, number>;
+  remainingMonths?: number | null;
+  leaseEnd?: string | null;
+  takeoverType?: string | null;
+  postedAt?: string;
+  amenities?: string[];
+  lastMonth?: number;
+  priceSuffix?: string;
+  specs?: string;
+  roommates?: number;
+  housemates?: JsonSafe[];
+  furniture?: string[];
+  imageAlt?: string;
+  videos?: JsonSafe[];
+  commuteNote?: string;
+  neighborhoodScores?: Record<string, number>;
+  host?: { [key: string]: JsonSafe };
+  building?: { [key: string]: JsonSafe } | null;
+  path?: string | null;
+  cityPath?: string | null;
+}
+
+export interface SourceCity {
+  id: string;
+  name: string;
+  state?: string;
+  rank?: number;
+  lat?: number;
+  lng?: number;
+  walk?: number;
+  transit?: number;
+  featured?: boolean;
+  avgRoom?: number;
+  avgFurnished?: number;
+  country?: string;
+  countryName?: string;
+  group?: string;
+  slug?: string;
+  neighborhoods?: string[];
+}
 
 export interface Catalog {
   listings: SourceListing[];
@@ -24,7 +100,7 @@ export interface Catalog {
 
 export function loadCatalog(repoRoot = join(process.cwd(), "..")): Catalog {
   const code = readFileSync(join(repoRoot, "data.js"), "utf8");
-  const sandbox: { window: Record<string, any> } = { window: {} };
+  const sandbox: { window: { RENTLEAKS_DATA?: Catalog } } = { window: {} };
   runInNewContext(code, sandbox, { timeout: 15_000 });
 
   const data = sandbox.window.RENTLEAKS_DATA;
@@ -40,7 +116,7 @@ export function allIn(l: SourceListing): number {
   const fees = l.fees || {};
   return (
     Number(l.price || 0) +
-    Object.values(fees).reduce((sum: number, v) => sum + Number(v || 0), 0)
+    Object.values(fees).reduce<number>((sum, v) => sum + Number(v || 0), 0)
   );
 }
 

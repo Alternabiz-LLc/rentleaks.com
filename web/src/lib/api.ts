@@ -8,6 +8,7 @@
  * any render code.
  */
 import type { NextRequest } from "next/server";
+import type { City, Listing } from "@prisma/client";
 
 const ALLOWED = (process.env.API_ALLOWED_ORIGINS ||
   "https://rentleaks.com,https://www.rentleaks.com,https://altech237.github.io,http://localhost:8123,http://localhost:8080,http://localhost:8765")
@@ -50,9 +51,12 @@ export function preflight(req: NextRequest) {
 
 type Detail = Record<string, unknown>;
 
-export function serializeListing(l: any) {
-  const d: Detail = (l.detail as Detail) || {};
-  const city = l.city || {};
+/** A listing row with its city joined in, as every route below queries it. */
+export type ListingRow = Listing & { city?: City | null };
+
+export function serializeListing(l: ListingRow) {
+  const d = ((l.detail as unknown) as Detail) || {};
+  const city = (l.city || {}) as Partial<City>;
   return {
     id: l.id,
     type: "rent",
@@ -111,7 +115,7 @@ export function serializeListing(l: any) {
   };
 }
 
-export function serializeCity(c: any) {
+export function serializeCity(c: City) {
   return {
     id: c.id,
     name: c.name,
@@ -122,7 +126,7 @@ export function serializeCity(c: any) {
     transit: c.transit,
     avgRoom: c.avgRoom,
     avgFurnished: c.avgFurnished,
-    neighborhoods: c.neighborhoods ?? [],
+    neighborhoods: (c.neighborhoods as unknown) ?? [],
     country: c.country,
     countryName: c.countryName,
     group: c.group,
