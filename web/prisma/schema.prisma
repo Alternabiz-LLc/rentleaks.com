@@ -78,6 +78,7 @@ model City {
   slug          String  @default("")
   // string[] of neighbourhood names
   neighborhoods Json    @default("[]")
+  currency      String  @default("USD")
 
   listings  Listing[]
 
@@ -98,6 +99,10 @@ model Listing {
   neighborhood    String
   price           Int
   allIn           Int
+  // allIn is in the market's own currency; allInUsd is the comparable figure
+  // every cross-market sort and budget filter runs on.
+  currency        String   @default("USD")
+  allInUsd        Int      @default(0)
   deposit         Int
   beds            Int
   baths           Float
@@ -142,7 +147,7 @@ model Listing {
   @@index([cityId])
   @@index([housingType])
   @@index([hostId])
-  @@index([allIn])
+  @@index([allInUsd])
   @@index([availableFrom])
   @@index([featured])
   @@index([housingType, cityId])

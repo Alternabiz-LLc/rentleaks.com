@@ -49,14 +49,31 @@
       .catch(function (err) { clearTimeout(timer); throw err; });
   }
 
+  /**
+   * Budgets are typed in whatever currency the visitor is viewing, but the
+   * API compares against allInUsd because listings span many currencies.
+   * Convert on the way out.
+   */
+  function toUsd(amount) {
+    if (!amount) return '';
+    var D = window.RENTLEAKS_DATA;
+    if (!D || !D.convert) return amount;
+    var display = 'USD';
+    try {
+      var saved = JSON.parse(localStorage.getItem('rl_currency') || '""');
+      if (saved) display = saved;
+    } catch (e) { /* default */ }
+    return Math.round(D.convert(Number(amount), display, 'USD'));
+  }
+
   /** Browse-page filter state -> API query params. */
   function stateToParams(state, page, pageSize) {
     return {
       city: state.city || '',
       type: state.type || '',
       q: state.location || '',
-      min: state.priceMin || '',
-      max: state.priceMax || '',
+      min: toUsd(state.priceMin),
+      max: toUsd(state.priceMax),
       beds: state.beds || '',
       stay: state.minStay || '',
       moveIn: state.moveIn || '',

@@ -369,6 +369,45 @@
     ]
   };
 
+
+  /* ---------------------------------------------------------------------
+   * Currency
+   * -------------------------------------------------------------------
+   * Every listing's price is stored in its OWN market's currency — a
+   * Toronto room is 1150 CAD, a Paris room is 1400 EUR. Mixing those in one
+   * list would make sorting and budget filters meaningless, so the UI
+   * converts everything into a single display currency the visitor picks.
+   *
+   * FX_PER_USD is how many units of each currency one US dollar buys. These
+   * are STATIC APPROXIMATIONS, not live rates — fine for ranking and rough
+   * comparison, not for quoting an exact amount. Swap this object for a
+   * rates feed when exact figures matter.
+   * ------------------------------------------------------------------- */
+  const FX_PER_USD = { USD: 1, CAD: 1.36, EUR: 0.92, GBP: 0.79, CHF: 0.88 };
+  const FX_UPDATED = '2026-09';
+
+  const CURRENCY_BY_COUNTRY = {
+    US: 'USD', CA: 'CAD', GB: 'GBP', IE: 'EUR', FR: 'EUR', ES: 'EUR',
+    NL: 'EUR', DE: 'EUR', IT: 'EUR', CH: 'CHF'
+  };
+
+  function currencyForCountry(code) {
+    return CURRENCY_BY_COUNTRY[code] || 'USD';
+  }
+
+  /** Convert between any two supported currencies. */
+  function convert(amount, from, to) {
+    const a = Number(amount) || 0;
+    const f = FX_PER_USD[from] || 1;
+    const t = FX_PER_USD[to] || 1;
+    if (f === t) return a;
+    return (a / f) * t;
+  }
+
+  function toUsd(amount, from) {
+    return convert(amount, from, 'USD');
+  }
+
   CITIES.forEach((c) => {
     if (!c.country) {
       c.country = 'US';
@@ -379,6 +418,7 @@
     const geo = CITY_GEO[c.id];
     if (geo) { c.lat = geo.lat; c.lng = geo.lng; }
     c.transitLines = TRANSIT[c.id] || [];
+    c.currency = currencyForCountry(c.country);
   });
 
   const COLIVING_BRANDS = [
@@ -618,6 +658,8 @@
       priceSuffix: '/mo',
       fees: { broker, utilities, wifi, cleaning, parking: seed % 7 === 0 ? 150 : 0 },
       allIn,
+      currency: currencyForCountry(city.country || 'US'),
+      allInUsd: Math.round(toUsd(allIn, currencyForCountry(city.country || 'US'))),
       deposit,
       lastMonth: type === 'lease-break' ? 0 : 0,
       beds,
@@ -732,6 +774,11 @@
     },
     housingTypes: HOUSING_TYPES,
     categories,
+    currencyForCountry,
+    convert,
+    toUsd,
+    fxPerUsd: FX_PER_USD,
+    fxUpdated: FX_UPDATED,
     cities: CITIES,
     listings: userListings.concat(listings),
     typeLabel,

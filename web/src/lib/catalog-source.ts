@@ -30,6 +30,8 @@ export interface SourceListing {
   neighborhood?: string;
   price?: number;
   allIn?: number;
+  currency?: string;
+  allInUsd?: number;
   deposit?: number;
   beds?: number;
   baths?: number;
@@ -85,6 +87,7 @@ export interface SourceCity {
   featured?: boolean;
   avgRoom?: number;
   avgFurnished?: number;
+  currency?: string;
   country?: string;
   countryName?: string;
   group?: string;
@@ -132,6 +135,8 @@ export function toDbListing(l: SourceListing, hostId: string) {
     neighborhood: l.neighborhood ?? "",
     price: Math.round(Number(l.price) || 0),
     allIn: Math.round(allIn(l)),
+    currency: l.currency ?? "USD",
+    allInUsd: Math.round(l.allInUsd ?? allIn(l)),
     deposit: Math.round(Number(l.deposit) || 0),
     beds: Number(l.beds) || 0,
     baths: Number(l.baths) || 0,
@@ -200,5 +205,6 @@ export function toDbCity(c: SourceCity) {
     group: c.group ?? "United States",
     slug: c.slug ?? "",
     neighborhoods: c.neighborhoods ?? [],
+    currency: c.currency ?? "USD",
   };
 }

@@ -2105,3 +2105,25 @@ textarea { min-height: 118px; resize: vertical; }
   background: var(--ink-4); animation: none;
 }
 body.rl-live .hero-proof__dot { background: var(--success); }
+
+/* --------------------------------------------------------------------------
+   43. CURRENCY SWITCHER
+   -------------------------------------------------------------------------- */
+
+.cur-select { position: relative; display: inline-flex; align-items: center; }
+.cur-select select {
+  appearance: none; -webkit-appearance: none;
+  padding: 6px var(--s-6) 6px var(--s-3);
+  border: 1px solid transparent; border-radius: var(--r-sm);
+  background-color: transparent; color: var(--ink-2);
+  font-size: var(--text-xs); font-weight: 600; cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%23526B74' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right var(--s-2) center;
+  transition: background-color var(--t-fast), color var(--t-fast), border-color var(--t-fast);
+}
+.cur-select select:hover { background-color: var(--line-faint); color: var(--ink); border-color: var(--line); }
+.cur-select select:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+:root[data-theme="dark"] .cur-select select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%237D959C' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+}
+@media (max-width: 620px) { .cur-select { display: none; } }

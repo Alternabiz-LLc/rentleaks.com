@@ -12,7 +12,8 @@
     alerts: 'rl_alerts',
     listings: 'rl_my_listings',
     recent: 'rl_recent',
-    match: 'rl_match'
+    match: 'rl_match',
+    currency: 'rl_currency'
   };
 
   const state = {
@@ -67,6 +68,8 @@
     const c = cityMeta(l.cityId);
     if (!c) return null;
     const roomish = l.housingType === 'room' || l.housingType === 'coliving';
+    // City benchmarks are stored in that city's own currency, matching the
+    // listing, so no conversion is needed here.
     const base = roomish ? c.avgRoom : c.avgFurnished;
     return Number.isFinite(base) && base > 0 ? base : null;
   }
@@ -83,17 +86,17 @@
   const FEE_LABELS = { broker: 'Broker fee', utilities: 'Utilities', wifi: 'Wi-Fi', cleaning: 'Cleaning', parking: 'Parking', amenity: 'Amenity fee', admin: 'Admin fee' };
   function feeRows(l) {
     const fees = l.fees || {};
-    const rows = [{ k: 'Base rent', v: money(l.price), zero: false }];
+    const rows = [{ k: 'Base rent', v: money(l.price, l), zero: false }];
     Object.keys(fees).forEach((k) => {
       const amount = Number(fees[k] || 0);
-      rows.push({ k: FEE_LABELS[k] || k, v: amount ? money(amount) : 'Included', zero: !amount });
+      rows.push({ k: FEE_LABELS[k] || k, v: amount ? money(amount, l) : 'Included', zero: !amount });
     });
     return rows;
   }
   function feeStackHtml(l) {
     return '<div class="rl-fee-stack">' +
       feeRows(l).map((r) => '<div class="rl-fee-stack__row' + (r.zero ? ' rl-fee-stack__row--zero' : '') + '"><span>' + escapeHtml(r.k) + '</span><span>' + r.v + '</span></div>').join('') +
-      '<div class="rl-fee-stack__row rl-fee-stack__row--total"><span>All-in / month</span><span>' + money(allIn(l)) + '</span></div>' +
+      '<div class="rl-fee-stack__row rl-fee-stack__row--total"><span>All-in / month</span><span>' + money(allIn(l), l) + '</span></div>' +
       '</div>';
   }
   function closeFeePop() {
@@ -311,7 +314,69 @@
 
   function $(sel, el) { return (el || document).querySelector(sel); }
   function $$(sel, el) { return Array.from((el || document).querySelectorAll(sel)); }
-  function money(n) { return '$' + Number(n || 0).toLocaleString(); }
+  /* ---------------------------------------------------------------------
+   * Money
+   * -------------------------------------------------------------------
+   * Prices are stored in each market's own currency. Everything on screen is
+   * converted into ONE display currency so figures stay comparable — mixing
+   * £1,840 and C$1,415 in a sorted list is meaningless.
+   *
+   * money(amount, ctx) where ctx is a currency code, or any object carrying
+   * one (a listing or a city). Omit ctx only for figures already expressed in
+   * the display currency, such as the visitor's own budget input.
+   * ------------------------------------------------------------------- */
+  const CURRENCIES = ['USD', 'CAD', 'EUR', 'GBP', 'CHF'];
+
+  function displayCurrency() {
+    const saved = read(STORE.currency, null);
+    if (saved && CURRENCIES.indexOf(saved) !== -1) return saved;
+    // Fall back to something sensible for the visitor's locale.
+    try {
+      const region = (navigator.language || '').split('-')[1];
+      const byRegion = { CA: 'CAD', GB: 'GBP', CH: 'CHF', IE: 'EUR', FR: 'EUR', ES: 'EUR', NL: 'EUR', DE: 'EUR', IT: 'EUR' };
+      if (region && byRegion[region]) return byRegion[region];
+    } catch (e) { /* ignore */ }
+    return 'USD';
+  }
+
+  function setDisplayCurrency(code) {
+    if (CURRENCIES.indexOf(code) === -1) return;
+    write(STORE.currency, code);
+    document.dispatchEvent(new CustomEvent('rl:currency', { detail: code }));
+  }
+
+  function sourceCurrency(ctx) {
+    if (!ctx) return null;
+    if (typeof ctx === 'string') return ctx;
+    if (ctx.currency) return ctx.currency;
+    if (ctx.cityId) {
+      const c = cityMeta(ctx.cityId);
+      if (c && c.currency) return c.currency;
+    }
+    if (ctx.country && DATA.currencyForCountry) return DATA.currencyForCountry(ctx.country);
+    return null;
+  }
+
+  function money(n, ctx) {
+    const to = displayCurrency();
+    const from = sourceCurrency(ctx) || to;
+    const value = DATA.convert ? DATA.convert(n, from, to) : Number(n || 0);
+    try {
+      return new Intl.NumberFormat(undefined, {
+        style: 'currency', currency: to,
+        minimumFractionDigits: 0, maximumFractionDigits: 0
+      }).format(Math.round(value));
+    } catch (e) {
+      return (to === 'USD' ? '$' : to + ' ') + Math.round(value).toLocaleString();
+    }
+  }
+
+  /** Comparable figure for sorting and budget filters, regardless of market. */
+  function allInDisplay(l) {
+    return DATA.convert
+      ? DATA.convert(allIn(l), sourceCurrency(l) || 'USD', displayCurrency())
+      : allIn(l);
+  }
   function escapeHtml(s) {
     return String(s == null ? '' : s)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -743,6 +808,12 @@
               </button>
               <a href="${base}saved.html" class="header__link">Saved${saved ? ' <span class="rl-count">' + saved + '</span>' : ''}</a>
               <a href="${appHref('/list', base + 'list.html')}" class="header__link">List a place</a>
+              <label class="cur-select" title="Display currency">
+                <span class="sr-only">Display currency</span>
+                <select class="js-currency" aria-label="Display currency">
+                  ${CURRENCIES.map((c) => '<option value="' + c + '"' + (c === displayCurrency() ? ' selected' : '') + '>' + c + '</option>').join('')}
+                </select>
+              </label>
               <button type="button" class="theme-toggle js-theme" aria-label="Switch colour theme">${iconSun()}${iconMoon()}</button>
               ${user
                 ? '<a href="' + base + 'saved.html" class="btn btn--primary btn--sm">' + escapeHtml(user.name.split(' ')[0]) + '</a>'
@@ -866,8 +937,10 @@
         (l.title || '').toLowerCase().includes(q)
       );
     }
-    if (s.priceMin) list = list.filter((l) => allIn(l) >= Number(s.priceMin));
-    if (s.priceMax) list = list.filter((l) => allIn(l) <= Number(s.priceMax));
+    // Budgets are typed in the display currency; listings are stored in their
+    // own. Compare on the converted figure, never the raw one.
+    if (s.priceMin) list = list.filter((l) => allInDisplay(l) >= Number(s.priceMin));
+    if (s.priceMax) list = list.filter((l) => allInDisplay(l) <= Number(s.priceMax));
     if (s.beds) list = list.filter((l) => (l.beds || 0) >= Number(s.beds));
     if (s.minStay) list = list.filter((l) => (l.minStayMonths || 1) <= Number(s.minStay));
     if (s.moveIn) list = list.filter((l) => !l.availableFrom || l.availableFrom <= s.moveIn);
@@ -879,8 +952,8 @@
     if (s.utilitiesIn) list = list.filter((l) => (l.utilitiesIncluded || []).includes('utilities') || (l.fees && l.fees.utilities === 0));
     if (s.verified) list = list.filter((l) => l.verified);
 
-    if (s.sort === 'price-asc') list.sort((a, b) => allIn(a) - allIn(b));
-    else if (s.sort === 'price-desc') list.sort((a, b) => allIn(b) - allIn(a));
+    if (s.sort === 'price-asc') list.sort((a, b) => allInDisplay(a) - allInDisplay(b));
+    else if (s.sort === 'price-desc') list.sort((a, b) => allInDisplay(b) - allInDisplay(a));
     else if (s.sort === 'move-in') list.sort((a, b) => String(a.availableFrom).localeCompare(String(b.availableFrom)));
     else if (s.sort === 'match' && read(STORE.match, null)) {
       const pref = read(STORE.match, null);
@@ -895,8 +968,8 @@
     let score = 40;
     if (pref.city && l.cityId === pref.city) score += 22;
     if (pref.types && pref.types.includes(l.housingType)) score += 18;
-    if (pref.budget && allIn(l) <= Number(pref.budget)) score += 12;
-    else if (pref.budget && allIn(l) > Number(pref.budget)) score -= 16;
+    if (pref.budget && allInDisplay(l) <= Number(pref.budget)) score += 12;
+    else if (pref.budget && allInDisplay(l) > Number(pref.budget)) score -= 16;
     if (pref.stay && (l.minStayMonths || 1) <= Number(pref.stay)) score += 8;
     if (pref.workspace && l.workplaceReady) score += 6;
     if (pref.pets === 'yes' && l.pets !== 'none') score += 6;
@@ -945,8 +1018,8 @@
           </button>
         </div>
         <div class="listing-card__body">
-          <p class="listing-card__price">${money(allIn(listing))}<span class="listing-card__period">all-in /mo</span>${leakChip(listing)}</p>
-          <button type="button" class="rl-allin-live" data-fees="${id}" aria-label="See what makes up this price">Base ${money(listing.price)} + fees</button>
+          <p class="listing-card__price">${money(allIn(listing), listing)}<span class="listing-card__period">all-in /mo</span>${leakChip(listing)}</p>
+          <button type="button" class="rl-allin-live" data-fees="${id}" aria-label="See what makes up this price">Base ${money(listing.price, listing)} + fees</button>
           <h3 class="listing-card__title"><a href="${href}" class="listing-card__link">${escapeHtml(listing.title)}</a></h3>
           <p class="listing-card__address">${iconPin()}${escapeHtml(listing.location)}</p>
           <p class="listing-card__specs">${escapeHtml(listing.specs)} · from ${formatDate(listing.availableFrom)}</p>
@@ -1116,7 +1189,7 @@
         bounds.push([geo.lat, geo.lng]);
         const icon = window.L.divIcon({
           className: '',
-          html: '<span class="rl-price-marker">' + money(allIn(listing)) + '</span>',
+          html: '<span class="rl-price-marker">' + money(allIn(listing), listing) + '</span>',
           iconSize: [70, 26],
           iconAnchor: [35, 26]
         });
@@ -1124,7 +1197,7 @@
         marker.bindPopup(
           '<a class="rl-pop" href="' + listingHref(listing) + '">' +
           '<img src="' + listing.image + '" alt="" loading="lazy">' +
-          '<span class="rl-pop__b"><span class="rl-pop__p">' + money(allIn(listing)) + ' all-in</span>' +
+          '<span class="rl-pop__b"><span class="rl-pop__p">' + money(allIn(listing), listing) + ' all-in</span>' +
           '<span class="rl-pop__t">' + escapeHtml(listing.title) + '</span></span></a>'
         );
         browseMarkers.push(marker);
@@ -1155,7 +1228,7 @@
         attribution: '&copy; OpenStreetMap'
       }).addTo(map);
       window.L.marker([geo.lat, geo.lng]).addTo(map)
-        .bindPopup(escapeHtml(listing.title) + '<br>' + money(allIn(listing)) + ' all-in /mo');
+        .bindPopup(escapeHtml(listing.title) + '<br>' + money(allIn(listing), listing) + ' all-in /mo');
     });
   }
 
@@ -1403,7 +1476,7 @@
     const items = ids.map(listingById).filter(Boolean);
     tray.hidden = false;
     tray.innerHTML = '<div class="rl-compare-tray__inner"><strong>Compare</strong>' +
-      items.map((l) => '<span>' + escapeHtml(typeMeta(l.housingType).short) + ' · ' + money(allIn(l)) + '</span>').join('') +
+      items.map((l) => '<span>' + escapeHtml(typeMeta(l.housingType).short) + ' · ' + money(allIn(l), l) + '</span>').join('') +
       '<a class="btn btn--primary btn--sm" href="compare.html">Open</a>' +
       '<button type="button" class="btn btn--outline btn--sm" id="rl-compare-clear">Clear</button></div>';
     const clear = $('#rl-compare-clear');
@@ -1441,7 +1514,8 @@
 
     const rooms = listings.filter((l) => l.housingType === 'room');
     const breaks = listings.filter((l) => l.housingType === 'lease-break');
-    const avgRoom = Math.round(rooms.reduce((s, l) => s + allIn(l), 0) / Math.max(1, rooms.length));
+    // Average across markets only makes sense once converted.
+    const avgRoom = Math.round(rooms.reduce((s, l) => s + allInDisplay(l), 0) / Math.max(1, rooms.length));
     const avgBreak = Math.round(breaks.reduce((s, l) => s + (l.remainingMonths || 0), 0) / Math.max(1, breaks.length));
     const noFee = listings.filter((l) => l.noFee).length;
     const noFeePct = Math.round((noFee / Math.max(1, listings.length)) * 100);
@@ -1474,7 +1548,7 @@
         <div style="padding-top:.5rem">
           <p class="hero-proof__note">Cheapest ${escapeHtml(nyc.name || 'New York')} room vs. the ${escapeHtml(nyc.name || 'local')} median</p>
           <div class="hero-proof__bar"><span class="hero-proof__fill" style="width:${pct}%"></span></div>
-          <p class="hero-proof__note" style="margin-top:.35rem">${cheapest ? money(allIn(cheapest)) + ' all-in vs ' + money(bench) + ' typical' : 'All-in pricing on every card'}</p>
+          <p class="hero-proof__note" style="margin-top:.35rem">${cheapest ? money(allIn(cheapest), cheapest) + ' all-in vs ' + money(bench) + ' typical' : 'All-in pricing on every card'}</p>
         </div>`;
     }
 
@@ -1507,7 +1581,7 @@
           <span class="rl-city-row__rank">${badge}</span>
           <span><strong>${c.name}</strong><em>${c.state}${c.launch ? ' · original RentLeaks market' : ''}</em></span>
           <span>${n} homes</span>
-          <span>${money(avg)} avg all-in</span>
+          <span>${money(avg, c)} avg all-in</span>
           <span>Walk ${c.walk}</span>
         </a>`;
       }).join('');
@@ -1537,7 +1611,7 @@
       const byType = (DATA.housingTypes || []).map((t) => {
         const subset = list.filter((l) => l.housingType === t.id);
         const avg = Math.round(subset.reduce((s, l) => s + allIn(l), 0) / Math.max(1, subset.length));
-        return `<a class="rl-stat" href="${typeHref(t.id)}?city=${city.id}"><span>${t.label}</span><strong>${subset.length}</strong><em>${subset.length ? money(avg) + ' all-in' : 'coming online'}</em></a>`;
+        return `<a class="rl-stat" href="${typeHref(t.id)}?city=${city.id}"><span>${t.label}</span><strong>${subset.length}</strong><em>${subset.length ? money(avg, c) + ' all-in' : 'coming online'}</em></a>`;
       }).join('');
       pulse.innerHTML = byType;
     }
@@ -1603,7 +1677,7 @@
                 <div><dt>Pets</dt><dd>${l.pets === 'none' ? 'Not allowed' : l.pets}</dd></div>
               </dl>
             </section>
-            ${l.housingType === 'lease-break' ? `<section class="rl-block rl-callout"><h2>Takeover math</h2><p>Remaining term × this rent vs. a typical furnished ${escapeHtml(l.cityName)} home. Estimated avoid-cost: <strong>${money(takeoverSave)}</strong> over ${l.remainingMonths} months. Confirm assignment vs sublet with the host before you send money.</p></section>` : ''}
+            ${l.housingType === 'lease-break' ? `<section class="rl-block rl-callout"><h2>Takeover math</h2><p>Remaining term × this rent vs. a typical furnished ${escapeHtml(l.cityName)} home. Estimated avoid-cost: <strong>${money(takeoverSave, l)}</strong> over ${l.remainingMonths} months. Confirm assignment vs sublet with the host before you send money.</p></section>` : ''}
             <section class="rl-block">
               <h2>Furniture inventory</h2>
               <ul class="rl-list">${furniture}</ul>
@@ -1631,14 +1705,14 @@
           </div>
           <aside class="rl-side">
             <div class="rl-price-card">
-              <p class="listing-card__price">${money(allIn(l))}<span class="listing-card__period">all-in /mo</span>${leakChip(l)}</p>
+              <p class="listing-card__price">${money(allIn(l), l)}<span class="listing-card__period">all-in /mo</span>${leakChip(l)}</p>
               <ul class="rl-fee-stack">
-                <li><span>Base rent</span><strong>${money(l.price)}</strong></li>
-                <li><span>Utilities</span><strong>${fees.utilities ? money(fees.utilities) : 'Included'}</strong></li>
-                <li><span>Wifi</span><strong>${fees.wifi ? money(fees.wifi) : 'Included'}</strong></li>
-                <li><span>Cleaning</span><strong>${fees.cleaning ? money(fees.cleaning) : extras && l.housingType !== 'coliving' ? '—' : 'Included'}</strong></li>
-                <li><span>Broker fee</span><strong>${fees.broker ? money(fees.broker) + ' one-time' : 'None'}</strong></li>
-                <li><span>Deposit</span><strong>${money(l.deposit)}</strong></li>
+                <li><span>Base rent</span><strong>${money(l.price, l)}</strong></li>
+                <li><span>Utilities</span><strong>${fees.utilities ? money(fees.utilities, l) : 'Included'}</strong></li>
+                <li><span>Wifi</span><strong>${fees.wifi ? money(fees.wifi, l) : 'Included'}</strong></li>
+                <li><span>Cleaning</span><strong>${fees.cleaning ? money(fees.cleaning, l) : extras && l.housingType !== 'coliving' ? '—' : 'Included'}</strong></li>
+                <li><span>Broker fee</span><strong>${fees.broker ? money(fees.broker, l) + ' one-time' : 'None'}</strong></li>
+                <li><span>Deposit</span><strong>${money(l.deposit, l)}</strong></li>
               </ul>
               <p class="rl-host">Host ${escapeHtml(l.host.name)} · replies in ~${l.host.responseHours}h · ${escapeHtml(l.host.type)}</p>
               <a class="btn btn--primary btn--lg" href="${assetBase()}apply.html?id=${encodeURIComponent(l.id)}">Apply with passport</a>
@@ -1763,7 +1837,7 @@
     const p = profile() || {};
     root.innerHTML = `
       <div class="rl-apply">
-        ${l ? '<aside class="rl-price-card"><p class="rl-kicker">Applying to</p><h2>' + escapeHtml(l.title) + '</h2><p>' + money(allIn(l)) + ' all-in · ' + escapeHtml(l.location) + '</p></aside>' : ''}
+        ${l ? '<aside class="rl-price-card"><p class="rl-kicker">Applying to</p><h2>' + escapeHtml(l.title) + '</h2><p>' + money(allIn(l), l) + ' all-in · ' + escapeHtml(l.location) + '</p></aside>' : ''}
         <form class="form form-card" id="rl-passport">
           <h2>Renter passport</h2>
           <p>Reuse this on every apply. Hosts see stay length and move window — not a mystery email.</p>
@@ -1904,8 +1978,8 @@
     }
     const rows = [
       ['Stay type', (l) => typeMeta(l.housingType).label],
-      ['All-in /mo', (l) => money(allIn(l))],
-      ['Base rent', (l) => money(l.price)],
+      ['All-in /mo', (l) => money(allIn(l), l)],
+      ['Base rent', (l) => money(l.price, l)],
       ['City', (l) => l.location],
       ['Available', (l) => formatDate(l.availableFrom)],
       ['Min stay', (l) => l.minStayMonths + ' mo'],
@@ -1914,7 +1988,7 @@
       ['Private bath', (l) => l.privateBath ? 'Yes' : 'No'],
       ['Workspace', (l) => l.workplaceReady ? 'Yes' : 'No'],
       ['Pets', (l) => l.pets],
-      ['Broker fee', (l) => l.fees && l.fees.broker ? money(l.fees.broker) : 'None'],
+      ['Broker fee', (l) => l.fees && l.fees.broker ? money(l.fees.broker, l) : 'None'],
       ['Verified', (l) => l.verified ? 'Yes' : 'Not yet']
     ];
     root.innerHTML = '<div class="rl-compare-table"><table><thead><tr><th></th>' +
@@ -2009,7 +2083,7 @@
     });
     if (query) {
       filterListings({ location: q, type: '', city: '' }).slice(0, 6).forEach((l) => {
-        rows.push({ href: listingHref(l), label: l.title, hint: money(allIn(l)) + ' all-in · ' + l.cityName });
+        rows.push({ href: listingHref(l), label: l.title, hint: money(allIn(l), l) + ' all-in · ' + l.cityName });
       });
     }
     box.innerHTML = rows.slice(0, 12).map((r, i) =>
@@ -2050,6 +2124,9 @@
     $$('.js-modal-close').forEach((btn) => { btn.onclick = closeModals; });
     $$('.js-cmd').forEach((btn) => { btn.onclick = openCmd; });
     $$('.js-theme').forEach((btn) => { btn.onclick = toggleTheme; });
+    $$('.js-currency').forEach((sel) => {
+      sel.onchange = () => setDisplayCurrency(sel.value);
+    });
 
     const header = $('.header');
     if (header && !window._rlStuck) {
@@ -2351,6 +2428,16 @@
     if ($('#listings-grid') && page !== 'home' && page !== 'listing' && page !== 'saved' && page !== 'match') {
       // city page already rendered
     }
+    document.addEventListener('rl:currency', () => {
+      const page = pageName();
+      if (page === 'home') renderHome();
+      else if (page === 'browse' || page === 'rent') { state.page = 1; renderListings(); }
+      else if (page === 'listing') renderDetail();
+      else if (page === 'city') renderCityPage();
+      else if (page === 'compare') renderComparePage();
+      else if (page === 'saved') renderSaved();
+      setupScrollAnimations();
+    });
     document.addEventListener('rl:meta', () => markLiveState(true));
     document.addEventListener('rl:data-offline', () => markLiveState(false));
     markLiveState(false);

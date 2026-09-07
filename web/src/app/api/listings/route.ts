@@ -36,8 +36,10 @@ export async function GET(req: NextRequest) {
 
   const min = num(p.get("min"));
   const max = num(p.get("max"));
+  // min/max arrive already converted to USD by the client, because listings
+  // live in many currencies and allIn is not comparable across them.
   if (min != null || max != null) {
-    where.allIn = {
+    where.allInUsd = {
       ...(min != null ? { gte: min } : {}),
       ...(max != null ? { lte: max } : {}),
     };
@@ -100,9 +102,9 @@ export async function GET(req: NextRequest) {
 function sortToOrderBy(sort: string | null): Prisma.ListingOrderByWithRelationInput[] {
   switch (sort) {
     case "price-asc":
-      return [{ allIn: "asc" }, { id: "asc" }];
+      return [{ allInUsd: "asc" }, { id: "asc" }];
     case "price-desc":
-      return [{ allIn: "desc" }, { id: "asc" }];
+      return [{ allInUsd: "desc" }, { id: "asc" }];
     case "move-in":
       return [{ availableFrom: "asc" }, { id: "asc" }];
     default:

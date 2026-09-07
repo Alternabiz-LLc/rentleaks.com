@@ -22,8 +22,18 @@ function esc(s) {
     .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-function money(n) {
-  return "$" + Number(n || 0).toLocaleString();
+// Pre-rendered pages show each market in its own currency. The client-side
+// switcher can convert afterwards; the crawled HTML must still be truthful.
+function money(n, currency) {
+  const cur = currency || "USD";
+  try {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency", currency: cur,
+      minimumFractionDigits: 0, maximumFractionDigits: 0,
+    }).format(Math.round(Number(n) || 0));
+  } catch (e) {
+    return "$" + Math.round(Number(n) || 0).toLocaleString();
+  }
 }
 
 function geoRegion(city) {
@@ -199,7 +209,7 @@ function card(l, depth) {
         ${shots > 1 ? `<span class="listing-card__shots">${shots} photos</span>` : ""}
       </div>
       <div class="listing-card__body">
-        <p class="listing-card__price">${money(l.allIn)}<span class="listing-card__period"> all-in /mo</span></p>
+        <p class="listing-card__price">${money(l.allIn, l.currency)}<span class="listing-card__period"> all-in /mo</span></p>
         <h3 class="listing-card__title" itemprop="name">${esc(l.title)}</h3>
         <p class="listing-card__address" itemprop="address">${esc(l.address)}</p>
         <p class="listing-card__specs">${esc(l.specs)}</p>
@@ -356,7 +366,7 @@ function writeListingPages() {
     const typeName = (DATA.housingTypes.find((t) => t.id === l.housingType) || { label: l.housingType }).label;
     const amenityBit = (l.amenities || []).slice(0, 5).join(", ");
     const title = `${l.title} — ${l.neighborhood}, ${l.cityName} | RentLeaks`;
-    const description = `${l.title} in ${l.neighborhood}, ${l.cityName}, ${l.state} at ${l.address}. All-in ${money(l.allIn)}/mo (${l.specs}). Available ${l.availableFrom}. ${amenityBit ? amenityBit + ". " : ""}30-day minimum — housing, not a hotel night.`;
+    const description = `${l.title} in ${l.neighborhood}, ${l.cityName}, ${l.state} at ${l.address}. All-in ${money(l.allIn, l.currency)}/mo (${l.specs}). Available ${l.availableFrom}. ${amenityBit ? amenityBit + ". " : ""}30-day minimum — housing, not a hotel night.`;
     const keywords = `${l.title}, ${l.neighborhood} ${typeName.toLowerCase()}, ${l.cityName} ${l.housingType}, ${l.neighborhood} for rent, furnished ${l.cityName}, ${l.cityName} lease, all-in rent ${l.cityName}`;
     const canonical = SITE + "/" + l.path;
     const city = DATA.cities.find((c) => c.id === l.cityId);
@@ -388,7 +398,7 @@ function writeListingPages() {
       offers: {
         "@type": "Offer",
         price: l.allIn,
-        priceCurrency: "USD",
+        priceCurrency: l.currency || "USD",
         availability: "https://schema.org/InStock",
         url: canonical,
       },
@@ -439,7 +449,7 @@ ${chrome(1, "", `
       </div>
       <h1 itemprop="name">${esc(l.title)}</h1>
       <p class="listing-card__address" itemprop="address">${esc(l.address)}</p>
-      <p class="listing-card__price">${money(l.allIn)} all-in /mo</p>
+      <p class="listing-card__price">${money(l.allIn, l.currency)} all-in /mo</p>
       <p class="rl-lead" itemprop="description">${esc(l.description)}</p>
       ${l.video ? `<section class="rl-tour"><h2>Video tour</h2><div class="rl-tour__frame"><video poster="${esc(l.video.poster || l.image)}" controls preload="metadata" playsinline src="${esc(l.video.src)}"></video></div><p>${esc(l.video.caption || "Watch the host walkthrough.")}</p></section>` : ""}
       <ul>
@@ -517,7 +527,7 @@ ${imageUrls.join("\n")}
       <title>${esc(l.title)} — ${esc(l.cityName)}</title>
       <link>${SITE}/${l.path}</link>
       <guid>${SITE}/${l.path}</guid>
-      <description>${esc(l.description)} All-in ${money(l.allIn)}/mo.</description>
+      <description>${esc(l.description)} All-in ${money(l.allIn, l.currency)}/mo.</description>
       <category>${esc(l.housingType)}</category>
     </item>`).join("");
   fs.writeFileSync(path.join(ROOT, "feed.xml"), `<?xml version="1.0" encoding="UTF-8"?>
@@ -640,7 +650,7 @@ ${imageUrls.join("\n")}
     ...DATA.cities.map((c) => `- [${c.name}, ${c.state}](${SITE}/cities/${c.slug}.html)`),
     "",
     "## Listings",
-    ...listings.map((l) => `- [${l.title} — ${l.neighborhood}, ${l.cityName} — ${money(l.allIn)}/mo](${SITE}/${l.path})`),
+    ...listings.map((l) => `- [${l.title} — ${l.neighborhood}, ${l.cityName} — ${money(l.allIn, l.currency)}/mo](${SITE}/${l.path})`),
     "",
   ].join("\n");
   fs.writeFileSync(path.join(ROOT, "llms-full.txt"), llmsFull);

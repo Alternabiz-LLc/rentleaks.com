@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
       prisma.listing.count({ where: { noFee: true } }),
       prisma.listing.aggregate({
         where: { housingType: { in: ["room", "coliving"] } },
-        _avg: { allIn: true },
+        _avg: { allInUsd: true },
         _count: true,
       }),
       prisma.listing.aggregate({
@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
         listings,
         cities,
         noFeePct: listings ? Math.round((noFee / listings) * 100) : 0,
-        avgRoomAllIn: Math.round(rooms._avg?.allIn ?? 0),
+        avgRoomAllInUsd: Math.round(rooms._avg?.allInUsd ?? 0),
         leaseBreaks: breaks._count,
         avgRemainingMonths: Math.round(breaks._avg?.remainingMonths ?? 0),
         updatedAt: new Date().toISOString(),
