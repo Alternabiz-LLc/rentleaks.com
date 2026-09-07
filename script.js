@@ -535,7 +535,7 @@
     },
     cities: {
       crumb: 'Cities',
-      kicker: '69 markets · U.S. + Europe',
+      kicker: '69 markets · U.S. + Canada + Europe',
       title: 'Pick a city, then a stay type',
       blurb: 'Rooms, co-living, furnished apartments, 1-month+ stays, and lease-breaks in New York, London, Paris, Dublin, Berlin, and 64 more markets.',
       film: 'Featured markets',
@@ -1190,7 +1190,7 @@
     const list = usingLive ? liveResult.items : filterListings();
     const city = state.city ? (cityMeta(state.city) || {}).name : '';
     const type = state.type ? typeMeta(state.type).label : 'flexible homes';
-    const where = city || state.location || 'the U.S. + Europe';
+    const where = city || state.location || 'the U.S. + Canada + Europe';
     const total = usingLive ? liveResult.total : list.length;
     if (countEl) countEl.textContent = total.toLocaleString() + ' ' + type.toLowerCase() + ' in ' + where;
     const rc = $('#trust-rent-count');
@@ -1276,7 +1276,11 @@
         const g = c.group || c.countryName || 'Other';
         (groups[g] = groups[g] || []).push(c);
       });
-      const order = ['United States', 'United Kingdom', 'Scotland', 'Ireland', 'France', 'Spain', 'Netherlands', 'Switzerland', 'Germany', 'Italy'];
+      const preferred = ['United States', 'Canada', 'United Kingdom', 'Scotland', 'Ireland', 'France', 'Spain', 'Netherlands', 'Switzerland', 'Germany', 'Italy'];
+      // Preference, not a whitelist: any group not listed above still renders,
+      // so adding a country to the catalog can never silently drop it.
+      const order = preferred.filter((g) => groups[g])
+        .concat(Object.keys(groups).filter((g) => preferred.indexOf(g) === -1).sort());
       citySel.innerHTML = '<option value="">All cities</option>' + order.filter((g) => groups[g]).map((g) =>
         '<optgroup label="' + g + '">' + groups[g].map((c) =>
           '<option value="' + c.id + '">' + c.name + ', ' + c.state + (c.launch ? ' · launch' : '') + '</option>'
@@ -1489,7 +1493,11 @@
       const g = c.group || c.countryName || 'Other';
       (groups[g] = groups[g] || []).push(c);
     });
-    const order = ['United States', 'United Kingdom', 'Scotland', 'Ireland', 'France', 'Spain', 'Netherlands', 'Switzerland', 'Germany', 'Italy'];
+    const preferred = ['United States', 'Canada', 'United Kingdom', 'Scotland', 'Ireland', 'France', 'Spain', 'Netherlands', 'Switzerland', 'Germany', 'Italy'];
+      // Preference, not a whitelist: any group not listed above still renders,
+      // so adding a country to the catalog can never silently drop it.
+      const order = preferred.filter((g) => groups[g])
+        .concat(Object.keys(groups).filter((g) => preferred.indexOf(g) === -1).sort());
     grid.innerHTML = order.filter((g) => groups[g]).map((g) => {
       const rows = groups[g].map((c) => {
         const n = (DATA.listings || []).filter((l) => l.cityId === c.id).length;

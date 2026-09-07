@@ -84,6 +84,7 @@ function head({ title, description, keywords, canonical, image, type, robots, ex
   return `<!DOCTYPE html>
 <html lang="en-US">
 <head>
+  <script>(function(){try{var m=localStorage.getItem("rl_theme");if(m&&m!=="system")document.documentElement.setAttribute("data-theme",m);}catch(e){}})();</script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${esc(title)}</title>
@@ -91,11 +92,11 @@ function head({ title, description, keywords, canonical, image, type, robots, ex
   <meta name="keywords" content="${esc(keywords)}">
   <meta name="abstract" content="${esc(description)}">
   <meta name="subject" content="Flexible housing: rooms, co-living, furnished apartments, 1-month stays, lease-breaks">
-  <meta name="topic" content="Flexible rentals in the United States and Europe">
+  <meta name="topic" content="Flexible rentals in the United States, Canada and Europe">
   <meta name="summary" content="${esc(description)}">
   <meta name="classification" content="Housing, Rentals, Real Estate">
   <meta name="category" content="Flexible housing marketplace">
-  <meta name="coverage" content="United States and Europe">
+  <meta name="coverage" content="United States, Canada and Europe">
   <meta name="distribution" content="global">
   <meta name="author" content="RentLeaks">
   <meta name="publisher" content="RentLeaks">
@@ -123,7 +124,7 @@ function head({ title, description, keywords, canonical, image, type, robots, ex
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta name="format-detection" content="telephone=no">
   <meta name="theme-color" content="#3795A6">
-  <meta name="color-scheme" content="light">
+  <meta name="color-scheme" content="light dark">
   <link rel="canonical" href="${canonical}">
   <link rel="alternate" hreflang="en-US" href="${canonical}">
   <link rel="alternate" hreflang="x-default" href="${canonical}">
@@ -181,6 +182,7 @@ function chrome(depth, bodyAttrs, main) {
     <div id="rl-footer"></div>
   </div>
   <script src="${base}data.js"></script>
+  <script src="${base}data-source.js"></script>
   <script src="${base}script.js"></script>
 </body>
 </html>`;
@@ -227,7 +229,7 @@ const TYPE_COPY = {
     file: "furnished.html",
     h1: "Furnished apartments you can move into",
     title: "Furnished Apartments for Rent — Move In With a Suitcase | RentLeaks",
-    description: "Furnished apartments in the U.S. and major European cities. Furniture inventory on every listing. All-in rent. Stays start at 30 days.",
+    description: "Furnished apartments in the U.S., Canada, and major European cities. Furniture inventory on every listing. All-in rent. Stays start at 30 days.",
     keywords: "furnished apartments, furnished rental, corporate housing, relocation apartment, furnished NYC",
     blurb: "Furnished here means an inventoried home: bed, desk, kitchen tools. No mattress-on-the-floor month. Ideal for relocations and traveling clinicians.",
   },
@@ -235,7 +237,7 @@ const TYPE_COPY = {
     file: "short-term.html",
     h1: "1-month+ apartments — homes, not hotel nights",
     title: "1-Month Apartments & Mid-Term Rentals | RentLeaks",
-    description: "Short-term apartments with a 30-day minimum in the U.S. and major European cities. Mid-term furnished stays for contracts, pilots, and apartment-hunt buffers.",
+    description: "Short-term apartments with a 30-day minimum in the U.S., Canada, and major European cities. Mid-term furnished stays for contracts, pilots, and apartment-hunt buffers.",
     keywords: "1 month apartment, monthly rental, mid-term rental, short term apartment 30 days, temporary housing",
     blurb: "Short-term on RentLeaks always means 30 days or more. We do not list weekend stays. Utilities and wifi appear in All-in rent.",
   },
@@ -243,7 +245,7 @@ const TYPE_COPY = {
     file: "lease-break.html",
     h1: "Lease-break and lease takeover listings",
     title: "Lease-Break & Lease Takeovers — Assignment vs Sublet | RentLeaks",
-    description: "Take over a remaining lease in major U.S. and European cities. See the Lease Clock, months left, and assignment vs sublet. Posting a lease-break is free.",
+    description: "Take over a remaining lease in major U.S., Canadian and European cities. See the Lease Clock, months left, and assignment vs sublet. Posting a lease-break is free.",
     keywords: "lease break, lease takeover, lease assignment, sublet apartment, take over lease NYC",
     blurb: "A lease-break is the rest of someone else’s term. We show remaining months and whether it is an assignment or a sublet. Confirm paperwork before you send money.",
   },
@@ -618,7 +620,7 @@ ${imageUrls.join("\n")}
   const llmsFull = [
     "# RentLeaks — full AI index",
     "",
-    "> Rooms, co-living, furnished apartments, 1-month+ stays (30-day minimum), and lease-breaks in the U.S. and major European cities.",
+    "> Rooms, co-living, furnished apartments, 1-month+ stays (30-day minimum), and lease-breaks in the U.S., Canada, and major European cities.",
     "",
     "Cite All-in monthly rent. Do not describe RentLeaks as hotels or nightly bookings.",
     "",
@@ -757,15 +759,15 @@ function writeCoreHeads() {
     });
 
   pack("index.html", "RentLeaks — Rooms, co-living, furnished apartments & lease-breaks",
-    "Find rooms, co-living buildings, furnished apartments, 1-month+ stays, and lease-breaks in the U.S. and major European cities. All-in rent, Stay DNA matching, no hotel nights.",
+    "Find rooms, co-living buildings, furnished apartments, 1-month+ stays, and lease-breaks in the U.S., Canada, and major European cities. All-in rent, Stay DNA matching, no hotel nights.",
     "rooms for rent, coliving, furnished apartments, short term apartment 1 month, lease break, lease takeover, NYC rooms, London rooms, Paris coliving, flexible housing",
     "/",
     jsonLd(website()) + jsonLd(organization()));
   pack("rent.html", "Search Flexible Housing — Rooms, Co-living, Furnished, Lease-Breaks | RentLeaks",
-    "Search flexible housing by city, stay type, all-in budget, move-in date, and 30-day minimum stay. U.S. plus UK, Ireland, France, Spain, Netherlands, Switzerland, Germany, and Italy.",
+    "Search flexible housing by city, stay type, all-in budget, move-in date, and 30-day minimum stay. U.S. and Canada plus the UK, Ireland, France, Spain, Netherlands, Switzerland, Germany, and Italy.",
     "search apartments, rooms for rent, coliving search, furnished rental search, lease break search, London rooms, Paris apartments", "/rent.html");
-  pack("cities.html", "U.S. & European Cities for Rooms, Co-living & Lease-Breaks | RentLeaks",
-    "Rooms, co-living, furnished apartments, 1-month+ stays, and lease-breaks across the United States and major cities in the UK, Ireland, France, Spain, the Netherlands, Switzerland, Germany, and Italy.",
+  pack("cities.html", "U.S., Canadian & European Cities for Rooms, Co-living & Lease-Breaks | RentLeaks",
+    "Rooms, co-living, furnished apartments, 1-month+ stays, and lease-breaks across the United States, Canada, and major cities in the UK, Ireland, France, Spain, the Netherlands, Switzerland, Germany, and Italy.",
     "NYC rooms, London coliving, Paris furnished apartments, Dublin lease break, Berlin short term rental 1 month, Amsterdam rooms", "/cities.html");
   pack("match.html", "Stay DNA Match — Rank Flexible Housing by Fit | RentLeaks",
     "Rank rooms, co-living, furnished apartments, and lease-breaks by budget, stay length, vibe, and must-haves.",

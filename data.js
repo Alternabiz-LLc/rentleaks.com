@@ -166,7 +166,17 @@
     { id: 'milan', name: 'Milan', state: 'Italy', rank: 66, featured: true, country: 'IT', countryName: 'Italy', group: 'Italy', walk: 86, transit: 80, avgRoom: 1100, avgFurnished: 3000, neighborhoods: ['Navigli', 'Porta Venezia', 'Isola', 'Porta Romana', 'Brera'], streets: ['Corso Buenos Aires', 'Via Tortona', 'Corso Como', 'Via Ripamonti'] },
     { id: 'florence', name: 'Florence', state: 'Italy', rank: 67, featured: false, country: 'IT', countryName: 'Italy', group: 'Italy', walk: 90, transit: 52, avgRoom: 850, avgFurnished: 2400, neighborhoods: ['Santo Spirito', 'Santa Croce', 'San Lorenzo', 'Oltrarno'], streets: ['Via de Tornabuoni', 'Via Guicciardini', 'Borgo San Frediano', 'Via dei Neri'] },
     { id: 'naples', name: 'Naples', state: 'Italy', rank: 68, featured: false, country: 'IT', countryName: 'Italy', group: 'Italy', walk: 78, transit: 60, avgRoom: 650, avgFurnished: 1700, neighborhoods: ['Chiaia', 'Vomero', 'Centro Storico', 'Posillipo'], streets: ['Via Toledo', 'Via dei Mille', 'Via Chiaia', 'Via Scarlatti'] },
-    { id: 'turin', name: 'Turin', state: 'Italy', rank: 69, featured: false, country: 'IT', countryName: 'Italy', group: 'Italy', walk: 80, transit: 64, avgRoom: 700, avgFurnished: 1900, neighborhoods: ['San Salvario', 'Vanchiglia', 'Crocetta', 'Centro'], streets: ['Via Po', 'Via Roma', 'Corso Vittorio Emanuele', 'Via Mazzini'] }
+    { id: 'turin', name: 'Turin', state: 'Italy', rank: 69, featured: false, country: 'IT', countryName: 'Italy', group: 'Italy', walk: 80, transit: 64, avgRoom: 700, avgFurnished: 1900, neighborhoods: ['San Salvario', 'Vanchiglia', 'Crocetta', 'Centro'], streets: ['Via Po', 'Via Roma', 'Corso Vittorio Emanuele', 'Via Mazzini'] },
+    { id: 'toronto', name: 'Toronto', state: 'ON', rank: 70, featured: true, country: 'CA', countryName: 'Canada', group: 'Canada', walk: 61, transit: 78, avgRoom: 1150, avgFurnished: 2900, neighborhoods: ['Kensington Market', 'Liberty Village', 'Leslieville', 'The Annex', 'Queen West', 'Riverdale', 'The Junction', 'Little Italy'], streets: ['Queen St W', 'Dundas St W', 'Ossington Ave', 'Bloor St W', 'College St'] },
+    { id: 'montreal', name: 'Montreal', state: 'QC', rank: 71, featured: true, country: 'CA', countryName: 'Canada', group: 'Canada', walk: 65, transit: 67, avgRoom: 850, avgFurnished: 2100, neighborhoods: ['Le Plateau', 'Mile End', 'Griffintown', 'Villeray', 'Verdun', 'Rosemont'], streets: ['Boulevard Saint-Laurent', 'Rue Saint-Denis', 'Avenue du Mont-Royal', 'Rue Notre-Dame O'] },
+    { id: 'vancouver', name: 'Vancouver', state: 'BC', rank: 72, featured: true, country: 'CA', countryName: 'Canada', group: 'Canada', walk: 80, transit: 74, avgRoom: 1200, avgFurnished: 3100, neighborhoods: ['Mount Pleasant', 'Kitsilano', 'Gastown', 'Yaletown', 'Commercial Drive', 'West End'], streets: ['Main St', 'Commercial Dr', 'West 4th Ave', 'Granville St', 'Davie St'] },
+    { id: 'calgary', name: 'Calgary', state: 'AB', rank: 73, featured: true, country: 'CA', countryName: 'Canada', group: 'Canada', walk: 48, transit: 56, avgRoom: 800, avgFurnished: 2000, neighborhoods: ['Kensington', 'Inglewood', 'Beltline', 'Bridgeland', 'Mission'], streets: ['17 Ave SW', 'Kensington Rd NW', '9 Ave SE', '4 St SW'] },
+    { id: 'ottawa', name: 'Ottawa', state: 'ON', rank: 74, featured: false, country: 'CA', countryName: 'Canada', group: 'Canada', walk: 54, transit: 67, avgRoom: 900, avgFurnished: 2200, neighborhoods: ['The Glebe', 'Westboro', 'ByWard Market', 'Hintonburg', 'Sandy Hill'], streets: ['Bank St', 'Wellington St W', 'Elgin St', 'Preston St'] },
+    { id: 'edmonton', name: 'Edmonton', state: 'AB', rank: 75, featured: false, country: 'CA', countryName: 'Canada', group: 'Canada', walk: 51, transit: 56, avgRoom: 700, avgFurnished: 1750, neighborhoods: ['Old Strathcona', 'Oliver', 'Garneau', 'Downtown', 'Ritchie'], streets: ['Whyte Ave', 'Jasper Ave', '124 St NW', '104 St NW'] },
+    { id: 'quebec-city', name: 'Quebec City', state: 'QC', rank: 76, featured: false, country: 'CA', countryName: 'Canada', group: 'Canada', walk: 51, transit: 52, avgRoom: 650, avgFurnished: 1600, neighborhoods: ['Saint-Roch', 'Montcalm', 'Saint-Jean-Baptiste', 'Limoilou'], streets: ['Rue Saint-Joseph E', 'Grande Allee E', 'Avenue Cartier', '3e Avenue'] },
+    { id: 'winnipeg', name: 'Winnipeg', state: 'MB', rank: 77, featured: false, country: 'CA', countryName: 'Canada', group: 'Canada', walk: 55, transit: 51, avgRoom: 650, avgFurnished: 1550, neighborhoods: ['Osborne Village', 'Exchange District', 'Wolseley', 'Corydon'], streets: ['Osborne St', 'Corydon Ave', 'Portage Ave', 'Main St'] },
+    { id: 'hamilton', name: 'Hamilton', state: 'ON', rank: 78, featured: false, country: 'CA', countryName: 'Canada', group: 'Canada', walk: 52, transit: 45, avgRoom: 800, avgFurnished: 1900, neighborhoods: ['Westdale', 'Durand', 'Corktown', 'Ainslie Wood'], streets: ['Locke St S', 'James St N', 'King St E', 'Ottawa St N'] },
+    { id: 'halifax', name: 'Halifax', state: 'NS', rank: 79, featured: false, country: 'CA', countryName: 'Canada', group: 'Canada', walk: 60, transit: 45, avgRoom: 850, avgFurnished: 2000, neighborhoods: ['North End', 'South End', 'Downtown', 'Dartmouth'], streets: ['Spring Garden Rd', 'Gottingen St', 'Barrington St', 'Quinpool Rd'] }
   ];
 
   function slugify(s) {
@@ -248,7 +258,17 @@
     milan: { lat: 45.4642, lng: 9.19 },
     florence: { lat: 43.7696, lng: 11.2558 },
     naples: { lat: 40.8518, lng: 14.2681 },
-    turin: { lat: 45.0703, lng: 7.6869 }
+    turin: { lat: 45.0703, lng: 7.6869 },
+    toronto: { lat: 43.6532, lng: -79.3832 },
+    montreal: { lat: 45.5019, lng: -73.5674 },
+    vancouver: { lat: 49.2827, lng: -123.1207 },
+    calgary: { lat: 51.0447, lng: -114.0719 },
+    ottawa: { lat: 45.4215, lng: -75.6972 },
+    edmonton: { lat: 53.5461, lng: -113.4938 },
+    'quebec-city': { lat: 46.8139, lng: -71.208 },
+    winnipeg: { lat: 49.8951, lng: -97.1384 },
+    hamilton: { lat: 43.2557, lng: -79.8711 },
+    halifax: { lat: 44.6488, lng: -63.5752 }
   };
 
   const TRANSIT = {
@@ -707,7 +727,7 @@
     product: {
       name: 'RentLeaks',
       tagline: 'Flexible housing, priced honestly.',
-      pitch: 'Rooms, co-living buildings, furnished apartments, 1-month+ stays, and lease-breaks — in the U.S. and major cities across the UK, Ireland, France, Spain, the Netherlands, Switzerland, Germany, and Italy.',
+      pitch: 'Rooms, co-living buildings, furnished apartments, 1-month+ stays, and lease-breaks — in the U.S. and Canada plus major cities across the UK, Ireland, France, Spain, the Netherlands, Switzerland, Germany, and Italy.',
       minStayRule: 'Short-term here means 30 days or more. We do not list hotel nights.'
     },
     housingTypes: HOUSING_TYPES,
