@@ -1707,40 +1707,180 @@
     return DATA.getOperator(listing.operatorId);
   }
 
-  function renderOperatorsDirectory() {
-    const host = $('#rl-operators');
+  /* --- Operator directory: search, filter, sort, grid/list ------------- */
+  const opState = { q: '', kind: '', country: '', verified: false, minHomes: 0, sort: 'homes', view: 'grid' };
+
+  function operatorCities(o) {
+    return o.cityIds.map((id) => (cityMeta(id) || {}).name).filter(Boolean);
+  }
+
+  function filterOperators() {
+    let rows = (DATA.operators || []).slice();
+    const q = opState.q.trim().toLowerCase();
+    if (q) {
+      rows = rows.filter((o) =>
+        o.name.toLowerCase().includes(q) ||
+        (o.tagline || '').toLowerCase().includes(q) ||
+        operatorCities(o).some((c) => c.toLowerCase().includes(q)) ||
+        o.countries.some((c) => c.toLowerCase().includes(q)));
+    }
+    if (opState.kind) rows = rows.filter((o) => o.kind === opState.kind);
+    if (opState.country) rows = rows.filter((o) => o.countries.indexOf(opState.country) !== -1);
+    if (opState.verified) rows = rows.filter((o) => o.verified);
+    if (opState.minHomes) rows = rows.filter((o) => o.count >= opState.minHomes);
+
+    if (opState.sort === 'name') rows.sort((a, b) => a.name.localeCompare(b.name));
+    else if (opState.sort === 'cities') rows.sort((a, b) => b.cityIds.length - a.cityIds.length);
+    else if (opState.sort === 'price') rows.sort((a, b) => a.fromAllInUsd - b.fromAllInUsd);
+    else if (opState.sort === 'reply') rows.sort((a, b) => a.responseHours - b.responseHours);
+    else rows.sort((a, b) => b.count - a.count);
+    return rows;
+  }
+
+  function operatorCardHtml(o) {
+    const cities = operatorCities(o);
+    return `
+      <a class="rl-op-card animate-on-scroll" href="${operatorHref(o)}">
+        <span class="rl-op-card__mark" aria-hidden="true">${escapeHtml(operatorInitials(o.name))}</span>
+        <span class="rl-op-card__body">
+          <strong>${escapeHtml(o.name)}</strong>
+          <em>${escapeHtml(o.tagline)}</em>
+          <span class="rl-op-card__meta">${o.count} ${o.count === 1 ? 'home' : 'homes'} · ${cities.length} ${cities.length === 1 ? 'city' : 'cities'}${o.verified ? ' · Verified' : ''}</span>
+        </span>
+      </a>`;
+  }
+
+  function operatorRowHtml(o) {
+    const cities = operatorCities(o);
+    return `
+      <a class="rl-op-row animate-on-scroll" href="${operatorHref(o)}">
+        <span class="rl-op-card__mark" aria-hidden="true">${escapeHtml(operatorInitials(o.name))}</span>
+        <span class="rl-op-row__main">
+          <strong>${escapeHtml(o.name)}</strong>
+          <em>${escapeHtml(o.tagline)}</em>
+        </span>
+        <span class="rl-op-row__col"><b>${escapeHtml(OPERATOR_KIND_LABEL[o.kind] || 'Operator')}</b><i>${o.since ? 'since ' + o.since : ''}</i></span>
+        <span class="rl-op-row__col"><b>${o.count}</b><i>${o.count === 1 ? 'home' : 'homes'}</i></span>
+        <span class="rl-op-row__col"><b>${cities.length}</b><i>${cities.length === 1 ? 'city' : 'cities'}</i></span>
+        <span class="rl-op-row__col"><b>${money(o.fromAllIn, o.currency)}</b><i>from</i></span>
+        <span class="rl-op-row__col"><b>~${o.responseHours}h</b><i>reply</i></span>
+        <span class="rl-op-row__go" aria-hidden="true">→</span>
+      </a>`;
+  }
+
+  function paintOperators() {
+    const host = $('#rl-op-results');
+    const countEl = $('#rl-op-count');
+    const empty = $('#rl-op-empty');
     if (!host) return;
-    const all = (DATA.operators || []).slice();
-    const groups = [
-      { kind: 'coliving', title: 'Co-living operators', blurb: 'Purpose-built buildings with shared space, cleaning and community built in.' },
-      { kind: 'portfolio', title: 'Furnished & mid-term operators', blurb: 'Portfolios of move-in-ready homes across several markets.' },
-      { kind: 'landlord', title: 'Independent landlords', blurb: 'Local owners renting a handful of rooms, answering messages themselves.' }
-    ];
-    host.innerHTML = groups.map((g) => {
-      const rows = all.filter((o) => o.kind === g.kind);
-      if (!rows.length) return '';
-      return `
-        <section class="rl-block">
-          <div class="section-head">
-            <div class="section-head__text">
-              <span class="section-head__eyebrow">${rows.length} ${rows.length === 1 ? 'operator' : 'operators'}</span>
-              <h2>${g.title}</h2>
-              <p>${g.blurb}</p>
-            </div>
+    const rows = filterOperators();
+
+    if (countEl) {
+      countEl.textContent = rows.length.toLocaleString() + ' ' +
+        (rows.length === 1 ? 'operator' : 'operators') +
+        (opState.kind ? ' · ' + (OPERATOR_KIND_LABEL[opState.kind] || '') : '');
+    }
+    host.className = opState.view === 'list' ? 'rl-op-list' : 'rl-op-grid';
+    host.innerHTML = opState.view === 'list'
+      ? rows.map(operatorRowHtml).join('')
+      : rows.map(operatorCardHtml).join('');
+    host.hidden = rows.length === 0;
+    if (empty) {
+      empty.hidden = rows.length > 0;
+      empty.innerHTML = '<h3>No operators match</h3><p>Try a different market, or clear the filters to see all ' +
+        (DATA.operators || []).length + '.</p><button type="button" class="btn btn--outline js-op-clear">Clear filters</button>';
+    }
+    $$('[data-op-kind]').forEach((b) => b.classList.toggle('is-on', b.dataset.opKind === opState.kind));
+    $$('[data-op-view]').forEach((b) => b.classList.toggle('is-on', b.dataset.opView === opState.view));
+    const vf = $('#op-verified');
+    if (vf) vf.checked = opState.verified;
+    setupScrollAnimations();
+  }
+
+  function renderOperatorsDirectory() {
+    const shell = $('#rl-operators');
+    if (!shell) return;
+    const ops = DATA.operators || [];
+    const countries = [];
+    ops.forEach((o) => o.countries.forEach((c) => { if (countries.indexOf(c) === -1) countries.push(c); }));
+    countries.sort();
+
+    shell.innerHTML = `
+      <form class="search-card rl-op-search" role="search" onsubmit="return false">
+        <div class="search-form__row">
+          <div class="search-field">
+            <input type="search" id="op-q" placeholder="Search operators, brands or cities" aria-label="Search operators" autocomplete="off">
           </div>
-          <div class="rl-op-grid">
-            ${rows.map((o) => `
-              <a class="rl-op-card" href="${operatorHref(o)}">
-                <span class="rl-op-card__mark" aria-hidden="true">${escapeHtml(operatorInitials(o.name))}</span>
-                <span class="rl-op-card__body">
-                  <strong>${escapeHtml(o.name)}</strong>
-                  <em>${escapeHtml(o.tagline)}</em>
-                  <span class="rl-op-card__meta">${o.count} ${o.count === 1 ? 'home' : 'homes'} · ${o.cityIds.length} ${o.cityIds.length === 1 ? 'city' : 'cities'}${o.verified ? ' · Verified' : ''}</span>
-                </span>
-              </a>`).join('')}
+          <div class="search-field">
+            <select id="op-country" aria-label="Country">
+              <option value="">All countries</option>
+              ${countries.map((c) => '<option value="' + escapeHtml(c) + '">' + escapeHtml(c) + '</option>').join('')}
+            </select>
           </div>
-        </section>`;
-    }).join('');
+          <div class="search-field">
+            <select id="op-size" aria-label="Portfolio size">
+              <option value="0">Any size</option>
+              <option value="2">2+ homes</option>
+              <option value="10">10+ homes</option>
+              <option value="25">25+ homes</option>
+            </select>
+          </div>
+        </div>
+      </form>
+
+      <div class="rl-chips" id="rl-op-kinds">
+        <button type="button" class="rl-chip is-on" data-op-kind="">All operators</button>
+        <button type="button" class="rl-chip" data-op-kind="coliving">Co-living</button>
+        <button type="button" class="rl-chip" data-op-kind="portfolio">Furnished portfolios</button>
+        <button type="button" class="rl-chip" data-op-kind="landlord">Independent landlords</button>
+        <label class="rl-check rl-check--inline"><input type="checkbox" id="op-verified"> Verified only</label>
+      </div>
+
+      <div class="listings__top">
+        <h2 class="listings__count" id="rl-op-count">${ops.length} operators</h2>
+        <div class="rl-view" role="group" aria-label="View">
+          <button type="button" data-op-view="grid" class="is-on">Grid</button>
+          <button type="button" data-op-view="list">List</button>
+        </div>
+        <div class="listings__sort">
+          <label for="op-sort">Sort</label>
+          <select id="op-sort">
+            <option value="homes">Most homes</option>
+            <option value="cities">Most markets</option>
+            <option value="price">Lowest from-price</option>
+            <option value="reply">Fastest reply</option>
+            <option value="name">Name A–Z</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="rl-op-results" class="rl-op-grid"></div>
+      <div id="rl-op-empty" class="listings__empty" hidden></div>`;
+
+    const on = (sel, ev, fn) => { const el = $(sel); if (el) el.addEventListener(ev, fn); };
+    let t;
+    on('#op-q', 'input', (e) => { clearTimeout(t); t = setTimeout(() => { opState.q = e.target.value; paintOperators(); }, 180); });
+    on('#op-country', 'change', (e) => { opState.country = e.target.value; paintOperators(); });
+    on('#op-size', 'change', (e) => { opState.minHomes = Number(e.target.value) || 0; paintOperators(); });
+    on('#op-sort', 'change', (e) => { opState.sort = e.target.value; paintOperators(); });
+    on('#op-verified', 'change', (e) => { opState.verified = e.target.checked; paintOperators(); });
+
+    shell.addEventListener('click', (e) => {
+      const k = e.target.closest('[data-op-kind]');
+      if (k) { opState.kind = k.dataset.opKind; paintOperators(); }
+      const v = e.target.closest('[data-op-view]');
+      if (v) { opState.view = v.dataset.opView; paintOperators(); }
+      if (e.target.closest('.js-op-clear')) {
+        opState.q = ''; opState.kind = ''; opState.country = ''; opState.verified = false; opState.minHomes = 0;
+        const q = $('#op-q'); if (q) q.value = '';
+        const c = $('#op-country'); if (c) c.value = '';
+        const z = $('#op-size'); if (z) z.value = '0';
+        paintOperators();
+      }
+    });
+
+    decorateSearchFields();
+    paintOperators();
   }
 
   function renderOperatorPage() {
