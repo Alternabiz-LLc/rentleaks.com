@@ -1,22 +1,11 @@
 import { cookies } from "next/headers";
-import { createHash, randomBytes, scryptSync, timingSafeEqual } from "crypto";
+import { createHash, randomBytes } from "crypto";
 import { prisma } from "./prisma";
+import { hashPassword, verifyPassword } from "./password";
+
+export { hashPassword, verifyPassword };
 
 const COOKIE = "rl_session";
-
-export function hashPassword(password: string) {
-  const salt = randomBytes(16).toString("hex");
-  const hash = scryptSync(password, salt, 64).toString("hex");
-  return `${salt}:${hash}`;
-}
-
-export function verifyPassword(password: string, stored: string) {
-  const [salt, hash] = stored.split(":");
-  if (!salt || !hash) return false;
-  const next = scryptSync(password, salt, 64);
-  const prev = Buffer.from(hash, "hex");
-  return prev.length === next.length && timingSafeEqual(prev, next);
-}
 
 export function shaToken(token: string) {
   return createHash("sha256").update(token).digest("hex");

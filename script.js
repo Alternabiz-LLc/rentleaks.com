@@ -32,8 +32,264 @@
     utilitiesIn: false,
     verified: false,
     sort: 'newest',
-    view: 'grid'
+    view: 'grid',
+    page: 1
   };
+  const PAGE_SIZE = 24;
+  let browseMap = null;
+  let browseMarkers = [];
+
+  /* ---------- theme ---------- */
+  function currentTheme() {
+    try { return localStorage.getItem('rl_theme') || 'system'; } catch (e) { return 'system'; }
+  }
+  function applyTheme(mode) {
+    const root = document.documentElement;
+    if (mode === 'system') root.removeAttribute('data-theme');
+    else root.setAttribute('data-theme', mode);
+    try { localStorage.setItem('rl_theme', mode); } catch (e) {}
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) {
+      const dark = mode === 'dark' || (mode === 'system' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      meta.setAttribute('content', dark ? '#0B1418' : '#FAF7F2');
+    }
+  }
+  function resolvedDark() {
+    const m = currentTheme();
+    if (m === 'dark') return true;
+    if (m === 'light') return false;
+    return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  }
+  function toggleTheme() { applyTheme(resolvedDark() ? 'light' : 'dark'); }
+
+  /* ---------- value signal: all-in vs city benchmark ---------- */
+  function cityBenchmark(l) {
+    const c = cityMeta(l.cityId);
+    if (!c) return null;
+    const roomish = l.housingType === 'room' || l.housingType === 'coliving';
+    const base = roomish ? c.avgRoom : c.avgFurnished;
+    return Number.isFinite(base) && base > 0 ? base : null;
+  }
+  function leakChip(l) {
+    const base = cityBenchmark(l);
+    if (!base) return '';
+    const delta = Math.round(((allIn(l) - base) / base) * 100);
+    if (delta <= -8) return '<span class="rl-leak rl-leak--under" title="Versus the typical all-in price in this market">' + Math.abs(delta) + '% under market</span>';
+    if (delta >= 12) return '<span class="rl-leak rl-leak--over" title="Versus the typical all-in price in this market">' + delta + '% over market</span>';
+    return '<span class="rl-leak" title="Versus the typical all-in price in this market">At market</span>';
+  }
+
+  /* ---------- fee transparency ---------- */
+  const FEE_LABELS = { broker: 'Broker fee', utilities: 'Utilities', wifi: 'Wi-Fi', cleaning: 'Cleaning', parking: 'Parking', amenity: 'Amenity fee', admin: 'Admin fee' };
+  function feeRows(l) {
+    const fees = l.fees || {};
+    const rows = [{ k: 'Base rent', v: money(l.price), zero: false }];
+    Object.keys(fees).forEach((k) => {
+      const amount = Number(fees[k] || 0);
+      rows.push({ k: FEE_LABELS[k] || k, v: amount ? money(amount) : 'Included', zero: !amount });
+    });
+    return rows;
+  }
+  function feeStackHtml(l) {
+    return '<div class="rl-fee-stack">' +
+      feeRows(l).map((r) => '<div class="rl-fee-stack__row' + (r.zero ? ' rl-fee-stack__row--zero' : '') + '"><span>' + escapeHtml(r.k) + '</span><span>' + r.v + '</span></div>').join('') +
+      '<div class="rl-fee-stack__row rl-fee-stack__row--total"><span>All-in / month</span><span>' + money(allIn(l)) + '</span></div>' +
+      '</div>';
+  }
+  function closeFeePop() {
+    const el = $('#rl-fee-pop');
+    if (el) el.remove();
+  }
+  function openFeePop(trigger, id) {
+    closeFeePop();
+    const l = listingById(id);
+    if (!l) return;
+    const pop = document.createElement('div');
+    pop.id = 'rl-fee-pop';
+    pop.className = 'rl-pop-over';
+    pop.innerHTML = '<p class="rl-side__title" style="margin-bottom:.5rem">What you actually pay</p>' + feeStackHtml(l);
+    document.body.appendChild(pop);
+    const r = trigger.getBoundingClientRect();
+    const w = pop.offsetWidth;
+    let left = r.left + window.scrollX;
+    if (left + w > window.innerWidth - 12) left = window.innerWidth - w - 12;
+    pop.style.position = 'absolute';
+    pop.style.left = Math.max(12, left) + 'px';
+    pop.style.top = (r.bottom + window.scrollY + 8) + 'px';
+  }
+
+  /* ---------- svg icons ---------- */
+  function iconSearch() {
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>';
+  }
+  function iconSun() {
+    return '<svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
+  }
+  function iconMoon() {
+    return '<svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>';
+  }
+
+  /* ---------- progressive enhancement of any search form ---------- */
+  function decorateSearchFields() {
+    $$('.search-field').forEach((field) => {
+      if (field.querySelector('.search-field__label')) return;
+      const control = field.querySelector('input, select');
+      if (!control) return;
+      const text = control.getAttribute('aria-label') || control.getAttribute('placeholder') || '';
+      if (!text) return;
+      const label = document.createElement('span');
+      label.className = 'search-field__label';
+      label.textContent = text.length > 18 ? text.slice(0, 17) + '…' : text;
+      field.insertBefore(label, field.firstChild);
+      field.classList.add('search-field--labeled');
+      if (control.tagName === 'INPUT' && control.placeholder === text) {
+        control.placeholder = control.type === 'number' ? 'Any' : 'Any area';
+      }
+    });
+    $$('.btn--search').forEach((btn) => {
+      if (btn.dataset.iconised) return;
+      btn.dataset.iconised = '1';
+      const label = btn.textContent.trim() || 'Search';
+      btn.innerHTML = iconSearch() + '<span class="btn__label">' + label + '</span>';
+      btn.setAttribute('aria-label', label);
+    });
+  }
+
+  /* ---------- skeletons ---------- */
+  function skeletonCards(n) {
+    let html = '';
+    for (let i = 0; i < n; i += 1) {
+      html += '<div class="rl-skel-card"><div class="rl-skel"></div><div class="rl-skel"></div><div class="rl-skel"></div><div class="rl-skel"></div></div>';
+    }
+    return html;
+  }
+
+  /* ---------- active filter chips ---------- */
+  const CHIP_DEFS = [
+    { key: 'type', label: (v) => typeMeta(v).label },
+    { key: 'city', label: (v) => (cityMeta(v) || {}).name || v },
+    { key: 'location', label: (v) => '“' + v + '”' },
+    { key: 'priceMin', label: (v) => 'From ' + money(v) },
+    { key: 'priceMax', label: (v) => 'Up to ' + money(v) },
+    { key: 'minStay', label: (v) => v + ' mo stay' },
+    { key: 'moveIn', label: (v) => 'By ' + formatDate(v) },
+    { key: 'privateBath', label: () => 'Private bath' },
+    { key: 'workspace', label: () => 'Workspace' },
+    { key: 'noFee', label: () => 'No broker fee' },
+    { key: 'utilitiesIn', label: () => 'Utilities included' },
+    { key: 'verified', label: () => 'Verified host' },
+    { key: 'furnished', label: () => 'Fully furnished' },
+    { key: 'pets', label: () => 'Pets ok' }
+  ];
+  function renderChips() {
+    const host = $('#rl-chips');
+    if (!host) return;
+    const chips = CHIP_DEFS.filter((d) => state[d.key]).map((d) =>
+      '<button type="button" class="rl-chip is-on" data-chip="' + d.key + '">' +
+      escapeHtml(String(d.label(state[d.key]))) + '<span class="rl-chip__x" aria-hidden="true">✕</span>' +
+      '<span class="sr-only">Remove filter</span></button>');
+    if (chips.length > 1) chips.push('<button type="button" class="rl-chip rl-chip--clear" data-chip="__all">Clear all</button>');
+    host.innerHTML = chips.join('');
+    host.hidden = chips.length === 0;
+  }
+  function clearFilter(key) {
+    state.page = 1;
+    const boolKeys = { privateBath: 1, workspace: 1, noFee: 1, utilitiesIn: 1, verified: 1 };
+    if (key === '__all') {
+      CHIP_DEFS.forEach((d) => { state[d.key] = boolKeys[d.key] ? false : (d.key === 'priceMin' || d.key === 'priceMax' || d.key === 'minStay' ? null : ''); });
+    } else {
+      state[key] = boolKeys[key] ? false : (key === 'priceMin' || key === 'priceMax' || key === 'minStay' ? null : '');
+    }
+    syncFormFromState();
+    pushBrowseUrl();
+    renderListings();
+  }
+  function syncFormFromState() {
+    const set = (sel, val) => { const el = $(sel); if (el) el.value = val == null ? '' : val; };
+    set('#city', state.city); set('#housing-type', state.type); set('#location', state.location);
+    set('#price-min', state.priceMin); set('#price-max', state.priceMax);
+    set('#min-stay', state.minStay); set('#move-in', state.moveIn);
+    const chk = (sel, on) => { const el = $(sel); if (el) el.checked = !!on; };
+    chk('#filter-furnished', state.furnished === 'fully');
+    chk('#filter-pets', state.pets === 'yes');
+    chk('#filter-bath', state.privateBath);
+    chk('#filter-work', state.workspace);
+    chk('#filter-nofee', state.noFee);
+    chk('#filter-utils', state.utilitiesIn);
+    chk('#filter-verified', state.verified);
+  }
+
+  /* ---------- filter rail state ---------- */
+  function paintRail() {
+    const mark = (sel, attr, value) => {
+      $$(sel + ' [' + attr + ']').forEach((b) => {
+        b.classList.toggle('is-on', String(b.getAttribute(attr)) === String(value == null ? '' : value));
+      });
+    };
+    mark('#rl-opt-type', 'data-set-type', state.type);
+    mark('#rl-opt-beds', 'data-set-beds', state.beds);
+    mark('#rl-opt-stay', 'data-set-stay', state.minStay);
+    mark('#rl-opt-budget', 'data-set-max', state.priceMax);
+    const min = $('#rail-min'); const max = $('#rail-max');
+    if (min && document.activeElement !== min) min.value = state.priceMin || '';
+    if (max && document.activeElement !== max) max.value = state.priceMax || '';
+  }
+
+  /* ---------- pagination ---------- */
+  function renderPager(shown, total) {
+    let pager = $('#rl-pager');
+    const results = $('#rl-results') || ($('#listings-grid') || {}).parentNode;
+    if (!results) return;
+    if (!pager) {
+      pager = document.createElement('div');
+      pager.id = 'rl-pager';
+      pager.className = 'rl-pager';
+      results.appendChild(pager);
+    }
+    if (!total) { pager.hidden = true; return; }
+    pager.hidden = false;
+    const done = shown >= total;
+    pager.innerHTML =
+      '<p class="rl-pager__count">Showing <strong>' + shown.toLocaleString() + '</strong> of <strong>' + total.toLocaleString() + '</strong> homes</p>' +
+      '<div class="rl-pager__bar"><span style="width:' + Math.round((shown / total) * 100) + '%"></span></div>' +
+      (done
+        ? '<p class="rl-pager__end">That is every home matching these filters.</p>'
+        : '<button type="button" class="btn btn--outline js-load-more">Show ' + Math.min(PAGE_SIZE, total - shown) + ' more</button>');
+  }
+
+  /* ---------- mobile filter sheet ---------- */
+  function openFilterSheet() {
+    const side = $('#rl-filters');
+    if (!side) return;
+    side.classList.add('is-open');
+    let scrim = $('#rl-scrim');
+    if (!scrim) {
+      scrim = document.createElement('div');
+      scrim.id = 'rl-scrim';
+      scrim.className = 'rl-scrim';
+      document.body.appendChild(scrim);
+      scrim.addEventListener('click', closeFilterSheet);
+    }
+    requestAnimationFrame(() => scrim.classList.add('is-open'));
+    document.body.style.overflow = 'hidden';
+  }
+  function closeFilterSheet() {
+    const side = $('#rl-filters');
+    if (side) side.classList.remove('is-open');
+    const scrim = $('#rl-scrim');
+    if (scrim) scrim.classList.remove('is-open');
+    document.body.style.overflow = '';
+  }
+
+  function appOrigin() {
+    if (window.RL_APP_URL) return String(window.RL_APP_URL).replace(/\/$/, '');
+    if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') return 'http://localhost:3000';
+    return '';
+  }
+  function appHref(path, fallback) {
+    const origin = appOrigin();
+    return origin ? origin + path : assetBase() + fallback;
+  }
 
   function $(sel, el) { return (el || document).querySelector(sel); }
   function $$(sel, el) { return Array.from((el || document).querySelectorAll(sel)); }
@@ -208,38 +464,144 @@
       </section>`;
   }
 
-  function renderRoomsShowcase() {
-    const isRooms = document.body.dataset.type === 'room' || state.type === 'room';
-    if (!isRooms) {
-      const leftover = $('#rl-rooms-media');
-      if (leftover && document.body.dataset.type !== 'room') leftover.innerHTML = '';
-      return;
+  const MENU_HEROES = {
+    room: {
+      crumb: 'Rooms',
+      kicker: 'Private bedrooms · 30-day minimum',
+      title: 'Rooms you can see before you tour',
+      blurb: 'A real bedroom with a door, named housemates, a photo gallery, and a video walkthrough. Rent is all-in.',
+      film: 'See the rooms',
+      filmSub: 'Bedroom, bath, kitchen, and a host video — not a single hero crop.',
+      cta: 'Browse rooms',
+      jump: '#listings'
+    },
+    coliving: {
+      crumb: 'Co-living',
+      kicker: 'Designed buildings · per-room inventory',
+      title: 'Co-living with a real room list',
+      blurb: 'Cleaning, coworking, and events are on the page. Inventory is per room — not a mystery house share.',
+      film: 'See the buildings',
+      filmSub: 'Studio-style and classic rooms in operated houses across the U.S. and Europe.',
+      cta: 'Browse co-living',
+      jump: '#listings'
+    },
+    furnished: {
+      crumb: 'Furnished',
+      kicker: 'Move in with a suitcase · 30-day minimum',
+      title: 'Furnished homes with an inventory',
+      blurb: 'Bed, desk, and kitchen tools are listed. No mattress-on-the-floor month. Ideal for relocations and contracts.',
+      film: 'See the homes',
+      filmSub: 'Inventoried apartments you can take for a month or a year.',
+      cta: 'Browse furnished',
+      jump: '#listings'
+    },
+    'short-term': {
+      crumb: '1-month+',
+      kicker: 'Mid-term housing · never hotel nights',
+      title: 'One month or more — a home, not a booking',
+      blurb: 'Short-term here starts at 30 days. Utilities and wifi sit in All-in rent. Built for pilots, contracts, and apartment-hunt buffers.',
+      film: 'See 1-month+ stays',
+      filmSub: 'Furnished mid-term homes in 69 markets.',
+      cta: 'Browse 1-month+',
+      jump: '#listings'
+    },
+    'lease-break': {
+      crumb: 'Lease-break',
+      kicker: 'Takeovers · assignment vs sublet',
+      title: 'Take the rest of the lease',
+      blurb: 'See the Lease Clock, months left, and whether it is an assignment or a sublet. Posting a lease-break is free.',
+      film: 'See takeovers',
+      filmSub: 'Remaining terms with takeover math before you send money.',
+      cta: 'Browse lease-breaks',
+      jump: '#listings'
+    },
+    cities: {
+      crumb: 'Cities',
+      kicker: '69 markets · U.S. + Europe',
+      title: 'Pick a city, then a stay type',
+      blurb: 'Rooms, co-living, furnished apartments, 1-month+ stays, and lease-breaks in New York, London, Paris, Dublin, Berlin, and 64 more markets.',
+      film: 'Featured markets',
+      filmSub: 'Jump into a city directory, then filter by stay type.',
+      cta: 'Browse all cities',
+      jump: '#rl-city-directory'
+    },
+    match: {
+      crumb: 'Match',
+      kicker: 'Stay DNA · two minutes',
+      title: 'Rank homes by how they fit you',
+      blurb: 'City, budget, stay length, and house energy. We score inventory in your browser — no credit pull, no unlock wall.',
+      film: 'Homes we can rank',
+      filmSub: 'Rooms, co-living, furnished, and takeovers — scored against your Stay DNA.',
+      cta: 'Build my Stay DNA',
+      jump: '#rl-match'
     }
-    const rooms = (DATA.listings || []).filter((l) => l.housingType === 'room');
-    if (!rooms.length) return;
-    const featured = rooms.filter((l) => l.cityId === 'nyc').concat(rooms).filter((l, i, arr) => arr.findIndex((x) => x.id === l.id) === i).slice(0, 8);
-    const lead = featured[0] || rooms[0];
+  };
+
+  function menuHeroKey() {
+    const type = document.body.dataset.type || state.type || '';
+    if (MENU_HEROES[type]) return type;
+    const page = pageName();
+    if (MENU_HEROES[page]) return page;
+    return '';
+  }
+
+  function menuHeroStrip(active) {
+    const items = [
+      ['room', 'Rooms', 'rooms.html'],
+      ['coliving', 'Co-living', 'coliving.html'],
+      ['furnished', 'Furnished', 'furnished.html'],
+      ['short-term', '1-month+', 'short-term.html'],
+      ['lease-break', 'Lease-break', 'lease-break.html'],
+      ['cities', 'Cities', 'cities.html'],
+      ['match', 'Match', 'match.html']
+    ];
+    const base = assetBase();
+    return '<nav class="rl-hero-menus" aria-label="Stay menus">' + items.map(([key, label, href]) =>
+      '<a class="rl-hero-menus__link' + (key === active ? ' is-on' : '') + '" href="' + base + href + '">' + label + '</a>'
+    ).join('') + '</nav>';
+  }
+
+  function renderMenuHero() {
+    const key = menuHeroKey();
+    if (!key) return;
+    const copy = MENU_HEROES[key];
+    const listings = DATA.listings || [];
+    const typePool = ['room', 'coliving', 'furnished', 'short-term', 'lease-break'].includes(key)
+      ? listings.filter((l) => l.housingType === key)
+      : listings.filter((l) => l.featured).concat(listings);
+    const pool = typePool.filter((l, i, arr) => arr.findIndex((x) => x.id === l.id) === i);
+    if (!pool.length) return;
+    const featured = pool.filter((l) => l.cityId === 'nyc' || l.featured).concat(pool)
+      .filter((l, i, arr) => arr.findIndex((x) => x.id === l.id) === i)
+      .slice(0, 8);
+    const lead = pool.find((l) => l.video && l.video.src) || featured[0] || pool[0];
     const leadMedia = listingMedia(lead);
     const videoIndex = Math.max(0, leadMedia.findIndex((x) => x.kind === 'video'));
+    const count = key === 'cities' ? (DATA.cities || []).length : pool.length;
     const html = `
-      <section class="rl-media-hero" id="rl-rooms-hero">
-        <video class="rl-media-hero__video" autoplay muted loop playsinline poster="${lead.image}" src="${lead.video && lead.video.src ? lead.video.src : ''}"></video>
+      <section class="rl-media-hero" id="rl-menu-hero">
+        ${lead.video && lead.video.src
+          ? '<video class="rl-media-hero__video" autoplay muted loop playsinline poster="' + lead.image + '" src="' + lead.video.src + '"></video>'
+          : '<img class="rl-media-hero__video" src="' + lead.image + '" alt="' + escapeHtml(lead.imageAlt || copy.title) + '">'}
         <div class="rl-media-hero__shade"></div>
         <div class="rl-media-hero__copy container">
-          <nav class="rl-crumb rl-crumb--light" aria-label="Breadcrumb"><a href="${assetBase()}index.html">Home</a> / Rooms</nav>
-          <p class="rl-kicker rl-kicker--light">Private bedrooms · 30-day minimum</p>
-          <h1>Rooms you can see before you tour</h1>
-          <p>A photo gallery and a video walkthrough on every room. Housemates are named. Rent is all-in.</p>
+          <nav class="rl-crumb rl-crumb--light" aria-label="Breadcrumb"><a href="${assetBase()}index.html">Home</a> / ${copy.crumb}</nav>
+          ${menuHeroStrip(key)}
+          <p class="rl-kicker rl-kicker--light">${copy.kicker}</p>
+          <h1>${copy.title}</h1>
+          <p>${copy.blurb}</p>
           <div class="rl-media-hero__actions">
-            <a class="btn btn--primary" href="#listings">Browse ${rooms.length} rooms</a>
-            <button type="button" class="btn btn--on-dark" data-open-gallery="${escapeHtml(lead.id)}" data-gallery-index="${videoIndex}">Play video tour</button>
+            <a class="btn btn--primary" href="${copy.jump}">${copy.cta}${key !== 'match' && key !== 'cities' ? ' · ' + count : ''}</a>
+            ${lead.video && lead.video.src
+              ? '<button type="button" class="btn btn--on-dark" data-open-gallery="' + escapeHtml(lead.id) + '" data-gallery-index="' + videoIndex + '">Play video tour</button>'
+              : '<a class="btn btn--on-dark" href="' + listingHref(lead) + '">View a featured stay</a>'}
           </div>
         </div>
       </section>
       <section class="rl-room-film container">
         <div class="rl-room-film__head">
-          <h2>See the rooms</h2>
-          <p>Bedroom, bath, kitchen, and a host video — not a single hero crop.</p>
+          <h2>${copy.film}</h2>
+          <p>${copy.filmSub}</p>
         </div>
         <div class="rl-room-film__grid">
           ${featured.map((l) => {
@@ -251,19 +613,22 @@
           }).join('')}
         </div>
       </section>`;
-    let mount = $('#rl-rooms-media');
+    let mount = $('#rl-page-hero') || $('#rl-rooms-media');
     if (!mount) {
       const main = $('#main');
       if (!main) return;
       mount = document.createElement('div');
-      mount.id = 'rl-rooms-media';
-      const listings = $('#listings');
-      main.insertBefore(mount, listings || main.firstElementChild);
+      mount.id = 'rl-page-hero';
+      const after = $('#listings') || $('#rl-city-directory') || $('#rl-match') || main.firstElementChild;
+      if (after && after.parentElement === main) main.insertBefore(mount, after);
+      else if (after && after.closest('section')) main.insertBefore(mount, after.closest('section'));
+      else main.insertBefore(mount, main.firstElementChild);
     }
     mount.innerHTML = html;
     const oldHero = $('.page-hero');
     if (oldHero) oldHero.hidden = true;
   }
+  function renderRoomsShowcase() { renderMenuHero(); }
   function allIn(l) { return DATA.allIn ? DATA.allIn(l) : (l.allIn || l.price); }
   function daysUntil(iso) {
     if (!iso) return null;
@@ -329,59 +694,65 @@
     return '<li><a href="' + href + '" class="nav__link' + (active ? ' nav__link--active' : '') + '">' + label + '</a></li>';
   }
 
+
   function injectChrome() {
     const saved = savedIds().length;
     const user = session();
+    const base = assetBase();
     const headerHost = $('#rl-header');
     if (headerHost) {
       headerHost.innerHTML = `
         <header class="header">
           <div class="header__container">
-            <a href="${assetBase()}index.html" class="logo" aria-label="RentLeaks Home">
+            <a href="${base}index.html" class="logo" aria-label="RentLeaks home">
               <span class="logo__mark">RL</span>
               <span class="logo__text">RentLeaks</span>
             </a>
-            <nav class="nav" aria-label="Main navigation">
+            <nav class="nav" id="rl-nav" aria-label="Main navigation">
               <ul class="nav__list">
-                ${navLink(assetBase() + 'rooms.html', 'Rooms', 'room')}
-                ${navLink(assetBase() + 'coliving.html', 'Co-living', 'coliving')}
-                ${navLink(assetBase() + 'furnished.html', 'Furnished', 'furnished')}
-                ${navLink(assetBase() + 'short-term.html', '1-month+', 'short-term')}
-                ${navLink(assetBase() + 'lease-break.html', 'Lease-break', 'lease-break')}
-                ${navLink(assetBase() + 'cities.html', 'Cities', 'cities')}
-                ${navLink(assetBase() + 'match.html', 'Match', 'match')}
+                ${navLink(base + 'rooms.html', 'Rooms', 'room')}
+                ${navLink(base + 'coliving.html', 'Co-living', 'coliving')}
+                ${navLink(base + 'furnished.html', 'Furnished', 'furnished')}
+                ${navLink(base + 'short-term.html', '1-month+', 'short-term')}
+                ${navLink(base + 'lease-break.html', 'Lease-break', 'lease-break')}
+                ${navLink(base + 'cities.html', 'Cities', 'cities')}
+                ${navLink(base + 'match.html', 'Stay DNA', 'match')}
               </ul>
             </nav>
             <div class="header__actions">
-              <button type="button" class="header__link js-cmd" aria-label="Search">Search ⌘K</button>
-              <a href="${assetBase()}saved.html" class="header__link">Saved${saved ? ' <span class="rl-count">' + saved + '</span>' : ''}</a>
-              <a href="${assetBase()}list.html" class="header__link">List a place</a>
+              <button type="button" class="header__link js-cmd" aria-label="Search everything">
+                <span class="js-cmd__label">Search everything</span><kbd>⌘K</kbd>
+              </button>
+              <a href="${base}saved.html" class="header__link">Saved${saved ? ' <span class="rl-count">' + saved + '</span>' : ''}</a>
+              <a href="${appHref('/list', base + 'list.html')}" class="header__link">List a place</a>
+              <button type="button" class="theme-toggle js-theme" aria-label="Switch colour theme">${iconSun()}${iconMoon()}</button>
               ${user
-                ? '<a href="' + assetBase() + 'saved.html" class="btn btn--primary">' + escapeHtml(user.name.split(' ')[0]) + '</a>'
-                : '<a href="#" class="btn btn--primary js-modal-trigger" data-modal="auth">Sign in</a>'}
+                ? '<a href="' + base + 'saved.html" class="btn btn--primary btn--sm">' + escapeHtml(user.name.split(' ')[0]) + '</a>'
+                : '<a href="' + appHref('/login', base + 'index.html') + '" class="btn btn--primary btn--sm' + (appOrigin() ? '' : ' js-modal-trigger') + '" data-modal="auth">Sign in</a>'}
+              <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false" aria-controls="rl-nav"><span></span><span></span><span></span></button>
             </div>
-            <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false"><span></span><span></span><span></span></button>
           </div>
         </header>`;
     }
 
     const footerHost = $('#rl-footer');
     if (footerHost) {
-      const base = assetBase();
       const typeLinks = (DATA.housingTypes || []).map((t) => '<li><a href="' + base + (t.href || typeHref(t.id)) + '">' + t.label + '</a></li>').join('');
       const featuredCities = (DATA.cities || []).filter((c) => c.featured);
       const cityLinks = featuredCities.filter((c) => (c.country || 'US') === 'US').slice(0, 4)
-        .concat(featuredCities.filter((c) => (c.country || 'US') !== 'US').slice(0, 6))
+        .concat(featuredCities.filter((c) => (c.country || 'US') !== 'US').slice(0, 5))
         .map((c) => '<li><a href="' + cityHref(c) + '">' + c.name + '</a></li>').join('');
       footerHost.innerHTML = `
         <footer class="footer">
           <div class="container">
             <div class="newsletter">
               <div class="newsletter__inner">
-                <h3 class="newsletter__title">Get the next flexible home first</h3>
-                <p class="newsletter__desc">Alerts for rooms, co-living, furnished, 1-month+ stays, and lease takeovers — never hotel nights.</p>
+                <div>
+                  <h3 class="newsletter__title">Get the next flexible home first</h3>
+                  <p class="newsletter__desc">Rooms, co-living, furnished, 1-month+ stays and lease takeovers — the moment they list. Never hotel nights.</p>
+                </div>
                 <form class="newsletter__form" action="#" aria-label="Alert signup">
-                  <input type="email" class="newsletter__input" placeholder="Enter your email" required aria-label="Email address">
+                  <input type="email" class="newsletter__input" placeholder="you@example.com" required aria-label="Email address">
                   <button type="submit" class="btn btn--primary">Start alerts</button>
                 </form>
               </div>
@@ -389,16 +760,16 @@
             <div class="footer__grid">
               <div class="footer__brand">
                 <a href="${base}index.html" class="logo logo--footer"><span class="logo__mark">RL</span><span class="logo__text">RentLeaks</span></a>
-                <p class="footer__tagline">Flexible housing, priced honestly. U.S. + major European cities.</p>
+                <p class="footer__tagline">Flexible housing, priced honestly. Every price all-in, every stay 30 days or more.</p>
               </div>
-              <nav class="footer__nav">
+              <nav class="footer__nav" aria-label="Footer">
                 <div class="footer__col"><h4>Find</h4><ul>${typeLinks}<li><a href="${base}match.html">Stay DNA match</a></li></ul></div>
                 <div class="footer__col"><h4>Cities</h4><ul>${cityLinks}<li><a href="${base}cities.html">All ${(DATA.cities || []).length} markets</a></li></ul></div>
                 <div class="footer__col"><h4>Hosts</h4><ul>
                   <li><a href="${base}list.html?kind=lease-break">Post a lease-break free</a></li>
                   <li><a href="${base}list.html?kind=room">List a room</a></li>
                   <li><a href="${base}list.html?kind=coliving">Co-living operators</a></li>
-                  <li><a href="${base}professionals.html">Plans & tools</a></li>
+                  <li><a href="${base}professionals.html">Plans &amp; tools</a></li>
                 </ul></div>
                 <div class="footer__col"><h4>Company</h4><ul>
                   <li><a href="${base}faq.html">FAQ</a></li>
@@ -410,7 +781,8 @@
               </nav>
             </div>
             <div class="footer__bottom">
-              <p>&copy; 2026 RentLeaks. Fair Housing applies in every market. Short-term means 30 days or more.</p>
+              <p>&copy; 2026 RentLeaks. Fair Housing applies in every market we list.</p>
+              <p>Short-term means 30 days or more — homes, not hotel nights.</p>
             </div>
           </div>
         </footer>`;
@@ -420,11 +792,11 @@
       const wrap = document.createElement('div');
       wrap.innerHTML = `
         <div class="modal-overlay" id="modal-auth" aria-hidden="true">
-          <div class="modal" role="dialog" aria-labelledby="modal-auth-title">
+          <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-auth-title">
             <button type="button" class="modal__close js-modal-close" aria-label="Close">&times;</button>
             <h2 id="modal-auth-title" class="modal__title">Your renter passport</h2>
-            <p class="modal__subtitle">One profile. Save homes, compare, and apply without retyping.</p>
-            <div class="modal-tabs">
+            <p class="modal__subtitle">One profile. Save homes, compare, and apply without retyping. Stored in this browser.</p>
+            <div class="modal-tabs" role="tablist">
               <button type="button" class="modal-tab is-active" data-panel="signin">Sign in</button>
               <button type="button" class="modal-tab" data-panel="signup">Create passport</button>
             </div>
@@ -432,7 +804,7 @@
               <form class="form js-auth-form" data-action="signin">
                 <div class="form-group"><label for="signin-email">Email</label><input type="email" id="signin-email" name="email" class="form-input" required placeholder="you@example.com"></div>
                 <div class="form-group"><label for="signin-password">Password</label><input type="password" id="signin-password" name="password" class="form-input" required></div>
-                <button type="submit" class="btn btn--primary">Sign in</button>
+                <button type="submit" class="btn btn--primary btn--block">Sign in</button>
               </form>
             </div>
             <div id="panel-signup" class="modal-panel">
@@ -440,23 +812,23 @@
                 <div class="form-group"><label for="signup-name">Name</label><input type="text" id="signup-name" name="name" class="form-input" required></div>
                 <div class="form-group"><label for="signup-email">Email</label><input type="email" id="signup-email" name="email" class="form-input" required></div>
                 <div class="form-group"><label for="signup-password">Password</label><input type="password" id="signup-password" name="password" class="form-input" required minlength="8"></div>
-                <button type="submit" class="btn btn--primary">Create passport</button>
+                <button type="submit" class="btn btn--primary btn--block">Create passport</button>
               </form>
             </div>
           </div>
         </div>
         <div class="rl-compare-tray" id="rl-compare-tray" hidden></div>
         <div class="rl-cmd" id="rl-cmd" hidden>
-          <div class="rl-cmd__panel" role="dialog" aria-label="Command search">
-            <input type="search" id="rl-cmd-input" class="rl-cmd__input" placeholder="Jump to a city, stay type, or listing…" autocomplete="off">
+          <div class="rl-cmd__panel" role="dialog" aria-modal="true" aria-label="Search everything">
+            <input type="search" id="rl-cmd-input" class="rl-cmd__input" placeholder="Jump to a city, stay type, or home…" autocomplete="off">
             <div id="rl-cmd-results" class="rl-cmd__results"></div>
+            <div class="rl-cmd__hint"><span>↑↓ to move</span><span>↵ to open</span><span>esc to close</span></div>
           </div>
         </div>`;
       document.body.appendChild(wrap);
     }
     renderCompareTray();
   }
-
   function filterListings(override) {
     const s = Object.assign({}, state, override || {});
     let list = (DATA.listings || []).filter((l) => l.type !== 'sale');
@@ -517,6 +889,7 @@
     return Math.max(0, Math.min(99, score));
   }
 
+
   function renderListing(listing) {
     const t = typeMeta(listing.housingType);
     const saved = savedIds().includes(listing.id);
@@ -535,35 +908,239 @@
     const media = listingMedia(listing);
     const shotCount = media.filter((x) => x.kind === 'photo').length;
     const hasVideo = media.some((x) => x.kind === 'video');
+    const id = escapeHtml(listing.id);
+    const href = listingHref(listing);
 
     return `
-      <article class="listing-card animate-on-scroll" data-id="${escapeHtml(listing.id)}">
-        <a href="${listingHref(listing)}" class="listing-card__link">
-          <div class="listing-card__img-wrap">
-            <div class="listing-card__img">
-              <img class="listing-card__photo" src="${listing.image}" alt="${escapeHtml(listing.imageAlt || listing.title + ' in ' + listing.location)}" width="1400" height="933" loading="lazy" decoding="async">
-              <span class="listing-card__badge">${escapeHtml(t.short)}</span>
-              ${clock}
-              ${match != null ? '<span class="rl-match-pill">' + match + '% fit</span>' : ''}
-              ${hasVideo ? '<span class="listing-card__vid">Video</span>' : ''}
-              ${shotCount > 1 ? '<span class="listing-card__shots">' + shotCount + ' photos</span>' : ''}
-            </div>
+      <article class="listing-card animate-on-scroll" data-id="${id}">
+        <div class="listing-card__img-wrap">
+          <div class="listing-card__img">
+            <img class="listing-card__photo" src="${listing.image}" alt="${escapeHtml(listing.imageAlt || listing.title + ' in ' + listing.location)}" width="1400" height="933" loading="lazy" decoding="async">
+            <span class="listing-card__badge">${escapeHtml(t.short)}</span>
+            ${clock}
+            ${match != null ? '<span class="rl-match-pill">' + match + '% fit</span>' : ''}
+            ${hasVideo ? '<span class="listing-card__vid">Video</span>' : ''}
+            ${shotCount > 1 ? '<span class="listing-card__shots">' + shotCount + ' photos</span>' : ''}
           </div>
-          <div class="listing-card__body">
-            <p class="listing-card__price">${money(allIn(listing))}<span class="listing-card__period"> all-in /mo</span></p>
-            <p class="rl-base-rent">Base ${money(listing.price)}${listing.priceSuffix || '/mo'}</p>
-            <h3 class="listing-card__title">${escapeHtml(listing.title)}</h3>
-            <p class="listing-card__address">${iconPin()} ${escapeHtml(listing.location)}</p>
-            <p class="listing-card__specs">${escapeHtml(listing.specs)} · from ${formatDate(listing.availableFrom)}</p>
-            ${extras ? '<p class="rl-card-meta">' + extras + '</p>' : ''}
-          </div>
-        </a>
-        <button type="button" class="listing-card__save${saved ? ' listing-card__save--saved' : ''}" data-save="${escapeHtml(listing.id)}" aria-label="Save listing">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="${saved ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-        </button>
-        <button type="button" class="rl-compare-btn${compared ? ' is-on' : ''}" data-compare="${escapeHtml(listing.id)}">${compared ? 'Added' : 'Compare'}</button>
+          <button type="button" class="listing-card__save${saved ? ' listing-card__save--saved' : ''}" data-save="${id}" aria-pressed="${saved}" aria-label="${saved ? 'Remove from saved' : 'Save this home'}">
+            <svg viewBox="0 0 24 24" fill="${saved ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+          </button>
+        </div>
+        <div class="listing-card__body">
+          <p class="listing-card__price">${money(allIn(listing))}<span class="listing-card__period">all-in /mo</span>${leakChip(listing)}</p>
+          <button type="button" class="rl-allin-live" data-fees="${id}" aria-label="See what makes up this price">Base ${money(listing.price)} + fees</button>
+          <h3 class="listing-card__title"><a href="${href}" class="listing-card__link">${escapeHtml(listing.title)}</a></h3>
+          <p class="listing-card__address">${iconPin()}${escapeHtml(listing.location)}</p>
+          <p class="listing-card__specs">${escapeHtml(listing.specs)} · from ${formatDate(listing.availableFrom)}</p>
+          ${extras ? '<p class="rl-card-meta">' + extras + '</p>' : ''}
+          <button type="button" class="rl-compare-btn${compared ? ' is-on' : ''}" data-compare="${id}" aria-pressed="${compared}">${compared ? 'Added' : 'Compare'}</button>
+        </div>
       </article>`;
   }
+  function listingCoords(listing) {
+    if (listing && Number.isFinite(listing.lat) && Number.isFinite(listing.lng)) {
+      return { lat: listing.lat, lng: listing.lng };
+    }
+    const city = listing ? cityMeta(listing.cityId) : null;
+    if (!city || !Number.isFinite(city.lat)) return null;
+    const seed = (listing.id || '').length;
+    return {
+      lat: city.lat + ((seed % 80) - 40) / 1000,
+      lng: city.lng + ((seed % 80) - 40) / 800
+    };
+  }
+
+  function ensureLeaflet(done) {
+    if (window.L) { done(); return; }
+    if (document.getElementById('rl-leaflet-js')) {
+      document.getElementById('rl-leaflet-js').addEventListener('load', done, { once: true });
+      return;
+    }
+    const css = document.createElement('link');
+    css.id = 'rl-leaflet-css';
+    css.rel = 'stylesheet';
+    css.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+    document.head.appendChild(css);
+    const script = document.createElement('script');
+    script.id = 'rl-leaflet-js';
+    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    script.onload = done;
+    document.body.appendChild(script);
+  }
+
+
+  function ensureBrowseLayout() {
+    const grid = $('#listings-grid');
+    if (!grid) return;
+    if ($('#rl-browse')) return;
+
+    const container = grid.closest('.container') || grid.parentNode;
+    const adv = $('.rl-adv');
+    const top = $('.listings__top');
+    const empty = $('#listings-empty');
+    const suggest = $('#rl-suggest');
+
+    const browse = document.createElement('div');
+    browse.className = 'rl-browse';
+    browse.id = 'rl-browse';
+
+    const side = document.createElement('aside');
+    side.className = 'rl-side';
+    side.id = 'rl-filters';
+    side.setAttribute('aria-label', 'Filters');
+    side.innerHTML = '<div class="rl-side__head"><span class="rl-side__title">Refine</span>' +
+      '<button type="button" class="rl-side__clear" data-chip="__all">Reset</button></div>';
+
+    const typeFs = document.createElement('fieldset');
+    typeFs.className = 'rl-fieldset';
+    typeFs.innerHTML = '<legend>Stay type</legend><div class="rl-optlist" id="rl-opt-type">' +
+      '<button type="button" class="rl-opt" data-set-type="">Everything</button>' +
+      (DATA.housingTypes || []).map((t) => {
+        const n = (DATA.listings || []).filter((l) => l.housingType === t.id).length;
+        return '<button type="button" class="rl-opt" data-set-type="' + t.id + '">' + escapeHtml(t.label) + '<span>' + n + '</span></button>';
+      }).join('') + '</div>';
+    side.appendChild(typeFs);
+
+    const priceFs = document.createElement('fieldset');
+    priceFs.className = 'rl-fieldset';
+    priceFs.innerHTML = '<legend>All-in budget / month</legend>' +
+      '<div class="rl-range">' +
+      '<label class="sr-only" for="rail-min">Minimum all-in</label>' +
+      '<input type="number" id="rail-min" min="0" step="50" placeholder="Min" inputmode="numeric">' +
+      '<span aria-hidden="true">–</span>' +
+      '<label class="sr-only" for="rail-max">Maximum all-in</label>' +
+      '<input type="number" id="rail-max" min="0" step="50" placeholder="Max" inputmode="numeric">' +
+      '</div>' +
+      '<div class="rl-optrow" id="rl-opt-budget">' +
+      [1500, 2500, 4000].map((v) => '<button type="button" class="rl-opt rl-opt--sm" data-set-max="' + v + '">Under ' + money(v) + '</button>').join('') +
+      '</div>';
+    side.appendChild(priceFs);
+
+    const bedFs = document.createElement('fieldset');
+    bedFs.className = 'rl-fieldset';
+    bedFs.innerHTML = '<legend>Bedrooms</legend><div class="rl-optrow" id="rl-opt-beds">' +
+      [['', 'Any'], ['1', '1+'], ['2', '2+'], ['3', '3+']].map((b) =>
+        '<button type="button" class="rl-opt rl-opt--sm" data-set-beds="' + b[0] + '">' + b[1] + '</button>').join('') +
+      '</div>';
+    side.appendChild(bedFs);
+
+    const stayFs = document.createElement('fieldset');
+    stayFs.className = 'rl-fieldset';
+    stayFs.innerHTML = '<legend>Stay length</legend><div class="rl-optrow" id="rl-opt-stay">' +
+      [['', 'Any'], ['1', '1 mo'], ['3', '3 mo'], ['6', '6 mo'], ['12', '12 mo']].map((b) =>
+        '<button type="button" class="rl-opt rl-opt--sm" data-set-stay="' + b[0] + '">' + b[1] + '</button>').join('') +
+      '</div>';
+    side.appendChild(stayFs);
+
+    const fs = document.createElement('fieldset');
+    fs.className = 'rl-fieldset';
+    fs.innerHTML = '<legend>Must-haves</legend>';
+    if (adv) { adv.parentNode.removeChild(adv); fs.appendChild(adv); }
+    side.appendChild(fs);
+
+    const done = document.createElement('div');
+    done.className = 'rl-side__done';
+    done.innerHTML = '<button type="button" class="btn btn--primary btn--block js-filter-done">Show homes</button>';
+    side.appendChild(done);
+
+    const results = document.createElement('div');
+    results.className = 'rl-results';
+    results.id = 'rl-results';
+
+    const chips = document.createElement('div');
+    chips.className = 'rl-chips';
+    chips.id = 'rl-chips';
+    chips.hidden = true;
+
+    container.insertBefore(browse, top || grid);
+    browse.appendChild(side);
+    browse.appendChild(results);
+    if (top) results.appendChild(top);
+    results.appendChild(chips);
+    results.appendChild(grid);
+    if (empty) results.appendChild(empty);
+    if (suggest) results.appendChild(suggest);
+
+    const map = document.createElement('div');
+    map.id = 'rl-browse-map';
+    map.className = 'rl-map';
+    map.hidden = true;
+    browse.appendChild(map);
+
+    const fab = document.createElement('button');
+    fab.type = 'button';
+    fab.className = 'rl-filter-fab js-filter-open';
+    fab.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 6h18M7 12h10M10 18h4"/></svg> Filters';
+    document.body.appendChild(fab);
+  }
+
+  function renderBrowseMap(list) {
+    const el = $('#rl-browse-map');
+    if (!el) return;
+    const on = state.view === 'map';
+    el.hidden = !on;
+    const browse = $('#rl-browse');
+    if (browse) browse.classList.toggle('rl-browse--map', on);
+    if (!on) return;
+    ensureLeaflet(function () {
+      if (!browseMap) {
+        browseMap = window.L.map(el, { scrollWheelZoom: false }).setView([40.71, -74], 3);
+        window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; OpenStreetMap', maxZoom: 18
+        }).addTo(browseMap);
+      }
+      browseMarkers.forEach((marker) => marker.remove());
+      browseMarkers = [];
+      const bounds = [];
+      list.slice(0, 160).forEach((listing) => {
+        const geo = listingCoords(listing);
+        if (!geo) return;
+        bounds.push([geo.lat, geo.lng]);
+        const icon = window.L.divIcon({
+          className: '',
+          html: '<span class="rl-price-marker">' + money(allIn(listing)) + '</span>',
+          iconSize: [70, 26],
+          iconAnchor: [35, 26]
+        });
+        const marker = window.L.marker([geo.lat, geo.lng], { icon: icon }).addTo(browseMap);
+        marker.bindPopup(
+          '<a class="rl-pop" href="' + listingHref(listing) + '">' +
+          '<img src="' + listing.image + '" alt="" loading="lazy">' +
+          '<span class="rl-pop__b"><span class="rl-pop__p">' + money(allIn(listing)) + ' all-in</span>' +
+          '<span class="rl-pop__t">' + escapeHtml(listing.title) + '</span></span></a>'
+        );
+        browseMarkers.push(marker);
+      });
+      if (bounds.length === 1) browseMap.setView(bounds[0], 13);
+      else if (bounds.length > 1) browseMap.fitBounds(bounds, { padding: [32, 32], maxZoom: 12 });
+      setTimeout(function () { browseMap.invalidateSize(); }, 80);
+    });
+  }
+  function hydrateListingMap() {
+    const id = document.body.dataset.listingId || params().get('id');
+    const listing = listingById(id);
+    const geo = listingCoords(listing);
+    if (!listing || !geo) return;
+    let el = $('#rl-listing-map');
+    if (!el) {
+      const host = $('.rl-detail') || $('#rl-detail') || $('#main');
+      if (!host) return;
+      const section = document.createElement('section');
+      section.className = 'rl-block';
+      section.innerHTML = '<h2>On the map</h2><div id="rl-listing-map" class="rl-map rl-map--detail"></div>';
+      host.appendChild(section);
+      el = $('#rl-listing-map');
+    }
+    ensureLeaflet(function () {
+      const map = window.L.map(el).setView([geo.lat, geo.lng], 14);
+      window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap'
+      }).addTo(map);
+      window.L.marker([geo.lat, geo.lng]).addTo(map)
+        .bindPopup(escapeHtml(listing.title) + '<br>' + money(allIn(listing)) + ' all-in /mo');
+    });
+  }
+
 
   function renderListings() {
     const grid = $('#listings-grid');
@@ -571,28 +1148,49 @@
     const countEl = $('#listings-count');
     const list = filterListings();
     const city = state.city ? (cityMeta(state.city) || {}).name : '';
-    const type = state.type ? typeMeta(state.type).label : 'Flexible homes';
-    const where = city || state.location || 'U.S. + Europe';
-    if (countEl) countEl.textContent = list.length + ' ' + type + ' in ' + where;
+    const type = state.type ? typeMeta(state.type).label : 'flexible homes';
+    const where = city || state.location || 'the U.S. + Europe';
+    if (countEl) countEl.textContent = list.length.toLocaleString() + ' ' + type.toLowerCase() + ' in ' + where;
     const rc = $('#trust-rent-count');
     const cc = $('#trust-city-count');
     if (rc) rc.textContent = (DATA.listings || []).length.toLocaleString();
     if (cc) cc.textContent = String((DATA.cities || []).length);
     if (!grid) return;
-    grid.classList.toggle('listings__grid--list', state.view === 'list');
-    grid.innerHTML = list.map(renderListing).join('');
+
+    ensureBrowseLayout();
+    renderChips();
+    paintRail();
+    grid.classList.toggle('is-list', state.view === 'list');
+    $$('[data-view]').forEach((btn) => btn.classList.toggle('is-on', btn.dataset.view === state.view));
+
+    if (!grid.dataset.painted) {
+      grid.innerHTML = skeletonCards(6);
+      grid.dataset.painted = '1';
+    }
+    const shown = Math.min(list.length, PAGE_SIZE * state.page);
+    grid.innerHTML = list.slice(0, shown).map(renderListing).join('');
     grid.hidden = list.length === 0;
+    renderPager(shown, list.length);
+    renderBrowseMap(list);
     renderRoomsShowcase();
+
     if (empty) {
       empty.hidden = list.length > 0;
-      empty.innerHTML = '<p>No homes match yet. Widen stay length, city, or All-in budget — or <a href="match.html">run Stay DNA</a>.</p>';
+      empty.innerHTML = '<h3>Nothing matches — yet</h3>' +
+        '<p>Try a longer stay window, a wider all-in budget, or drop a must-have. Rooms and lease-breaks move fast, so alerts beat refreshing.</p>' +
+        '<button type="button" class="btn btn--outline" data-chip="__all">Clear all filters</button> ' +
+        '<a class="btn btn--primary" href="' + assetBase() + 'match.html">Run Stay DNA</a>';
     }
     const suggest = $('#rl-suggest');
-    if (suggest && list.length) {
-      const alts = filterListings({ city: state.city, type: '', priceMax: state.priceMax }).slice(0, 3);
+    if (suggest) {
+      const alts = list.length ? filterListings({ city: state.city, type: '', priceMax: state.priceMax }).slice(0, 3) : [];
       if (alts.length && state.type) {
         suggest.hidden = false;
-        suggest.innerHTML = '<h3>Also nearby</h3><p>Same city, other flexible types — because the right stay is not always the first label.</p><div class="listings__grid">' + alts.map(renderListing).join('') + '</div>';
+        suggest.innerHTML = '<div class="section-head"><div class="section-head__text"><span class="section-head__eyebrow">Widen the net</span>' +
+          '<h2>Also worth a look</h2><p>Same city, different stay type — the right home is not always the label you started with.</p></div></div>' +
+          '<div class="listings__grid">' + alts.map(renderListing).join('') + '</div>';
+      } else {
+        suggest.hidden = true;
       }
     }
     setupScrollAnimations();
@@ -600,17 +1198,22 @@
   }
 
   function setupScrollAnimations() {
-    if (typeof IntersectionObserver === 'undefined') {
-      $$('.animate-on-scroll').forEach((el) => el.classList.add('visible'));
+    const els = $$('.animate-on-scroll');
+    if (typeof IntersectionObserver === 'undefined' ||
+        (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+      els.forEach((el) => el.classList.add('is-visible'));
       return;
     }
     const io = window._rlScrollIo || (window._rlScrollIo = new IntersectionObserver(
-      (entries) => { entries.forEach((e) => { if (e.isIntersecting) e.target.classList.add('visible'); }); },
-      { threshold: 0.05, rootMargin: '0px 0px -20px 0px' }
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) { e.target.classList.add('is-visible'); io.unobserve(e.target); }
+        });
+      },
+      { threshold: 0.04, rootMargin: '0px 0px -32px 0px' }
     ));
-    $$('.animate-on-scroll').forEach((el) => { el.classList.remove('visible'); io.observe(el); });
+    els.forEach((el) => { if (!el.classList.contains('is-visible')) io.observe(el); });
   }
-
   function populateSearchFields() {
     const citySel = $('#city');
     if (citySel && !(citySel.options && citySel.options.length > 2)) {
@@ -650,6 +1253,7 @@
   }
 
   function syncStateFromForm() {
+    state.page = 1;
     state.location = $('#location')?.value?.trim() || '';
     state.city = $('#city')?.value || state.city;
     state.type = $('#housing-type')?.value || state.type;
@@ -679,6 +1283,8 @@
     state.minStay = p.get('stay');
     state.moveIn = p.get('moveIn') || '';
     state.sort = p.get('sort') || 'newest';
+    if (p.get('view') === 'list' || p.get('view') === 'map' || p.get('view') === 'grid') state.view = p.get('view');
+    if (location.hash === '#map') state.view = 'map';
     if (p.get('pets') === '1') state.pets = 'yes';
     if (p.get('bath') === '1') state.privateBath = true;
     if (p.get('work') === '1') state.workspace = true;
@@ -746,51 +1352,81 @@
     if (clear) clear.onclick = () => { write(STORE.compare, []); renderCompareTray(); };
   }
 
+
   function renderHome() {
+    const listings = DATA.listings || [];
+    const cities = DATA.cities || [];
     const rc = $('#trust-rent-count');
     const cc = $('#trust-city-count');
-    if (rc) rc.textContent = (DATA.listings || []).length.toLocaleString();
-    if (cc) cc.textContent = String((DATA.cities || []).length);
+    if (rc) rc.textContent = listings.length.toLocaleString();
+    if (cc) cc.textContent = String(cities.length);
+
     const types = $('#rl-types');
     if (types) {
       types.innerHTML = (DATA.housingTypes || []).map((t) => {
-        const n = (DATA.listings || []).filter((l) => l.housingType === t.id).length;
+        const n = listings.filter((l) => l.housingType === t.id).length;
         return `<a class="rl-type-card" href="${t.href}"><span class="rl-type-card__kicker">${n} live</span><h3>${t.label}</h3><p>${t.blurb}</p><span class="rl-type-card__cta">Browse ${t.short}</span></a>`;
       }).join('');
     }
-    const cities = $('#rl-cities');
-    if (cities) {
-      const featured = (DATA.cities || []).filter((c) => c.featured);
+
+    const cityHost = $('#rl-cities');
+    if (cityHost) {
+      const featured = cities.filter((c) => c.featured);
       const homeCities = featured.filter((c) => (c.country || 'US') === 'US').slice(0, 8)
         .concat(featured.filter((c) => (c.country || 'US') !== 'US'));
-      cities.innerHTML = homeCities.map((c) => {
-        const n = (DATA.listings || []).filter((l) => l.cityId === c.id).length;
+      cityHost.innerHTML = homeCities.map((c) => {
+        const n = listings.filter((l) => l.cityId === c.id).length;
         const badge = (c.country || 'US') === 'US' ? '#' + c.rank : c.group;
         return `<a class="rl-city-card" href="${cityHref(c)}"><span class="rl-city-card__rank">${badge}</span><h3>${c.name}</h3><p>${c.state} · ${n} flexible homes</p><span>Walk ${c.walk} · Transit ${c.transit}</span></a>`;
       }).join('');
     }
+
+    const rooms = listings.filter((l) => l.housingType === 'room');
+    const breaks = listings.filter((l) => l.housingType === 'lease-break');
+    const avgRoom = Math.round(rooms.reduce((s, l) => s + allIn(l), 0) / Math.max(1, rooms.length));
+    const avgBreak = Math.round(breaks.reduce((s, l) => s + (l.remainingMonths || 0), 0) / Math.max(1, breaks.length));
+    const noFee = listings.filter((l) => l.noFee).length;
+    const noFeePct = Math.round((noFee / Math.max(1, listings.length)) * 100);
+
     const pulse = $('#rl-pulse');
     if (pulse) {
-      const rooms = (DATA.listings || []).filter((l) => l.housingType === 'room');
-      const breaks = (DATA.listings || []).filter((l) => l.housingType === 'lease-break');
-      const avgRoom = Math.round(rooms.reduce((s, l) => s + allIn(l), 0) / Math.max(1, rooms.length));
-      const avgBreak = Math.round(breaks.reduce((s, l) => s + (l.remainingMonths || 0), 0) / Math.max(1, breaks.length));
       pulse.innerHTML = `
-        <article class="rl-stat"><span>Live inventory</span><strong>${(DATA.listings || []).length}</strong><em>across ${(DATA.cities || []).length} markets</em></article>
-        <article class="rl-stat"><span>Typical room all-in</span><strong>${money(avgRoom)}</strong><em>median-style snapshot</em></article>
+        <article class="rl-stat"><span>Live inventory</span><strong>${listings.length.toLocaleString()}</strong><em>across ${cities.length} markets</em></article>
+        <article class="rl-stat"><span>Typical room all-in</span><strong>${money(avgRoom)}</strong><em>fees already counted</em></article>
         <article class="rl-stat"><span>Lease Clock</span><strong>${avgBreak} mo</strong><em>average time left on takeovers</em></article>
-        <article class="rl-stat"><span>Min stay rule</span><strong>30 days</strong><em>homes, not hotel nights</em></article>`;
+        <article class="rl-stat"><span>No broker fee</span><strong>${noFeePct}%</strong><em>of every home we list</em></article>`;
     }
+
+    const proof = $('#rl-proof');
+    if (proof) {
+      const nyc = cities.find((c) => c.id === 'nyc') || cities[0] || {};
+      const nycRooms = listings.filter((l) => l.cityId === nyc.id && l.housingType === 'room');
+      const cheapest = nycRooms.slice().sort((a, b) => allIn(a) - allIn(b))[0];
+      const bench = nyc.avgRoom || 0;
+      const pct = cheapest && bench ? Math.max(6, Math.min(100, Math.round((allIn(cheapest) / bench) * 100))) : 60;
+      proof.innerHTML = `
+        <div class="hero-proof__head">
+          <span class="hero-proof__title">Market pulse</span>
+          <span class="hero-proof__live"><span class="hero-proof__dot"></span>Live</span>
+        </div>
+        <div class="hero-proof__row"><span class="hero-proof__k">Homes listed right now</span><span class="hero-proof__v">${listings.length.toLocaleString()}</span></div>
+        <div class="hero-proof__row"><span class="hero-proof__k">Markets covered</span><span class="hero-proof__v">${cities.length}</span></div>
+        <div class="hero-proof__row"><span class="hero-proof__k">Listings with zero broker fee</span><span class="hero-proof__v">${noFeePct}%</span></div>
+        <div class="hero-proof__row"><span class="hero-proof__k">Lease-breaks posted free</span><span class="hero-proof__v">${breaks.length}</span></div>
+        <div style="padding-top:.5rem">
+          <p class="hero-proof__note">Cheapest ${escapeHtml(nyc.name || 'New York')} room vs. the ${escapeHtml(nyc.name || 'local')} median</p>
+          <div class="hero-proof__bar"><span class="hero-proof__fill" style="width:${pct}%"></span></div>
+          <p class="hero-proof__note" style="margin-top:.35rem">${cheapest ? money(allIn(cheapest)) + ' all-in vs ' + money(bench) + ' typical' : 'All-in pricing on every card'}</p>
+        </div>`;
+    }
+
     const grid = $('#listings-grid');
     if (grid) {
-      const featured = (DATA.listings || []).filter((l) => l.featured).slice(0, 6);
+      const featured = listings.filter((l) => l.featured).slice(0, 6);
       const fallback = filterListings({ type: '', city: 'nyc' }).slice(0, 6);
       grid.innerHTML = (featured.length ? featured : fallback).map(renderListing).join('');
     }
-    const countEl = $('#listings-count');
-    if (countEl) countEl.textContent = 'Featured this week';
   }
-
   function renderCitiesPage() {
     const grid = $('#rl-city-directory');
     if (!grid) return;
@@ -933,7 +1569,7 @@
           </div>
           <aside class="rl-side">
             <div class="rl-price-card">
-              <p class="listing-card__price">${money(allIn(l))}<span class="listing-card__period"> all-in /mo</span></p>
+              <p class="listing-card__price">${money(allIn(l))}<span class="listing-card__period">all-in /mo</span>${leakChip(l)}</p>
               <ul class="rl-fee-stack">
                 <li><span>Base rent</span><strong>${money(l.price)}</strong></li>
                 <li><span>Utilities</span><strong>${fees.utilities ? money(fees.utilities) : 'Included'}</strong></li>
@@ -943,10 +1579,12 @@
                 <li><span>Deposit</span><strong>${money(l.deposit)}</strong></li>
               </ul>
               <p class="rl-host">Host ${escapeHtml(l.host.name)} · replies in ~${l.host.responseHours}h · ${escapeHtml(l.host.type)}</p>
-              <a class="btn btn--primary" href="${assetBase()}apply.html?id=${encodeURIComponent(l.id)}">Apply with passport</a>
-              <button type="button" class="btn btn--outline" data-save="${escapeHtml(l.id)}">${saved ? 'Saved' : 'Save'}</button>
-              <button type="button" class="btn btn--outline" data-compare="${escapeHtml(l.id)}">Compare</button>
-              <a class="btn btn--outline" href="contact.html?listing=${encodeURIComponent(l.id)}">Message host</a>
+              <a class="btn btn--primary btn--lg" href="${assetBase()}apply.html?id=${encodeURIComponent(l.id)}">Apply with passport</a>
+              <div class="rl-price-card__actions">
+                <button type="button" class="btn btn--outline" data-save="${escapeHtml(l.id)}">${saved ? 'Saved' : 'Save'}</button>
+                <button type="button" class="btn btn--outline" data-compare="${escapeHtml(l.id)}">Compare</button>
+              </div>
+              <a class="btn btn--ghost btn--sm" href="${assetBase()}contact.html?listing=${encodeURIComponent(l.id)}">Message host</a>
             </div>
           </aside>
         </div>
@@ -1258,21 +1896,24 @@
     document.head.appendChild(el);
   }
 
+
   function openModal(id) {
     const overlay = $('#modal-' + id);
     if (!overlay) return;
-    overlay.classList.add('is-open');
+    overlay.classList.add('is-active');
     overlay.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
+    const focusable = overlay.querySelector('input, button, a');
+    if (focusable) focusable.focus();
   }
+
   function closeModals() {
-    $$('.modal-overlay.is-open').forEach((ov) => {
-      ov.classList.remove('is-open');
+    $$('.modal-overlay.is-active').forEach((ov) => {
+      ov.classList.remove('is-active');
       ov.setAttribute('aria-hidden', 'true');
     });
     document.body.style.overflow = '';
   }
-
   function openCmd() {
     const cmd = $('#rl-cmd');
     if (!cmd) return;
@@ -1288,23 +1929,44 @@
       cmd.classList.remove('is-open');
     }
   }
+
   function renderCmd(q) {
     const box = $('#rl-cmd-results');
     if (!box) return;
-    const query = (q || '').toLowerCase();
+    const query = (q || '').trim().toLowerCase();
     const rows = [];
     (DATA.housingTypes || []).forEach((t) => {
-      if (!query || t.label.toLowerCase().includes(query)) rows.push({ href: t.href, label: t.label, hint: 'Stay type' });
-    });
-    (DATA.cities || []).forEach((c) => {
-      if (!query || c.name.toLowerCase().includes(query) || c.state.toLowerCase().includes(query)) {
-        rows.push({ href: cityHref(c), label: c.name + ', ' + c.state, hint: 'City' });
+      if (!query || t.label.toLowerCase().includes(query)) {
+        rows.push({ href: assetBase() + t.href, label: t.label, hint: 'Stay type' });
       }
     });
-    filterListings({ location: q, type: '', city: '' }).slice(0, 6).forEach((l) => {
-      rows.push({ href: listingHref(l), label: l.title, hint: money(allIn(l)) + ' · ' + l.cityName });
+    (DATA.cities || []).forEach((c) => {
+      if (!query || c.name.toLowerCase().includes(query) || String(c.state).toLowerCase().includes(query)) {
+        rows.push({ href: cityHref(c), label: c.name + ', ' + c.state, hint: 'Market' });
+      }
     });
-    box.innerHTML = rows.slice(0, 12).map((r) => '<a href="' + r.href + '"><strong>' + escapeHtml(r.label) + '</strong><span>' + escapeHtml(r.hint) + '</span></a>').join('') || '<p>No jump targets</p>';
+    if (query) {
+      filterListings({ location: q, type: '', city: '' }).slice(0, 6).forEach((l) => {
+        rows.push({ href: listingHref(l), label: l.title, hint: money(allIn(l)) + ' all-in · ' + l.cityName });
+      });
+    }
+    box.innerHTML = rows.slice(0, 12).map((r, i) =>
+      '<a href="' + r.href + '"' + (i === 0 ? ' class="is-active"' : '') + '><strong>' + escapeHtml(r.label) + '</strong><span>' + escapeHtml(r.hint) + '</span></a>'
+    ).join('') || '<p>Nothing matches “' + escapeHtml(q) + '”. Try a city or “lease-break”.</p>';
+    cmdIndex = 0;
+  }
+
+  let cmdIndex = 0;
+  function moveCmd(dir) {
+    const links = $$('#rl-cmd-results a');
+    if (!links.length) return;
+    cmdIndex = (cmdIndex + dir + links.length) % links.length;
+    links.forEach((a, i) => a.classList.toggle('is-active', i === cmdIndex));
+    links[cmdIndex].scrollIntoView({ block: 'nearest' });
+  }
+  function openActiveCmd() {
+    const active = $('#rl-cmd-results a.is-active') || $('#rl-cmd-results a');
+    if (active) window.location.href = active.getAttribute('href');
   }
 
   function bindChromeEvents() {
@@ -1315,17 +1977,26 @@
       navToggle.addEventListener('click', () => {
         const expanded = navToggle.getAttribute('aria-expanded') === 'true';
         navToggle.setAttribute('aria-expanded', String(!expanded));
-        nav.classList.toggle('nav--open');
-        document.body.style.overflow = expanded ? '' : 'hidden';
+        nav.classList.toggle('is-open', !expanded);
       });
     }
     $$('.js-modal-trigger').forEach((btn) => {
+      if (btn.dataset.bound) return;
+      btn.dataset.bound = '1';
       btn.addEventListener('click', (e) => { e.preventDefault(); openModal(btn.dataset.modal); });
     });
     $$('.js-modal-close').forEach((btn) => { btn.onclick = closeModals; });
     $$('.js-cmd').forEach((btn) => { btn.onclick = openCmd; });
-  }
+    $$('.js-theme').forEach((btn) => { btn.onclick = toggleTheme; });
 
+    const header = $('.header');
+    if (header && !window._rlStuck) {
+      window._rlStuck = true;
+      const onScroll = () => header.classList.toggle('is-stuck', window.scrollY > 8);
+      window.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+    }
+  }
   function bindEvents() {
     bindChromeEvents();
 
@@ -1506,6 +2177,65 @@
         toast('Alert saved');
       });
     });
+
+    /* --- fee popover, chips, filter sheet --------------------------- */
+    document.addEventListener('click', (e) => {
+      const feeBtn = e.target.closest('[data-fees]');
+      if (feeBtn) {
+        e.preventDefault();
+        const already = $('#rl-fee-pop');
+        if (already && already.dataset.for === feeBtn.dataset.fees) { closeFeePop(); return; }
+        openFeePop(feeBtn, feeBtn.dataset.fees);
+        const pop = $('#rl-fee-pop');
+        if (pop) pop.dataset.for = feeBtn.dataset.fees;
+        return;
+      }
+      if (!e.target.closest('#rl-fee-pop')) closeFeePop();
+
+      const chip = e.target.closest('[data-chip]');
+      if (chip) { e.preventDefault(); clearFilter(chip.dataset.chip); }
+
+      const setType = e.target.closest('[data-set-type]');
+      if (setType) { state.type = setType.dataset.setType; state.page = 1; pushBrowseUrl(); renderListings(); return; }
+      const setBeds = e.target.closest('[data-set-beds]');
+      if (setBeds) { state.beds = setBeds.dataset.setBeds || null; state.page = 1; renderListings(); return; }
+      const setStay = e.target.closest('[data-set-stay]');
+      if (setStay) { state.minStay = setStay.dataset.setStay || null; state.page = 1; renderListings(); return; }
+      const setMax = e.target.closest('[data-set-max]');
+      if (setMax) {
+        const v = Number(setMax.dataset.setMax);
+        state.priceMax = state.priceMax === v ? null : v;
+        state.page = 1; renderListings(); return;
+      }
+      if (e.target.closest('.js-load-more')) {
+        state.page += 1;
+        renderListings();
+        return;
+      }
+      if (e.target.closest('.js-filter-open')) openFilterSheet();
+      if (e.target.closest('.js-filter-done')) closeFilterSheet();
+    });
+    document.addEventListener('input', (e) => {
+      if (e.target.id === 'rail-min' || e.target.id === 'rail-max') {
+        clearTimeout(window._rlRailT);
+        window._rlRailT = setTimeout(() => {
+          state.priceMin = $('#rail-min').value ? Number($('#rail-min').value) : null;
+          state.priceMax = $('#rail-max').value ? Number($('#rail-max').value) : null;
+          state.page = 1;
+          renderListings();
+        }, 320);
+      }
+    });
+    window.addEventListener('resize', closeFeePop, { passive: true });
+    window.addEventListener('scroll', closeFeePop, { passive: true });
+
+    document.addEventListener('keydown', (e) => {
+      const cmd = $('#rl-cmd');
+      if (!cmd || cmd.hidden) return;
+      if (e.key === 'ArrowDown') { e.preventDefault(); moveCmd(1); }
+      if (e.key === 'ArrowUp') { e.preventDefault(); moveCmd(-1); }
+      if (e.key === 'Enter') { e.preventDefault(); openActiveCmd(); }
+    });
   }
 
   function init() {
@@ -1524,13 +2254,18 @@
         return;
       }
     }
+    applyTheme(currentTheme());
+    document.documentElement.classList.add('js-reveal');
     injectChrome();
     populateSearchFields();
+    decorateSearchFields();
     applyUrlToState();
+    renderMenuHero();
     if (page === 'home') renderHome();
     else if (page === 'browse' || page === 'rent') renderListings();
     else if (page === 'listing') {
       renderDetail();
+      hydrateListingMap();
       if (params().get('gallery') === '1') {
         const found = listingById(params().get('id') || document.body.dataset.listingId);
         if (found) openLightbox(listingMedia(found), Number(params().get('shot') || 0));

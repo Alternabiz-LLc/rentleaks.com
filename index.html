@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en-US">
 <head>
+  <script>(function(){try{var m=localStorage.getItem("rl_theme");if(m&&m!=="system")document.documentElement.setAttribute("data-theme",m);}catch(e){}})();</script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RentLeaks — Rooms, co-living, furnished apartments &amp; lease-breaks</title>
@@ -40,7 +41,7 @@
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta name="format-detection" content="telephone=no">
   <meta name="theme-color" content="#3795A6">
-  <meta name="color-scheme" content="light">
+  <meta name="color-scheme" content="light dark">
   <link rel="canonical" href="https://rentleaks.com/">
   <link rel="alternate" hreflang="en-US" href="https://rentleaks.com/">
   <link rel="alternate" hreflang="x-default" href="https://rentleaks.com/">
@@ -97,16 +98,22 @@
   <div class="tahoe-content">
     <div id="rl-header"></div>
     <main id="main">
-      <section class="hero">
+
+      <section class="hero hero--split">
         <div class="hero__inner">
-          <span class="hero__kicker">U.S. + Europe · 30-day minimum</span>
-          <h1 class="hero__title">Find a place to live — not a night to book</h1>
-          <p class="hero__subtitle">Rooms, co-living buildings, furnished apartments, 1-month+ stays, and lease-breaks. Every price is All-in. Every short stay starts at 30 days.</p>
-          <div class="trust-bar">
-            <span class="trust-bar__item"><span class="trust-bar__value" id="trust-rent-count">0</span> live homes</span>
-            <span class="trust-bar__item"><span class="trust-bar__value" id="trust-city-count">31</span> markets</span>
-            <span class="trust-bar__item">Lease-break posts are free</span>
+          <div class="hero__lead">
+            <span class="hero__kicker">U.S. + Europe · 30-day minimum</span>
+            <h1 class="hero__title">Find a place to <em>live</em> — not a night to book</h1>
+            <p class="hero__subtitle">Rooms, co-living buildings, furnished apartments, 1-month+ stays and lease-breaks. Every price is all-in. Every short stay starts at 30 days.</p>
+            <div class="trust-bar">
+              <span class="trust-bar__item"><span class="trust-bar__value" id="trust-rent-count">0</span> live homes</span>
+              <span class="trust-bar__item"><span class="trust-bar__value" id="trust-city-count">69</span> markets</span>
+              <span class="trust-bar__item">Lease-break posts are free</span>
+            </div>
           </div>
+
+          <div class="hero-proof" id="rl-proof" aria-label="Live market pulse"></div>
+
           <div class="search-card">
             <form class="search-form" action="rent.html" aria-label="Search flexible housing">
               <div class="search-form__row">
@@ -117,14 +124,14 @@
                   <select id="housing-type" name="type" aria-label="Stay type"><option value="">All stay types</option></select>
                 </div>
                 <div class="search-field search-field--location">
-                  <input type="text" id="location" name="q" placeholder="Neighborhood — Williamsburg, Brickell, Mission…" aria-label="Neighborhood">
+                  <input type="text" id="location" name="q" placeholder="Neighborhood" aria-label="Neighborhood">
                 </div>
                 <div class="search-field search-field--price">
-                  <input type="number" id="price-max" name="max" placeholder="All-in max" min="0" aria-label="Maximum all-in rent">
+                  <input type="number" id="price-max" name="max" placeholder="Any" min="0" aria-label="All-in max">
                 </div>
                 <div class="search-field search-field--stay">
                   <select id="min-stay" name="stay" aria-label="Stay length">
-                    <option value="">Stay length</option>
+                    <option value="">Any length</option>
                     <option value="1">1 month ok</option>
                     <option value="3">Up to 3 months</option>
                     <option value="6">Up to 6 months</option>
@@ -135,18 +142,25 @@
               </div>
             </form>
           </div>
-          <p class="hero__hint">Not sure which type? <a href="match.html">Run Stay DNA</a> · Press <a href="#" class="js-cmd">⌘K</a> to jump · <a href="list.html?kind=lease-break">Post a lease-break free</a></p>
+
+          <p class="hero__hint">Not sure which type? <a href="match.html">Run Stay DNA</a> · Press <a href="#" class="js-cmd">⌘K</a> to jump anywhere · <a href="list.html?kind=lease-break">Post a lease-break free</a></p>
         </div>
       </section>
 
       <section class="compliance-banner" aria-label="Fair Housing">
-        <p class="compliance-banner__text">Fair Housing applies in every city we list. <a href="https://www.hud.gov/program_offices/fair_housing_equal_opp" target="_blank" rel="noopener">Know your rights</a> · <a href="faq.html">How we handle rooms, takeovers, and 30-day stays</a>.</p>
+        <p class="compliance-banner__text">Fair Housing applies in every city we list. <a href="https://www.hud.gov/program_offices/fair_housing_equal_opp" target="_blank" rel="noopener">Know your rights</a> <a href="faq.html">How we handle rooms, takeovers and 30-day stays</a></p>
       </section>
 
       <section class="categories-section">
         <div class="container">
-          <h2 class="categories-title animate-on-scroll">Five ways to live here</h2>
-          <p class="hero__subtitle" style="margin: 0 auto 1.5rem; text-align:center;">Traditional portals bury rooms and lease-breaks. We start there.</p>
+          <div class="section-head animate-on-scroll">
+            <div class="section-head__text">
+              <span class="section-head__eyebrow">Five ways to live here</span>
+              <h2 class="categories-title">The stays other portals bury</h2>
+              <p>Rooms and lease-breaks are an afterthought everywhere else. Here they are the front page — with housemates, fees and remaining term shown up front.</p>
+            </div>
+            <div class="section-head__action"><a class="btn btn--outline btn--sm" href="rent.html">Browse everything</a></div>
+          </div>
           <div class="rl-types animate-on-scroll" id="rl-types"></div>
         </div>
       </section>
@@ -164,32 +178,42 @@
 
       <section class="categories-section">
         <div class="container">
-          <h2 class="categories-title">Featured markets</h2>
+          <div class="section-head animate-on-scroll">
+            <div class="section-head__text">
+              <span class="section-head__eyebrow">Featured markets</span>
+              <h2 class="categories-title">69 markets, one honest price</h2>
+              <p>From Bushwick to Kreuzberg. Same rules everywhere: all-in rent, 30-day floor, no bait listings.</p>
+            </div>
+            <div class="section-head__action"><a class="btn btn--outline btn--sm" href="cities.html">All U.S. &amp; European cities</a></div>
+          </div>
           <div class="rl-cities animate-on-scroll" id="rl-cities"></div>
-          <p style="text-align:center;margin-top:1.5rem;"><a class="btn btn--outline" href="cities.html">All U.S. &amp; European cities</a></p>
         </div>
       </section>
 
       <section class="alerts-section">
         <div class="container">
-          <h2 class="alerts-section__title">Stay DNA beats endless scrolling</h2>
-          <p class="alerts-section__subtitle">Tell us city, budget, stay length, and house energy. We rank rooms, co-living, furnished, and takeovers — and remember the score on every card.</p>
+          <span class="rl-kicker">Stay DNA</span>
+          <h2 class="alerts-section__title">Stop scrolling. Start matching.</h2>
+          <p class="alerts-section__subtitle">Tell us city, budget, stay length and house energy. We rank every room, co-living unit, furnished apartment and takeover — and keep the score on every card you see afterwards.</p>
           <ul class="alerts-features">
-            <li>All-in rent, not bait pricing</li>
+            <li>All-in rent, never bait pricing</li>
             <li>Housemate vibe before the tour</li>
             <li>Lease Clock on every takeover</li>
+            <li>Scored in your browser, no credit pull</li>
           </ul>
-          <a class="btn btn--primary" href="match.html">Build my Stay DNA</a>
+          <a class="btn btn--primary btn--lg" href="match.html">Build my Stay DNA</a>
         </div>
       </section>
 
       <section class="professionals-cta">
         <div class="container">
+          <span class="rl-kicker rl-kicker--light">For hosts &amp; operators</span>
           <h2 class="professionals-cta__title">Leaving early? List the rest of the lease for free.</h2>
-          <p class="professionals-cta__subtitle">Rooms, furnished operators, and co-living buildings can list too. <a href="professionals.html">See host tools</a>.</p>
-          <a href="list.html" class="btn btn--dark">List a place</a>
+          <p class="professionals-cta__subtitle">Rooms, furnished operators and co-living buildings list here too — with real tooling, not a classified ad. <a href="professionals.html">See host tools</a>.</p>
+          <a href="list.html" class="btn btn--dark btn--lg">List a place</a>
         </div>
       </section>
+
     </main>
     <div id="rl-footer"></div>
   </div>

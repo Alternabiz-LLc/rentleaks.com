@@ -603,6 +603,8 @@
       beds,
       baths,
       sqft,
+      lat: (city.lat || 40.71) + ((seed % 80) - 40) / 1000,
+      lng: (city.lng || -74) + ((seed % 80) - 40) / 800,
       specs,
       privateBath,
       roommates,

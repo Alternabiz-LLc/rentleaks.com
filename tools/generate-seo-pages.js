@@ -281,8 +281,8 @@ function writeTypePages() {
     })}
 <body class="tahoe-body" data-page="browse" data-type="${id}">
 ${chrome(0, "", `
-  ${id === "room" ? `<div id="rl-rooms-media"></div>` : ""}
-  <section class="container page-hero"${id === "room" ? " hidden" : ""}>
+  <div id="rl-page-hero"></div>
+  <section class="container page-hero">
     <nav class="rl-crumb" aria-label="Breadcrumb"><a href="index.html">Home</a> / ${esc(copy.h1)}</nav>
     <h1>${esc(copy.h1)}</h1>
     <p>${esc(copy.blurb)}</p>

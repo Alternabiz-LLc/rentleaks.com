@@ -1,15 +1,15 @@
 import { PrismaClient } from "@prisma/client";
-import bcrypt from "bcryptjs";
 import { CITIES, buildSeedListings } from "../src/lib/catalog";
+import { hashPassword } from "../src/lib/password";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  const passwordHash = await bcrypt.hash("rentleaks", 10);
+  const passwordHash = hashPassword("rentleaks");
 
   const host = await prisma.user.upsert({
     where: { email: "host@rentleaks.com" },
-    update: {},
+    update: { passwordHash },
     create: {
       email: "host@rentleaks.com",
       name: "Kai Kim",
@@ -30,7 +30,7 @@ async function main() {
 
   await prisma.user.upsert({
     where: { email: "renter@rentleaks.com" },
-    update: {},
+    update: { passwordHash },
     create: {
       email: "renter@rentleaks.com",
       name: "Ava Lee",

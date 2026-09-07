@@ -1,11 +1,66 @@
+const photo = (id: string) =>
+  `https://images.unsplash.com/${id}?auto=format&fit=crop&w=1400&q=80`;
+
 export const IMAGES = [
-  "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1400&q=80",
-  "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1400&q=80",
-  "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1400&q=80",
-  "https://images.unsplash.com/photo-1493809842364-78817add7ccb?auto=format&fit=crop&w=1400&q=80",
-  "https://images.unsplash.com/photo-1536376072261-38c75010e6c9?auto=format&fit=crop&w=1400&q=80",
-  "https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=1400&q=80",
+  photo("photo-1522708323590-d24dbb6b0267"),
+  photo("photo-1502672260266-1c1ef2d93688"),
+  photo("photo-1560448204-e02f11c3d0e2"),
+  photo("photo-1493809842364-78817add7ccb"),
+  photo("photo-1536376072261-38c75010e6c9"),
+  photo("photo-1505691938895-1758d7feb511"),
 ];
+
+const GALLERY_POOL = {
+  bedroom: [
+    { src: photo("photo-1616594039964-ae9021a400a0"), label: "Bedroom" },
+    { src: photo("photo-1540518614846-7eded433c457"), label: "Bedroom" },
+    { src: photo("photo-1505693416388-ac5ce068fe85"), label: "Bedroom" },
+    { src: photo("photo-1522771739844-6a9f6d5f14af"), label: "Bedroom" },
+    { src: photo("photo-1560185127-6ed189bf02f4"), label: "Bedroom" },
+    { src: photo("photo-1505691938895-1758d7feb511"), label: "Bedroom" },
+  ],
+  bathroom: [
+    { src: photo("photo-1552321554-5fefe8c9ef14"), label: "Bathroom" },
+    { src: photo("photo-1584622650111-993a426fbf0a"), label: "Bathroom" },
+    { src: photo("photo-1600566752355-35792bedcfea"), label: "Bathroom" },
+  ],
+  kitchen: [
+    { src: photo("photo-1556912172-45b7abe8b7e1"), label: "Kitchen" },
+    { src: photo("photo-1556909114-f6e7ad7d3136"), label: "Kitchen" },
+    { src: photo("photo-1554995207-c18c203602cb"), label: "Kitchen" },
+  ],
+  living: [
+    { src: photo("photo-1502672260266-1c1ef2d93688"), label: "Living room" },
+    { src: photo("photo-1512918728675-ed5a9ecdebfd"), label: "Living room" },
+    { src: photo("photo-1560448204-e02f11c3d0e2"), label: "Living room" },
+    { src: photo("photo-1522708323590-d24dbb6b0267"), label: "Living room" },
+  ],
+  workspace: [
+    { src: photo("photo-1486312338219-ce68d2c6f44d"), label: "Workspace" },
+    { src: photo("photo-1593642532400-2682810df593"), label: "Workspace" },
+    { src: photo("photo-1536376072261-38c75010e6c9"), label: "Workspace" },
+  ],
+  exterior: [
+    { src: photo("photo-1574362848149-11496d93a7c7"), label: "Building" },
+    { src: photo("photo-1486406146926-c627a92ad1ab"), label: "Building" },
+    { src: photo("photo-1449824913935-59a10b8d2000"), label: "Street" },
+    { src: photo("photo-1502005229762-cf1b2da7c5d6"), label: "Neighborhood" },
+  ],
+} as const;
+
+const TOUR_VIDEOS = [
+  { src: "https://videos.pexels.com/video-files/3773486/3773486-hd_1920_1080_30fps.mp4", caption: "Walkthrough of the room and common spaces" },
+  { src: "https://videos.pexels.com/video-files/7578544/7578544-hd_1280_720_30fps.mp4", caption: "Host video tour — kitchen, bath, and bedroom" },
+  { src: "https://videos.pexels.com/video-files/7578552/7578552-hd_1280_720_30fps.mp4", caption: "Furnished walkthrough" },
+  { src: "https://videos.pexels.com/video-files/6498514/6498514-hd_1280_720_25fps.mp4", caption: "Bedroom and light tour" },
+  { src: "https://videos.pexels.com/video-files/7578541/7578541-hd_1920_1080_30fps.mp4", caption: "Apartment video tour" },
+] as const;
+
+const GALLERY_ROOMS = ["bedroom", "bathroom", "kitchen", "living", "workspace", "exterior"] as const;
+
+export type GalleryItem =
+  | { kind: "photo"; src: string; caption: string; alt: string }
+  | { kind: "video"; src: string; caption: string; alt: string; poster?: string };
 
 export const HOUSING_TYPES = [
   { id: "room", label: "Rooms" },
@@ -91,9 +146,8 @@ export const CITIES = [
 
 export const HOST_PLANS = [
   { id: "lease-break", name: "Lease-break listing", amount: 0, kind: "host_plan" as const },
-  { id: "room", name: "Room host", amount: 1900, kind: "host_plan" as const },
-  { id: "furnished", name: "Furnished / 1-month+", amount: 4900, kind: "host_plan" as const },
-  { id: "coliving", name: "Co-living operator", amount: 14900, kind: "host_plan" as const },
+  { id: "week", name: "$14/week listing", amount: 1400, kind: "host_plan" as const },
+  { id: "month", name: "$60/month listing", amount: 6000, kind: "host_plan" as const },
 ];
 
 function hash(str: string) {
@@ -103,6 +157,47 @@ function hash(str: string) {
     h = Math.imul(h, 16777619);
   }
   return h >>> 0;
+}
+
+export function listingGallery(input: {
+  id: string;
+  image: string;
+  title: string;
+  neighborhood: string;
+  cityName: string;
+}): GalleryItem[] {
+  const seed = hash(input.id);
+  const picks: Array<{ src: string; label: string }> = GALLERY_ROOMS.map((key, i) => {
+    const pool = GALLERY_POOL[key];
+    return pool[(seed + i * 17) % pool.length];
+  });
+  picks.push(GALLERY_POOL.bedroom[(seed + 41) % GALLERY_POOL.bedroom.length]);
+  picks.push(GALLERY_POOL.living[(seed + 53) % GALLERY_POOL.living.length]);
+
+  const seen = new Set<string>([input.image]);
+  const unique: Array<{ src: string; label: string }> = [{ src: input.image, label: "Main photo" }];
+  for (const shot of picks) {
+    if (seen.has(shot.src)) continue;
+    seen.add(shot.src);
+    unique.push({ src: shot.src, label: shot.label });
+  }
+
+  const video = TOUR_VIDEOS[seed % TOUR_VIDEOS.length];
+  return [
+    ...unique.map((shot) => ({
+      kind: "photo" as const,
+      src: shot.src,
+      caption: shot.label,
+      alt: `${input.title} — ${shot.label} in ${input.neighborhood}, ${input.cityName}`,
+    })),
+    {
+      kind: "video" as const,
+      src: video.src,
+      poster: input.image,
+      caption: video.caption,
+      alt: `Video tour of ${input.title} in ${input.neighborhood}`,
+    },
+  ];
 }
 
 export function buildSeedListings() {

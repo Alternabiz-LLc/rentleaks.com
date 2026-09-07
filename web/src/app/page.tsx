@@ -1,65 +1,109 @@
-import Image from "next/image";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { HomeHero } from "@/components/HomeHero";
+import { ListingCard } from "@/components/ListingCard";
+import { Shell } from "@/components/Shell";
+import { CITIES, HOUSING_TYPES } from "@/lib/catalog";
+import { publicListingCount, publicListings, toBrowseListing } from "@/lib/listings";
 
-export default function Home() {
+const TYPE_COPY: Record<(typeof HOUSING_TYPES)[number]["id"], string> = {
+  room: "A private room in a shared home.",
+  coliving: "A building set up for housemates.",
+  furnished: "Move-in ready apartments.",
+  "short-term": "Thirty days or more. Not hotel nights.",
+  "lease-break": "Take over the rest of a lease. Free to post.",
+};
+
+function asPositiveInt(value?: string) {
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? Math.round(n) : undefined;
+}
+
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    city?: string;
+    type?: string;
+    view?: string;
+    q?: string;
+    max?: string;
+    stay?: string;
+  }>;
+}) {
+  const params = await searchParams;
+  if (params.city || params.type || params.view || params.q || params.max || params.stay) {
+    const query = new URLSearchParams();
+    if (params.city) query.set("city", params.city);
+    if (params.type) query.set("type", params.type);
+    if (params.q) query.set("q", params.q);
+    const max = asPositiveInt(params.max);
+    if (max) query.set("max", String(max));
+    if (params.stay) query.set("stay", params.stay);
+    if (params.view) query.set("view", params.view);
+    const qs = query.toString();
+    redirect(qs ? `/stays?${qs}` : "/stays");
+  }
+
+  const [rows, listingCount] = await Promise.all([
+    publicListings(),
+    publicListingCount(),
+  ]);
+  const featured = rows.slice(0, 8).map(toBrowseListing);
+  const markets = CITIES.filter((city) => city.featured).slice(0, 8);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+    <Shell wide>
+      <HomeHero listingCount={listingCount} cityCount={CITIES.length} />
+
+      <div className="rl-home">
+        <section className="rl-home__block" aria-labelledby="rl-types-title">
+          <h2 id="rl-types-title">Five ways to live here</h2>
+          <p>Traditional portals bury rooms and lease-breaks. We start there.</p>
+          <div className="rl-type-grid">
+            {HOUSING_TYPES.map((type) => (
+              <Link key={type.id} className="rl-type-card" href={`/stays?type=${type.id}`}>
+                <strong>{type.label}</strong>
+                <span>{TYPE_COPY[type.id]}</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <section className="rl-home__block" aria-labelledby="rl-featured-title">
+          <div className="rl-home__row">
+            <h2 id="rl-featured-title">Featured this week</h2>
+            <Link className="rl-ghost" href="/stays">
+              See all inventory
+            </Link>
+          </div>
+          <div className="rl-stay-grid">
+            {featured.map((listing) => (
+              <ListingCard key={listing.id} listing={listing} />
+            ))}
+          </div>
+        </section>
+
+        <section className="rl-home__block" aria-labelledby="rl-markets-title">
+          <h2 id="rl-markets-title">Featured markets</h2>
+          <div className="rl-city-grid">
+            {markets.map((city) => (
+              <Link key={city.id} className="rl-city-card" href={`/stays?city=${city.id}`}>
+                <strong>{city.name}</strong>
+                <span>{city.state}</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <section className="rl-home__cta">
+          <h2>Leaving early? List the rest of the lease for free.</h2>
+          <p>Rooms, furnished operators, and co-living buildings can list too.</p>
+          <Link className="rl-cta" href="/list">
+            List a place
+          </Link>
+        </section>
+      </div>
+    </Shell>
   );
 }

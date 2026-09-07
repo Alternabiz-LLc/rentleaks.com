@@ -15,10 +15,4 @@ export function integrationId(prefix: string) {
   return `${prefix}_${suffix}`;
 }
 
-export function appUrl() {
-  return process.env.APP_URL || "http://localhost:3000";
-}
-
-export function catalogOrigin() {
-  return process.env.CATALOG_ORIGIN || "http://localhost:8765";
-}
+export { appUrl, catalogOrigin } from "./site";
