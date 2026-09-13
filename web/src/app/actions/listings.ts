@@ -175,6 +175,7 @@ export async function createListingFromComposer(payload: string): Promise<{ erro
     role: ROLES.includes(String(raw.role)) ? String(raw.role) : "owner",
     housingType,
     cityId,
+    citySlug: city.slug,
     cityName: city.name,
     state: city.state,
     country: city.country,
@@ -201,7 +202,7 @@ export async function createListingFromComposer(payload: string): Promise<{ erro
     return { error: `${blocked[0].title}: ${blocked[0].why}` };
   }
 
-  const rules = rulesFor({ cityId, cityName: city.name, state: city.state, country: city.country });
+  const rules = rulesFor({ cityId, citySlug: city.slug, cityName: city.name, state: city.state, country: city.country });
 
   /* Source-of-income protection is not a preference the lister gets to set.
      Where the market protects it, acceptance is forced on regardless of what

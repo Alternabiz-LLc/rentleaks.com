@@ -21,7 +21,7 @@ const HOUSING_TYPES = [
 export default async function ListPage() {
   const cities = await prisma.city.findMany({
     orderBy: [{ rank: "asc" }, { name: "asc" }],
-    select: { id: true, name: true, state: true, country: true, currency: true },
+    select: { id: true, slug: true, name: true, state: true, country: true, currency: true },
   });
 
   return (

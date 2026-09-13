@@ -63,6 +63,7 @@ export default async function AdminPage() {
         role: l.listedBy,
         housingType: l.housingType,
         cityId: l.cityId,
+        citySlug: l.city.slug,
         cityName: l.city.name,
         state: l.city.state,
         country: l.city.country,

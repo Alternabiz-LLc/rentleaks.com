@@ -29,7 +29,7 @@ import {
   type ListingDraft,
 } from "@/lib/listing-rules";
 
-type City = { id: string; name: string; state: string; country: string; currency: string };
+type City = { id: string; slug: string; name: string; state: string; country: string; currency: string };
 type HousingType = { id: string; label: string };
 
 const FEE_TYPES: Array<[string, string, "monthly" | "once"]> = [
@@ -186,7 +186,7 @@ export default function ListingComposer({
   const isLeaseBreak = draft.housingType === "lease-break";
 
   const rules = useMemo(
-    () => rulesFor({ cityId: draft.cityId, cityName: city?.name, state: city?.state, country: city?.country }),
+    () => rulesFor({ cityId: draft.cityId, citySlug: city?.slug, cityName: city?.name, state: city?.state, country: city?.country }),
     [draft.cityId, city],
   );
 
@@ -195,6 +195,7 @@ export default function ListingComposer({
       role: draft.role,
       housingType: draft.housingType,
       cityId: draft.cityId,
+      citySlug: city?.slug,
       cityName: city?.name,
       state: city?.state,
       country: city?.country,

@@ -1,127 +1,44 @@
 /**
- * Jurisdiction rules for listing validation.
+ * Jurisdiction rules.
  *
- * This is the canonical TypeScript copy of the engine the static layer runs in
- * `rentleaks-x.js`. It exists because the composer needs it in the browser AND
- * the server action needs it to enforce, and a client-side gate is user
- * experience rather than enforcement — anyone can post a form.
+ * The DATA lives in ./rules.json — one file, read by this typed wrapper and,
+ * via tools/build-rules.mjs, by the static layer's rentleaks-rules.js. Only
+ * the merge below is written twice, and a merge function does not drift; a
+ * deposit cap does, which is why it is not written twice any more.
  *
  * Every rule carries the instrument it comes from and the date it took effect,
  * so a stale rule is visible rather than silently wrong. Rules resolve city →
- * region → country → default.
+ * region → country → defaults.
  *
  * This is research, not legal advice.
  */
 
+import book from "./rules.json";
+
 export type Source = { label: string; eff: string; url: string };
 
-export const SOURCES = {
-  fare: {
-    label: "NYC FARE Act, Local Law 119 of 2024",
-    eff: "2025-06-11",
-    url: "https://www.nyc.gov/site/dca/news/018-25/dcwp-the-fare-act-now-effect",
-  },
-  fareDisclosure: {
-    label: "NYC Admin. Code § 20-699.22 — fee disclosure on every listing",
-    eff: "2025-06-11",
-    url: "https://www.nyc.gov/assets/dca/downloads/pdf/about/FAQ-Broker-Fees.pdf",
-  },
-  ll18: {
-    label: "NYC Local Law 18 — short-term rental registration",
-    eff: "2023-09-05",
-    url: "https://www.nyc.gov/site/specialenforcement/registration-law/registration.page",
-  },
-  gol7108: {
-    label: "NY General Obligations Law § 7-108 (HSTPA)",
-    eff: "2019-06-14",
-    url: "https://www.nysenate.gov/legislation/laws/GOB/7-108",
-  },
-  rpl238a: {
-    label: "NY Real Property Law § 238-a — application and move-in charges",
-    eff: "2019-06-14",
-    url: "https://www.nysenate.gov/legislation/laws/RPP/238-A",
-  },
-  rpl226b: {
-    label: "NY Real Property Law § 226-b — sublet and assignment",
-    eff: "1983-01-01",
-    url: "https://www.nysenate.gov/legislation/laws/RPP/226-B",
-  },
-  rsc25256: {
-    label: "Rent Stabilization Code § 2525.6 — subletting",
-    eff: "1987-05-01",
-    url: "https://www.law.cornell.edu/regulations/new-york/9-NYCRR-2525.6",
-  },
-  nycSoi: {
-    label: "NYC Human Rights Law — source of income",
-    eff: "2008-03-01",
-    url: "https://www.nyc.gov/site/cchr/media/source-of-income.page",
-  },
-  ftcFees: {
-    label: "FTC Rule on Unfair or Deceptive Fees, 16 CFR Part 464",
-    eff: "2025-05-12",
-    url: "https://www.ftc.gov/business-guidance/resources/rule-unfair-or-deceptive-fees-frequently-asked-questions",
-  },
-  coHb1090: {
-    label: "Colorado HB25-1090 price transparency",
-    eff: "2026-01-01",
-    url: "https://leg.colorado.gov/bills/hb25-1090",
-  },
-  esReg: {
-    label: "Spain Real Decreto 1312/2024 — Registro Único de Arrendamientos",
-    eff: "2025-07-01",
-    url: "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2024-26931",
-  },
-  catSeason: {
-    label: "Catalonia Llei 11/2025 — seasonal and room rentals",
-    eff: "2026-01-01",
-    url: "https://www.cuatrecasas.com/en/spain/real-estate/art/catalonia-regulates-seasonal-rentals",
-  },
-  itCin: {
-    label: "Italy CIN — Codice Identificativo Nazionale",
-    eff: "2024-09-02",
-    url: "https://fiscomania.com/cin-affitti-brevi/",
-  },
-  deZweck: {
-    label: "Berlin Zweckentfremdungsverbot",
-    eff: "2014-05-01",
-    url: "https://www.berlin.de/sen/wohnen/rechtliches/zweckentfremdungsverbot/",
-  },
-  frMobilite: {
-    label: "France bail mobilité (loi ELAN)",
-    eff: "2018-11-24",
-    url: "https://www.lodgis.com/en/owners/helpful-hints/bail-mobilite-the-new-contract-for-furnished-rentals/",
-  },
-  nlGoed: {
-    label: "Netherlands Wet goed verhuurderschap",
-    eff: "2023-07-01",
-    url: "https://en.straatmankoster.nl/actueel/wet-goed-verhuurderschap",
-  },
-  ukRra: {
-    label: "UK Renters’ Rights Act 2025",
-    eff: "2026-05-01",
-    url: "https://www.legislation.gov.uk/ukpga/2025/26/contents",
-  },
-  euStr: {
-    label: "Regulation (EU) 2024/1028 — short-term rental data sharing",
-    eff: "2026-05-20",
-    url: "https://eur-lex.europa.eu/eli/reg/2024/1028/oj/eng",
-  },
-  toronto: {
-    label: "Toronto short-term rental by-law — 28-day threshold",
-    eff: "2019-09-10",
-    url: "https://www.keycafe.com/s/blog/understanding-torontos-short-term-rental-regulations",
-  },
-  vancouver: {
-    label: "BC / Vancouver short-term rental rules — 30-day threshold",
-    eff: "2024-05-01",
-    url: "https://liv.rent/blog/landlords/vancouver-short-term-rental-rules/",
-  },
-  montreal: {
-    label: "Québec tourist accommodation — 31-day threshold",
-    eff: "2023-09-01",
-    url: "https://lendcity.ca/blog/short-term-rental-regulations-across-canada-city-by-city-guide/",
-  },
-} satisfies Record<string, Source>;
+export const SOURCES: Record<string, Source> = book.sources as Record<string, Source>;
+export const BANNED_TERMS: string[] = book.bannedTerms;
+export const FX_PER_USD: Record<string, number> = book.fx.perUsd;
+export const FX_UPDATED: string = book.fx.updated;
+
+const CURRENCY_BY_COUNTRY: Record<string, string> = book.fx.byCountry;
+
+export function currencyForCountry(code: string) {
+  return CURRENCY_BY_COUNTRY[code] || "USD";
+}
+
+/** Amount in `from`, expressed in US dollars. */
+export function toUsd(amount: number, from: string) {
+  const rate = FX_PER_USD[from] ?? 1;
+  return rate ? (Number(amount) || 0) / rate : Number(amount) || 0;
+}
+
+/** Convert between any two supported currencies. */
+export function convert(amount: number, from: string, to: string) {
+  if (from === to) return Number(amount) || 0;
+  return toUsd(amount, from) * (FX_PER_USD[to] ?? 1);
+}
 
 export type Rules = {
   cityName: string;
@@ -131,6 +48,9 @@ export type Rules = {
   minStaySrc: Source | null;
   depositCapMonths: number | null;
   depositSrc: Source | null;
+  appFeeCap: number | null;
+  appFeeCurrency: string;
+  appFeeSrc: Source | null;
   applicationFeeBanned: boolean;
   applicationFeeSrc: Source | null;
   screeningFeeCap: number | null;
@@ -138,9 +58,10 @@ export type Rules = {
   moveInFeesSrc: Source | null;
   subLessorNamed: boolean;
   landlordAgentMayChargeTenant: boolean;
-  brokerFeeSrc: Source | null;
+  tenantBrokerFeeSrc: Source | null;
   soiProtected: boolean;
   soiSrc: Source | null;
+  fairChance: boolean;
   registrationRequired: boolean;
   registrationSrc: Source | null;
   allInDisclosure: boolean;
@@ -153,173 +74,51 @@ export type Rules = {
   notes: string[];
 };
 
-const DEFAULTS: Rules = {
-  cityName: "",
-  country: "US",
-  region: "",
-  minStayDays: 30,
-  minStaySrc: null,
-  depositCapMonths: null,
-  depositSrc: null,
-  applicationFeeBanned: false,
-  applicationFeeSrc: null,
-  screeningFeeCap: null,
-  moveInFeesBarred: false,
-  moveInFeesSrc: null,
-  subLessorNamed: false,
-  landlordAgentMayChargeTenant: true,
-  brokerFeeSrc: null,
-  soiProtected: false,
-  soiSrc: null,
-  registrationRequired: false,
-  registrationSrc: null,
-  allInDisclosure: false,
-  allInSrc: null,
-  listingFeeDisclosureSrc: null,
-  subletSurchargePct: null,
-  subletSurchargeSrc: null,
-  contractType: null,
-  unassessed: false,
-  notes: [],
-};
+/* Fields whose JSON value is a key into `sources`. */
+const SRC_FIELDS = [
+  "minStaySrc", "depositSrc", "appFeeSrc", "applicationFeeSrc", "moveInFeesSrc",
+  "tenantBrokerFeeSrc", "soiSrc", "fairChanceSrc", "allInSrc", "listingFeeDisclosureSrc",
+  "registrationSrc", "subletSurchargeSrc", "brokerLicenceSrc", "reusableSrc",
+  "screeningLaw", "adLaw", "dataLaw",
+] as const;
 
-type Partial_ = Partial<Rules>;
+type Bag = Record<string, unknown>;
 
-const BY_CITY: Record<string, Partial_> = {
-  nyc: {
-    minStayDays: 30,
-    minStaySrc: SOURCES.ll18,
-    depositCapMonths: 1,
-    depositSrc: SOURCES.gol7108,
-    applicationFeeBanned: true,
-    applicationFeeSrc: SOURCES.rpl238a,
-    screeningFeeCap: 20,
-    moveInFeesBarred: true,
-    moveInFeesSrc: SOURCES.rpl238a,
-    subLessorNamed: true,
-    landlordAgentMayChargeTenant: false,
-    brokerFeeSrc: SOURCES.fare,
-    soiProtected: true,
-    soiSrc: SOURCES.nycSoi,
-    allInDisclosure: true,
-    allInSrc: SOURCES.fare,
-    listingFeeDisclosureSrc: SOURCES.fareDisclosure,
-    subletSurchargePct: 10,
-    subletSurchargeSrc: SOURCES.rsc25256,
-    contractType: "NY residential lease; sublet or assignment under § 226-b",
-    notes: [
-      "A tenant may not be charged the broker fee when the landlord engaged the broker.",
-      "Every fee a tenant will owe must be disclosed in the listing and in the lease.",
-    ],
-  },
-  berlin: {
-    minStayDays: 90,
-    minStaySrc: SOURCES.deZweck,
-    registrationRequired: true,
-    registrationSrc: SOURCES.deZweck,
-    contractType: "Zeitmietvertrag with a documented temporary purpose",
-    notes: [
-      "Berlin’s misappropriation ban is the binding constraint, and the practical threshold sits near three months rather than 30 days.",
-    ],
-  },
-  barcelona: {
-    registrationRequired: true,
-    registrationSrc: SOURCES.catSeason,
-    contractType: "Contracte de temporada — the temporary purpose must be documented",
-    notes: ["Catalonia’s seasonal and room-rental regime reaches mid-term lets, not only tourist lets."],
-  },
-  paris: {
-    depositCapMonths: 0,
-    depositSrc: SOURCES.frMobilite,
-    contractType: "Bail mobilité — 1 to 10 months, non-renewable, no deposit permitted",
-  },
-  amsterdam: {
-    depositCapMonths: 2,
-    depositSrc: SOURCES.nlGoed,
-    landlordAgentMayChargeTenant: false,
-    brokerFeeSrc: SOURCES.nlGoed,
-  },
-  toronto: { minStayDays: 28, minStaySrc: SOURCES.toronto },
-  vancouver: { minStayDays: 30, minStaySrc: SOURCES.vancouver },
-  montreal: { minStayDays: 31, minStaySrc: SOURCES.montreal },
-  seattle: { soiProtected: true },
-  denver: { allInDisclosure: true, allInSrc: SOURCES.coHb1090, soiProtected: true },
-  boston: { soiProtected: true },
-  dc: { soiProtected: true },
-  chicago: { soiProtected: true },
-  portland: { soiProtected: true },
-};
+export function rulesFor(input: { cityId: string; citySlug?: string; cityName?: string; state?: string; country?: string }): Rules {
+  const out: Bag = { ...(book.defaults as Bag), notes: [] as string[] };
 
-const BY_REGION: Record<string, Partial_> = {
-  NY: {
-    depositCapMonths: 1,
-    depositSrc: SOURCES.gol7108,
-    applicationFeeBanned: true,
-    applicationFeeSrc: SOURCES.rpl238a,
-    screeningFeeCap: 20,
-    moveInFeesBarred: true,
-    moveInFeesSrc: SOURCES.rpl238a,
-    subLessorNamed: true,
-    subletSurchargePct: 10,
-    subletSurchargeSrc: SOURCES.rsc25256,
-  },
-  CA: { soiProtected: true, allInDisclosure: true, allInSrc: SOURCES.ftcFees },
-  CO: { allInDisclosure: true, allInSrc: SOURCES.coHb1090 },
-  MA: { soiProtected: true, allInDisclosure: true, allInSrc: SOURCES.ftcFees },
-  WA: { soiProtected: true },
-  OR: { soiProtected: true },
-  NJ: { soiProtected: true },
-  CT: { soiProtected: true, allInDisclosure: true, allInSrc: SOURCES.ftcFees },
-  DC: { soiProtected: true },
-  England: { contractType: "Assured tenancy, periodic", allInDisclosure: true, allInSrc: SOURCES.ukRra },
-  ON: { minStayDays: 28, minStaySrc: SOURCES.toronto },
-  BC: { minStayDays: 30, minStaySrc: SOURCES.vancouver },
-  QC: { minStayDays: 31, minStaySrc: SOURCES.montreal },
-};
-
-const BY_COUNTRY: Record<string, Partial_> = {
-  US: { minStayDays: 30, allInDisclosure: true, allInSrc: SOURCES.ftcFees },
-  CA: { minStayDays: 30 },
-  GB: { minStayDays: 30, allInDisclosure: true, allInSrc: SOURCES.ukRra, contractType: "Assured tenancy, periodic" },
-  IE: {
-    minStayDays: 30,
-    unassessed: true,
-    notes: ["Irish law was not assessed in the source research. Treat Dublin, Cork and Galway as unverified."],
-  },
-  FR: { minStayDays: 30, registrationRequired: true, registrationSrc: SOURCES.euStr, contractType: "Bail mobilité or bail meublé" },
-  ES: { minStayDays: 30, registrationRequired: true, registrationSrc: SOURCES.esReg, contractType: "Arrendamiento de temporada" },
-  NL: { minStayDays: 30, depositCapMonths: 2, depositSrc: SOURCES.nlGoed, landlordAgentMayChargeTenant: false, brokerFeeSrc: SOURCES.nlGoed },
-  DE: { minStayDays: 30, registrationRequired: true, registrationSrc: SOURCES.euStr, contractType: "Zeitmietvertrag" },
-  IT: { minStayDays: 30, registrationRequired: true, registrationSrc: SOURCES.itCin, contractType: "Locazione transitoria" },
-  CH: {
-    minStayDays: 30,
-    unassessed: true,
-    notes: ["Swiss law was not assessed in the source research. Treat Zurich, Geneva, Basel and Bern as unverified."],
-  },
-};
-
-export function rulesFor(input: { cityId: string; cityName?: string; state?: string; country?: string }): Rules {
-  const out: Rules = { ...DEFAULTS, notes: [] };
-
-  const merge = (src?: Partial_) => {
+  const merge = (src?: Bag) => {
     if (!src) return;
     for (const [k, v] of Object.entries(src)) {
       if (k === "notes") {
-        out.notes = out.notes.concat((v as string[]) || []);
+        out.notes = (out.notes as string[]).concat((v as string[]) || []);
         continue;
       }
-      (out as Record<string, unknown>)[k] = v;
+      out[k] = v;
     }
   };
 
-  merge(BY_COUNTRY[input.country || "US"]);
-  merge(BY_REGION[input.state || ""]);
-  merge(BY_CITY[input.cityId]);
+  /* rules.json keys cities by slug ("new-york"), the database by id ("nyc").
+     Try both rather than silently resolving New York to the bare defaults —
+     which is the shape of bug that turns a compliance panel into decoration. */
+  merge((book.country as Bag)[input.country || "US"] as Bag);
+  merge((book.region as Bag)[input.state || ""] as Bag);
+  const cityRules =
+    (input.citySlug ? ((book.city as Bag)[input.citySlug] as Bag) : undefined) ??
+    ((book.city as Bag)[input.cityId] as Bag);
+  merge(cityRules);
+
+  /* Resolve source keys to source objects, so a citation cannot point at
+     nothing. */
+  for (const field of SRC_FIELDS) {
+    const value = out[field];
+    if (typeof value === "string") out[field] = SOURCES[value] ?? null;
+  }
 
   out.cityName = input.cityName || "";
   out.country = input.country || "US";
   out.region = input.state || "";
-  return out;
+  return out as unknown as Rules;
 }
 
 /* ------------------------------------------------------------------------ */
@@ -330,6 +129,7 @@ export type ListingDraft = {
   role: string;
   housingType: string;
   cityId: string;
+  citySlug?: string;
   cityName?: string;
   state?: string;
   country?: string;
@@ -358,21 +158,7 @@ export type Check = {
   why: string;
 };
 
-/**
- * Wording that cannot lawfully be published in a housing advertisement. The
- * composer never asks a structured question about a protected characteristic —
- * a drop-down on one is the line that costs a platform its intermediary
- * protection — so free text is where this has to be caught.
- */
-export const BANNED_TERMS = [
-  "no kids", "no children", "adults only", "no families", "child free", "childfree",
-  "no wheelchair", "able bodied", "able-bodied", "no disabilities", "no service animals",
-  "no foreigners", "americans only", "english speakers only", "christian only", "christians only",
-  "muslim only", "no muslims", "jewish only", "whites only", "no immigrants",
-  "no vouchers", "no section 8", "no section8", "no dss", "no housing benefit", "no cityfheps",
-  "working professionals only", "employed only",
-  "females only", "males only", "women only", "men only", "no gays", "straight only", "no couples",
-];
+/* The lexicon lives in rules.json and is exported at the top of this file. */
 
 export function scanText(text: string): string[] {
   const low = String(text || "").toLowerCase();
@@ -400,7 +186,7 @@ function daysBetween(a: string, b: string) {
  * form that will be rejected, and the server copy is the one that decides.
  */
 export function checkListing(draft: ListingDraft): Check[] {
-  const r = rulesFor({ cityId: draft.cityId, cityName: draft.cityName, state: draft.state, country: draft.country });
+  const r = rulesFor({ cityId: draft.cityId, citySlug: draft.citySlug, cityName: draft.cityName, state: draft.state, country: draft.country });
   const out: Check[] = [];
   const add = (id: string, ok: boolean, blocking: boolean, title: string, why: string) =>
     out.push({ id, ok, blocking, title, why });
@@ -479,7 +265,7 @@ export function checkListing(draft: ListingDraft): Check[] {
       "No broker fee charged to the renter",
       broker === 0
         ? "None on this listing. A broker the renter retains themselves is a different arrangement and is unaffected."
-        : `A landlord’s agent may not charge the renter here${r.brokerFeeSrc ? ` — ${r.brokerFeeSrc.label}` : ""}.`,
+        : `A landlord’s agent may not charge the renter here${r.tenantBrokerFeeSrc ? ` — ${r.tenantBrokerFeeSrc.label}` : ""}.`,
     );
   }
 
