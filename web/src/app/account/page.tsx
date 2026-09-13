@@ -34,6 +34,7 @@ export default async function AccountPage() {
                 <strong>{listing.title}</strong>
                 <span>
                   {typeLabel(listing.housingType)} · {listing.city.name}
+                  {listing.featured ? " · Sponsored" : ""}
                 </span>
                 <em>{money(listing.allIn)} all-in /mo</em>
               </Link>

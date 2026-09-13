@@ -4,7 +4,7 @@ import { HomeHero } from "@/components/HomeHero";
 import { ListingCard } from "@/components/ListingCard";
 import { Shell } from "@/components/Shell";
 import { CITIES, HOUSING_TYPES } from "@/lib/catalog";
-import { heroSlidePicks, publicListingCount, publicListings, toBrowseListing } from "@/lib/listings";
+import { heroSlidePicks, publicListingCount, publicListings, sponsoredListings, toBrowseListing } from "@/lib/listings";
 
 const TYPE_COPY: Record<(typeof HOUSING_TYPES)[number]["id"], string> = {
   room: "A private room in a shared home.",
@@ -50,7 +50,7 @@ export default async function HomePage({
     publicListingCount(),
   ]);
   const listings = rows.map(toBrowseListing);
-  const featured = listings.slice(0, 8);
+  const sponsored = sponsoredListings(listings, 8);
   const slides = heroSlidePicks(listings, 6);
   const markets = CITIES.filter((city) => city.featured).slice(0, 8);
 
@@ -59,6 +59,25 @@ export default async function HomePage({
       <HomeHero listingCount={listingCount} cityCount={CITIES.length} slides={slides} />
 
       <div className="rl-home">
+        {sponsored.length ? (
+          <section className="rl-home__block rl-home__block--sponsored" aria-labelledby="rl-sponsored-title">
+            <div className="rl-home__row">
+              <div>
+                <h2 id="rl-sponsored-title">Sponsored listings</h2>
+                <p>Paid extra placement. These homes also appear in stay results.</p>
+              </div>
+              <Link className="rl-ghost" href="/list">
+                Feature a listing
+              </Link>
+            </div>
+            <div className="rl-stay-grid">
+              {sponsored.map((listing) => (
+                <ListingCard key={listing.id} listing={listing} />
+              ))}
+            </div>
+          </section>
+        ) : null}
+
         <section className="rl-home__block" aria-labelledby="rl-types-title">
           <h2 id="rl-types-title">Five ways to live here</h2>
           <p>Traditional portals bury rooms and lease-breaks. We start there.</p>
@@ -68,20 +87,6 @@ export default async function HomePage({
                 <strong>{type.label}</strong>
                 <span>{TYPE_COPY[type.id]}</span>
               </Link>
-            ))}
-          </div>
-        </section>
-
-        <section className="rl-home__block" aria-labelledby="rl-featured-title">
-          <div className="rl-home__row">
-            <h2 id="rl-featured-title">Featured this week</h2>
-            <Link className="rl-ghost" href="/stays">
-              See all inventory
-            </Link>
-          </div>
-          <div className="rl-stay-grid">
-            {featured.map((listing) => (
-              <ListingCard key={listing.id} listing={listing} />
             ))}
           </div>
         </section>

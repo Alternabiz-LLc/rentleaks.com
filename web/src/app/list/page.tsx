@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { createListingAction } from "@/app/actions/listings";
 import { Shell } from "@/components/Shell";
-import { CITIES, HOUSING_TYPES } from "@/lib/catalog";
 import { getCurrentUser } from "@/lib/auth";
+import { FEATURED_MONTHLY, FEATURED_WEEKLY, MONTHLY_PLAN, WEEKLY_PLAN } from "@/lib/billing";
+import { CITIES, HOUSING_TYPES } from "@/lib/catalog";
 
 export default async function ListPage({
   searchParams,
@@ -102,6 +103,19 @@ export default async function ListPage({
               Description
               <textarea name="description" rows={5} required placeholder="Who it is for, what is included, and move-in timing." />
             </label>
+            <fieldset className="rl-addon">
+              <legend>Optional extra</legend>
+              <label className="rl-addon__check">
+                <input type="checkbox" name="featured" value="1" />
+                <span>
+                  <strong>Sponsored placement</strong> {FEATURED_WEEKLY.label} or {FEATURED_MONTHLY.label}
+                  <em>
+                    {FEATURED_WEEKLY.blurb}. Listing fee stays {WEEKLY_PLAN.label} or {MONTHLY_PLAN.label}.
+                    Lease-break posts stay free to publish.
+                  </em>
+                </span>
+              </label>
+            </fieldset>
             <button className="rl-cta" type="submit">
               Publish to map
             </button>

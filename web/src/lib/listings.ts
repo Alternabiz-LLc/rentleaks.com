@@ -41,6 +41,7 @@ export type BrowseListing = {
   cityName: string;
   cityState: string;
   gallery: GalleryItem[];
+  featured: boolean;
 };
 
 function parseAmenities(raw: string) {
@@ -74,6 +75,7 @@ export function toBrowseListing(listing: {
   amenitiesJson: string;
   cityId: string;
   city: { name: string; state: string };
+  featured?: boolean;
 }): BrowseListing {
   return {
     id: listing.id,
@@ -98,6 +100,7 @@ export function toBrowseListing(listing: {
     cityId: listing.cityId,
     cityName: listing.city.name,
     cityState: listing.city.state,
+    featured: Boolean(listing.featured),
     gallery: listingGallery({
       id: listing.id,
       image: listing.image,
@@ -138,7 +141,9 @@ export function heroSlidePicks(listings: BrowseListing[], limit = 6) {
   const seenCity = new Set<string>();
   const seenType: Record<string, number> = {};
   const picks: BrowseListing[] = [];
-  for (const listing of listings) {
+  const editorial = listings.filter((listing) => !listing.featured);
+  const pool = editorial.length >= limit ? editorial : listings;
+  for (const listing of pool) {
     if (picks.length >= limit) break;
     if (!listing.image) continue;
     if (seenCity.has(listing.cityId)) continue;
@@ -147,7 +152,7 @@ export function heroSlidePicks(listings: BrowseListing[], limit = 6) {
     seenType[listing.housingType] = (seenType[listing.housingType] || 0) + 1;
     picks.push(listing);
   }
-  for (const listing of listings) {
+  for (const listing of pool) {
     if (picks.length >= limit) break;
     if (!picks.includes(listing) && listing.image) picks.push(listing);
   }
@@ -190,6 +195,58 @@ export async function publicListings(filters?: ListingFilters) {
       ],
     },
     include: { city: true, host: { select: { id: true, name: true } } },
-    orderBy: { createdAt: "desc" },
+    orderBy: [{ featured: "desc" }, { createdAt: "desc" }],
   });
+}
+
+export function pickDiverseFeatured<T extends { id: string; cityId: string; housingType: string }>(
+  rows: T[],
+  limit = 16,
+) {
+  const seenCity = new Set<string>();
+  const typeCount: Record<string, number> = {};
+  const picks: T[] = [];
+  for (const row of rows) {
+    if (picks.length >= limit) break;
+    if (seenCity.has(row.cityId)) continue;
+    if ((typeCount[row.housingType] || 0) >= 4) continue;
+    seenCity.add(row.cityId);
+    typeCount[row.housingType] = (typeCount[row.housingType] || 0) + 1;
+    picks.push(row);
+  }
+  for (const row of rows) {
+    if (picks.length >= limit) break;
+    if (!picks.some((item) => item.id === row.id)) picks.push(row);
+  }
+  return picks;
+}
+
+export function sponsoredListings(listings: BrowseListing[], limit = 8) {
+  return pickDiverseFeatured(
+    listings.filter((listing) => listing.featured),
+    limit,
+  );
+}
+
+export async function markDemoSponsored(limit = 16) {
+  const candidates = await prisma.listing.findMany({
+    select: { id: true, cityId: true, housingType: true },
+    orderBy: [{ verified: "desc" }, { postedAt: "desc" }],
+  });
+  const ids = pickDiverseFeatured(candidates, limit).map((row) => row.id);
+  await prisma.$transaction([
+    prisma.listing.updateMany({
+      where: ids.length ? { id: { notIn: ids } } : {},
+      data: { featured: false },
+    }),
+    ...(ids.length
+      ? [
+          prisma.listing.updateMany({
+            where: { id: { in: ids } },
+            data: { featured: true },
+          }),
+        ]
+      : []),
+  ]);
+  return ids;
 }

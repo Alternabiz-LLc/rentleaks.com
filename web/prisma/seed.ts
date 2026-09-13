@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { loadCatalog, toDbCity, toDbListing, toDbOperator } from "../src/lib/catalog-source";
+import { pickDiverseFeatured } from "../src/lib/listings";
 import { hashPassword } from "../src/lib/password";
 
 const prisma = new PrismaClient();
@@ -83,7 +84,29 @@ async function main() {
     count += 1;
   }
 
-  console.log(`Seeded ${catalog.cities.length} cities, ${(catalog.operators || []).length} operators, ${count} listings, host ${host.email}`);
+  const candidates = await prisma.listing.findMany({
+    select: { id: true, cityId: true, housingType: true },
+    orderBy: [{ verified: "desc" }, { postedAt: "desc" }],
+  });
+  const featuredIds = pickDiverseFeatured(candidates, 16).map((row) => row.id);
+  const catalogIds = catalog.listings.map((listing) => listing.id);
+  await prisma.listing.updateMany({
+    where: {
+      id: {
+        in: catalogIds,
+        ...(featuredIds.length ? { notIn: featuredIds } : {}),
+      },
+    },
+    data: { featured: false },
+  });
+  if (featuredIds.length) {
+    await prisma.listing.updateMany({
+      where: { id: { in: featuredIds } },
+      data: { featured: true },
+    });
+  }
+
+  console.log(`Seeded ${catalog.cities.length} cities, ${(catalog.operators || []).length} operators, ${count} listings, ${featuredIds.length} sponsored, host ${host.email}`);
 }
 
 main()

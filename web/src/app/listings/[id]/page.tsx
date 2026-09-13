@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ListingCard } from "@/components/ListingCard";
 import { ListingGallery } from "@/components/ListingGallery";
 import { ListingMap } from "@/components/ListingMap";
 import { Shell } from "@/components/Shell";
 import { listingGallery } from "@/lib/catalog";
-import { toMapPin } from "@/lib/listings";
+import { toBrowseListing, toMapPin } from "@/lib/listings";
 import { prisma } from "@/lib/prisma";
 import { catalogOrigin, money, typeLabel } from "@/lib/site";
 
@@ -23,6 +24,7 @@ export default async function ListingPage({
   const nearby = await prisma.listing.findMany({
     where: { cityId: listing.cityId, id: { not: listing.id } },
     include: { city: true },
+    orderBy: [{ featured: "desc" }, { createdAt: "desc" }],
     take: 4,
   });
 
@@ -44,6 +46,7 @@ export default async function ListingPage({
         <div className="rl-listing__grid">
           <div>
             <p className="rl-kicker">
+              {listing.featured ? "Sponsored · " : ""}
               {typeLabel(listing.housingType)} · {listing.neighborhood}
             </p>
             <h1>{listing.title}</h1>
@@ -101,21 +104,16 @@ export default async function ListingPage({
           />
         </div>
         {nearby.length ? (
-          <section>
+          <section className="rl-listing__more">
             <h2>More in {listing.city.name}</h2>
-            <ul className="rl-pin-list">
+            {nearby.some((item) => item.featured) ? (
+              <p className="rl-listing__more-note">Sponsored homes pay extra to show here and under the homepage hero.</p>
+            ) : null}
+            <div className="rl-stay-grid">
               {nearby.map((item) => (
-                <li key={item.id}>
-                  <Link href={`/listings/${item.id}`}>
-                    <strong>{item.title}</strong>
-                    <span>
-                      {typeLabel(item.housingType)} · {item.neighborhood}
-                    </span>
-                    <em>{money(item.allIn)} all-in /mo</em>
-                  </Link>
-                </li>
+                <ListingCard key={item.id} listing={toBrowseListing(item)} />
               ))}
-            </ul>
+            </div>
           </section>
         ) : null}
       </article>

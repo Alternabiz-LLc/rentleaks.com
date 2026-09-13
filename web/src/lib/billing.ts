@@ -16,6 +16,24 @@ export const MONTHLY_PLAN = {
   interval: "month" as const,
 };
 
+export const FEATURED_WEEKLY = {
+  id: "featured-week" as const,
+  label: "+$10/week",
+  blurb: "Sponsored under the homepage hero and in stay results",
+  amountCents: 1000,
+  days: 7,
+  interval: "week" as const,
+};
+
+export const FEATURED_MONTHLY = {
+  id: "featured-month" as const,
+  label: "+$35/month",
+  blurb: "Sponsored under the homepage hero and in stay results",
+  amountCents: 3500,
+  days: 30,
+  interval: "month" as const,
+};
+
 export type BillingPlanId = typeof WEEKLY_PLAN.id | typeof MONTHLY_PLAN.id;
 
 export function listingPlan(id: string) {

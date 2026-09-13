@@ -113,6 +113,6 @@ function sortToOrderBy(sort: string | null): Prisma.ListingOrderByWithRelationIn
     default:
       // "newest" — and the fallback for client-only sorts like Stay DNA,
       // which re-ranks in the browser after fetching.
-      return [{ postedAt: "desc" }, { id: "asc" }];
+      return [{ featured: "desc" }, { postedAt: "desc" }, { id: "asc" }];
   }
 }

@@ -667,12 +667,19 @@
         : 'This account shares a contact identifier with an account reported in the last 90 days.',
       when: fmtDate(todayISO())
     });
+    /* RentLeaks handles no money, so there is no escrow check to make. What
+       there IS to check — and what stale-listing complaints and fraud signals
+       both point at — is whether the person still has this place to let. */
+    var confirmDays = seed % 21;
+    var fresh = confirmDays <= 10;
     ledger.push({
-      key: 'money',
-      state: 'pass',
-      what: 'First month and deposit held, released 48h after move-in',
-      how: 'Card and bank rails only. No wire, Zelle, gift card or crypto is ever a valid way to pay on RentLeaks — a request to pay that way is the single reliable sign of a scam.',
-      when: 'At booking'
+      key: 'freshness',
+      state: fresh ? 'pass' : 'warn',
+      what: 'Availability re-confirmed by the host',
+      how: fresh
+        ? 'Confirmed ' + confirmDays + ' day' + (confirmDays === 1 ? '' : 's') + ' ago. Hosts re-confirm every 14 days or the listing drops out of search.'
+        : 'Last confirmed ' + confirmDays + ' days ago. Ask whether it is still free before you arrange a viewing.',
+      when: fmtDate(toISO(new Date(Date.now() - confirmDays * DAY)))
     });
 
     var trustScore = ledger.reduce(function (acc, r) {
@@ -690,7 +697,7 @@
       flags.push({ tone: 'bad', title: 'Identity overlap with a reported account', body: 'Contact-identity clustering is the strongest published signal for rental-listing fraud. This listing is under manual review.' });
     }
     if (!flags.length) {
-      flags.push({ tone: 'ok', title: 'No fraud signals on this listing', body: 'Identity, address control, image uniqueness and account clustering all pass. That is not a guarantee — pay on-platform and keep it that way.' });
+      flags.push({ tone: 'ok', title: 'No fraud signals on this listing', body: 'Identity, address control, image uniqueness and account clustering all pass. That is not a guarantee. Read how to pay, below.' });
     }
 
     /* --- compliance checks against the rules engine --------------------- */
@@ -1112,10 +1119,50 @@
       '</div>' +
       '<div class="x-ledger">' + rows + '</div>' +
       '<div class="x-flags">' + flags + '</div>' +
-      '<p class="x-note">A badge that says “verified” without saying what was verified is decoration. These are the five separate things that word was doing, each shown with the method. Reported rental fraud runs to tens of millions of dollars a year with a median loss around a thousand, and roughly half of it starts on social platforms — the defence that survives AI-generated listings is not image forensics, it is the payment ask, because that is the one thing a scammer cannot remove. ' +
+      payGuide(l) +
+      '<p class="x-note">A badge that says “verified” without saying what was verified is decoration. These are the five separate things that word was doing, each shown with the method. Reported rental fraud runs to tens of millions of dollars a year with a median loss around a thousand, and roughly half of it starts on social platforms. ' +
       '<button type="button" class="x-report-btn" data-x-report="' + esc(l.id) + '">Report a problem with this listing</button></p>';
 
     return panel('Trust ledger', 'What we checked, and how', 'Five separate checks, not one badge.', body, 'x-trust');
+  }
+
+  /* --- 4.2a How to pay ---------------------------------------------------
+     RentLeaks holds no money: no escrow, no booking payment, no deposit.
+     That is a deliberate position and it has a consequence — the platform
+     cannot claw anything back for you. So the payment rail you choose is the
+     only reversibility you get, and it belongs on the listing rather than in
+     a help-centre article nobody opens. Scammers select wire, Zelle, gift
+     cards and crypto precisely because they are irreversible, and avoid cards
+     because chargebacks exist; the payment ask is the one part of the script
+     they cannot drop, which makes it the control that still works against a
+     listing generated entirely by a machine.
+     ----------------------------------------------------------------------- */
+
+  function payGuide(l) {
+    var d = derive(l);
+    var who = d.deal.byDepartingTenant ? 'the departing tenant' : d.deal.byOwner ? 'the owner' : 'the landlord';
+    var rails = [
+      ['ok', 'Card', 'You keep a chargeback. This is the only rail that gives you a way back.'],
+      ['ok', 'Bank transfer to a named account', 'Traceable, and the account name should match the verified identity above. Slow to reverse, but not impossible.'],
+      ['no', 'Zelle, Venmo, Cash App', 'Instant and final. Treated as cash.'],
+      ['no', 'Wire transfer', 'Effectively unrecoverable once it lands.'],
+      ['no', 'Gift cards or crypto', 'There is no legitimate reason a landlord asks for these. None.']
+    ];
+
+    return '' +
+      '<div class="x-pay">' +
+        '<h3 class="x-pay__title">How to pay ' + esc(who) + '</h3>' +
+        '<p class="x-pay__lede"><b>RentLeaks never takes your money.</b> There is no deposit to pay us, no booking fee, no application fee, no “unlock” or “verification” charge. Anyone who asks you to pay RentLeaks anything is running a scam, and that is true with no exceptions — which makes it a much easier rule to remember than any escrow policy.</p>' +
+        '<p class="x-pay__lede">Rent and the deposit go direct to ' + esc(who) + '. We are not a party to that payment, we do not hold it, and we cannot return it. What we can do is tell you which rail leaves you a way back.</p>' +
+        '<ul class="x-rails">' +
+          rails.map(function (r) {
+            return '<li class="x-rail x-rail--' + r[0] + '">' +
+              '<span class="x-rail__mark" aria-hidden="true">' + (r[0] === 'ok' ? '✓' : '✕') + '</span>' +
+              '<span><b>' + esc(r[1]) + '</b>' + esc(r[2]) + '</span></li>';
+          }).join('') +
+        '</ul>' +
+        '<p class="x-pay__foot">Never pay anything before you or someone you trust has seen the place, live. A video walkthrough on a call you initiated counts; a recorded tour sent to you does not.</p>' +
+      '</div>';
   }
 
   /* --- 4.2b Who you are dealing with, and what they may charge ----------- */
@@ -1157,8 +1204,23 @@
         }).join('') + '</div>';
     }
 
-    var feeRows = d.feeLedger.length
-      ? '<div class="x-rules">' + d.feeLedger.map(function (row) {
+    /* The deposit is not a fee, but it is the largest sum the renter hands
+       over and the one we most need to be honest about not holding. */
+    var depositRow = l.deposit ? {
+      meta: { label: 'Security deposit' },
+      amount: l.deposit,
+      verdict: {
+        state: (r.depositCapMonths != null && l.deposit > Math.round(l.price * r.depositCapMonths)) ? 'over' : (r.depositCapMonths != null ? 'capped' : 'ok'),
+        why: 'Paid direct to ' + (deal.byDepartingTenant ? 'the departing tenant or the building’s owner' : deal.byOwner ? 'the owner' : 'the landlord') + '. RentLeaks does not hold it and cannot return it.' +
+          (r.depositCapMonths != null ? ' Capped here at ' + r.depositCapMonths + ' month' + (r.depositCapMonths === 1 ? '' : 's') + ' of rent, and the cap reaches advances too.' : ''),
+        src: r.depositSrc
+      }
+    } : null;
+
+    var ledgerRows = d.feeLedger.concat(depositRow ? [depositRow] : []);
+
+    var feeRows = ledgerRows.length
+      ? '<div class="x-rules">' + ledgerRows.map(function (row) {
           return '<div class="x-rule-row">' +
             '<span class="x-rule-row__k"><b>' + esc(row.meta.label) + '</b>' + esc(row.verdict.why) +
               (row.verdict.src ? ' <span class="x-cite">· ' + esc(row.verdict.src.label) + ', in force ' + esc(row.verdict.src.eff) + '</span>' : '') +
@@ -1168,12 +1230,15 @@
         }).join('') + '</div>'
       : '<p class="x-note" style="border:0;padding:0">No one-off charge of any kind sits on this listing. The all-in figure is the whole of it.</p>';
 
+    var collectNote = '<p class="x-note" style="margin-top:var(--s-3)"><b>None of this is paid to RentLeaks.</b> We list and we verify; we do not collect, hold or remit. Every figure above is money that moves between you and ' + esc(deal.byDepartingTenant ? 'the departing tenant' : deal.byOwner ? 'the owner' : 'the landlord') + ' directly.</p>';
+
     var body =
       '<p class="x-desk__lede">' + esc(deal.meta.blurb) + '</p>' +
       '<p><span class="x-chip' + (deal.byOwner ? ' x-chip--owner' : '') + '">' + esc(deal.meta.short) + '</span> ' +
       '<span class="x-chip">' + (deal.meta.brokerInDeal ? 'Broker acts for the landlord' : 'No broker in this deal') + '</span></p>' +
       '<h3 style="font-size:var(--text-md);margin:var(--s-5) 0 var(--s-3);color:var(--ink)">What you can be asked to pay</h3>' +
       feeRows +
+      collectNote +
       ownerProof +
       '<p class="x-note">' +
         (r.landlordAgentMayChargeTenant === false
@@ -1391,7 +1456,7 @@
       '<div class="x-step" data-state="idle">' +
         '<div class="x-step__head"><span class="x-step__title">' + (clockApplies ? '5' : '3') + '. Screening handoff and deposit transfer</span>' +
         '<span class="x-step__clock">At signature</span></div>' +
-        '<p class="x-step__body">The incoming tenant presents a RentLeaks passport rather than being re-screened from scratch, which is the step that usually costs a takeover two to three weeks. The ' + esc(money(t.depositHeld, l)) + ' deposit moves into escrow against a timestamped condition report instead of sitting with a departing tenant who has become an accidental escrow agent — the point where these deals actually go wrong.</p>' +
+        '<p class="x-step__body">The incoming tenant presents a RentLeaks passport rather than being re-screened from scratch, which is the step that usually costs a takeover two to three weeks. On the ' + esc(money(t.depositHeld, l)) + ' deposit: <b>RentLeaks does not hold it and cannot return it.</b> Pay it to the building’s owner rather than to the departing tenant wherever the paperwork allows — a deposit sitting in a departing tenant’s account is the single point where these deals go wrong, and once they have moved out and stopped replying you have no counterparty. Whoever holds it, do the condition report below on the day you get the keys.</p>' +
       '</div>';
 
     /* What the departing tenant may charge you. This is the question every
@@ -1422,7 +1487,7 @@
         'Deposit taken by the departing tenant',
         c.depositCapMonths + ' month' + (c.depositCapMonths === 1 ? '' : 's') + ' maximum',
         'capped',
-        'The cap reaches advances as well as deposits, so “first, last and security” does not work here. On RentLeaks it sits in escrow rather than in a departing tenant’s account.',
+        'The cap reaches advances as well as deposits, so “first, last and security” does not work here. RentLeaks does not hold this — it goes direct, and we cannot get it back for you. Pay the building’s owner rather than the departing tenant if the paperwork allows it.',
         d.rules.depositSrc
       ]);
     }
@@ -1453,6 +1518,7 @@
             ? 'On an assignment the departing tenant is not a party to your tenancy at all. Being paid to introduce two other people is the classic description of brokerage, and doing it without a licence is a misdemeanour that also exposes them to up to four times the sum they took. RentLeaks does not escrow, remit or enforce a handover fee on this route.'
             : 'On a sublet the departing tenant is a principal — they are your landlord under the sublease — which is a far weaker footing for a brokerage argument. It is not nothing, and it gets worse if the same account does it repeatedly across units.') +
         '</span></div>' +
+        '<div class="x-flag x-flag--ok"><span><strong>RentLeaks holds none of this money</strong> — not the deposit, not the first month, not a handover fee. We are not an escrow agent and never collect or remit on a lister’s behalf, which is also what keeps the platform out of the licensing question above.</span></div>' +
       '</div>';
 
     var body = '' +

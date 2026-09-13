@@ -40,10 +40,16 @@ export function BrowseWorkspace({
 
   const rows = useMemo(() => {
     const copy = listings.slice();
-    if (sort === "price-asc") copy.sort((a, b) => a.allIn - b.allIn);
-    else if (sort === "price-desc") copy.sort((a, b) => b.allIn - a.allIn);
+    copy.sort((a, b) => {
+      if (a.featured !== b.featured) return a.featured ? -1 : 1;
+      if (sort === "price-asc") return a.allIn - b.allIn;
+      if (sort === "price-desc") return b.allIn - a.allIn;
+      return 0;
+    });
     return copy;
   }, [listings, sort]);
+  const pinned = rows.filter((listing) => listing.featured).slice(0, 4);
+  const rest = rows.filter((listing) => !listing.featured);
 
   const pins = rows.map(toMapPin);
   const usCities = CITIES.filter((city) => city.rank <= 31);
@@ -149,16 +155,34 @@ export function BrowseWorkspace({
           </button>
         </form>
 
-        <div className={view === "list" ? "rl-stay-grid" : "rl-stay-stack"}>
-          {rows.map((listing) => (
-            <ListingCard
-              key={listing.id}
-              listing={listing}
-              active={activeId === listing.id}
-              onHover={setActiveId}
-            />
-          ))}
-        </div>
+        {pinned.length ? (
+          <div className="rl-browse__sponsored">
+            <p className="rl-kicker">Sponsored</p>
+            <div className={view === "list" ? "rl-stay-grid" : "rl-stay-stack"}>
+              {pinned.map((listing) => (
+                <ListingCard
+                  key={listing.id}
+                  listing={listing}
+                  active={activeId === listing.id}
+                  onHover={setActiveId}
+                />
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {rest.length ? (
+          <div className={view === "list" ? "rl-stay-grid" : "rl-stay-stack"}>
+            {rest.map((listing) => (
+              <ListingCard
+                key={listing.id}
+                listing={listing}
+                active={activeId === listing.id}
+                onHover={setActiveId}
+              />
+            ))}
+          </div>
+        ) : null}
         {rows.length === 0 ? (
           <p className="rl-empty">No stays match yet. Clear a filter or open the full catalog.</p>
         ) : null}

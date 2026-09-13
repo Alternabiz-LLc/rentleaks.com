@@ -164,7 +164,7 @@ export function toDbListing(l: SourceListing, hostId: string) {
     verified: Boolean(l.verified),
     noFee: Boolean(l.noFee),
     scamShield: l.scamShield !== false,
-    featured: Boolean(l.featured),
+    featured: false,
     privateBath: Boolean(l.privateBath),
     workplaceReady: Boolean(l.workplaceReady),
     petsPolicy: l.pets ?? "none",

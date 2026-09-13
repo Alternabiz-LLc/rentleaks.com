@@ -41,7 +41,7 @@ Ranked by evidence strength, not by build cost.
 
 1. **Date-range search with enforced minimum stay.** Universal across mid-term players. It is the mechanic that separates mid-term from both long-term listings and short-stay.
 2. **A published tiered cancellation policy with refund percentages.** Spotahome, Flatio, Blueground, Landing and Outsite all publish explicit day thresholds. Renters compare them. RentLeaks publishes none.
-3. **Escrow with a 48-hour post-move-in release.** HousingAnywhere, Spotahome, Wunderflats and Flatio independently converged on *the same 48-hour window* — the strongest convergent standard in the category. The Prisma schema has `Payment` and Stripe; the release rule is not modelled.
+3. ~~**Escrow with a 48-hour post-move-in release.**~~ **Deliberately not adopted — see §7.** HousingAnywhere, Spotahome, Wunderflats and Flatio independently converged on *the same 48-hour window*, the strongest convergent standard in the category. RentLeaks takes no money at all, so this is a strategic position rather than a gap.
 4. **Differentiated identity verification with a visible method.** Stripe Identity is the de facto build-vs-buy answer; HousingAnywhere names it outright.
 5. **Notice-and-action reporting with a statement of reasons.** Binding on you at any size in the EU under the Digital Services Act, and the right standard everywhere.
 
@@ -51,7 +51,7 @@ Ranked by evidence strength, not by build cost.
 7. **Digital lease generation and e-signature.** Furnished Finder does it with Rocket Lawyer state-compliant templates; Flatio with a code-based signature and translation included. Your `Lease` model has signature fields and no generator.
 8. **Screening beyond ID** — credit, criminal, eviction, income. TransUnion SmartMove at \$44.99 tenant-paid is the US default.
 9. **Verified-stay reviews with a host response window.**
-10. **A deposit answer.** Either abolish it under a threshold (Flatio: no deposit under 180 days, backed by AXA-underwritten cover) or guarantee its return (Spotahome, 90-day claim window). A plain escrow is now the *weak* option.
+10. **A deposit answer.** Either abolish it under a threshold (Flatio: no deposit under 180 days, backed by AXA-underwritten cover) or guarantee its return (Spotahome, 90-day claim window). RentLeaks' answer is currently the Wunderflats one — the deposit exists and the platform is not a party to it. That is a defensible position; it is not yet a *product*. See §7.
 
 **Tier 3 — nobody ships these. This is where the disruption is.**
 
@@ -144,9 +144,9 @@ Plus: a prohibited-terms lexicon on every free-text field, which explains *why* 
 
 ## 5. What I would build next, in order
 
-1. **Cancellation policy as structured data.** Three named tiers with published percentages, on the listing, in the JSON-LD, and in the comparison table. Cheapest Tier-1 gap left.
-2. **The 48-hour escrow release.** Your `Payment` model and Stripe integration are already there; this is a state machine and a job, not an integration.
-3. **Lease generation and e-signature**, keyed to the contract type the rules engine already resolves per market — *bail mobilité*, *locazione transitoria*, Catalan documented-temporary-purpose, NL short-stay, periodic assured tenancy.
+1. **The condition report.** Two-sided, timestamped, geotagged photo sets at move-in and move-out, held by the platform and released to both parties. It needs no money to change hands, it is the single best defence a renter has when a deposit they paid elsewhere is withheld, and no competitor ships it. Given the no-money position, this is now the highest-value build on the list.
+2. **Cancellation policy as structured data.** Three named tiers with published percentages, on the listing, in the JSON-LD, and in the comparison table. Cheapest Tier-1 gap left.
+3. **Lease generation and e-signature**, keyed to the contract type the rules engine already resolves per market — *bail mobilité*, *locazione transitoria*, Catalan documented-temporary-purpose, NL short-stay, periodic assured tenancy. This is the fee-disclosure duty too: §20-699.22(b) needs a signed itemised document retained three years, and no NYC platform generates one.
 4. **Make the passport real** — Stripe Identity, an income connection, a screening referral, and the FCRA decision documented: referral-out (not a consumer reporting agency) or reseller (a CRA, with the full adverse-action apparatus). Decide before you build, not after.
 5. **Photo requirement at publish time**, with perceptual hashing against your own corpus. Half your fraud surface closes here.
 6. **Roommate compatibility matching** — the one Tier-3 gap I did *not* build, because it is the one with genuine § 230 exposure. It needs a design where compatibility is expressed as habits and schedules the user volunteers about themselves, never as structured preferences about other people's protected characteristics. Worth doing; worth doing carefully.
@@ -154,7 +154,53 @@ Plus: a prohibited-terms lexicon on every free-text field, which explains *why* 
 
 ---
 
-## 6. Honest notes
+## 6. Correction — the broker-fee fix was wrong in both directions
+
+Colonel challenged the FARE Act finding on two cases. He was right, and the correction is more interesting than the original defect.
+
+**§ 20-699.21(a) binds a *landlord's agent*, not everyone.** I read it as "no tenant-paid broker fees in NYC" and zeroed them. That over-corrected:
+
+- **A broker the tenant retained may still charge the tenant.** DCWP's FAQ is explicit — the law does not prohibit "tenants from choosing to hire their own broker and pay broker fees." The anti-workaround rule is narrower than a ban: a tenant-side broker may advertise, but may not condition *access to specific units or identifiable inventory* on being hired. And § 20-699.21(e) creates a **rebuttable presumption** that a broker who published a listing is the landlord's authorised agent, with the burden on the broker.
+- **For rent by owner has no agent at all,** so the fee prohibition never attaches. But § 20-699.22 does: **(a)** is written against "**every listing**", and **(b)** requires a signed itemised pre-lease disclosure retained **three years** — from "the landlord **or** landlord's agent", disjunctive, so an owner carries it personally. StreetEasy's own FRBO page doesn't mention the FARE Act at all. That is a gap worth taking.
+
+So the model is three independent facts — `listedBy`, `brokerEngagement`, and the market — not a boolean. Now built as `feeVerdict()`, resolving each charge to allowed / capped / over cap / not allowed.
+
+**The bigger miss: RPL § 238-a, which I had only as a $20 cap.** It bars an application, processing or acceptance fee **outright**, statewide, and bars "any other payment, fee or charge before or at the beginning of the tenancy" — reaching move-in fees, admin fees and key fees. Background and credit are capped at the lesser of actual cost or **$20**, and **must be waived** if the applicant supplies their own report from the last 30 days. Waiver is void as against public policy. That last clause is precisely what the Renter Passport is for.
+
+**And the lease-breaker answer, which is the one nobody in the category has published.** The FARE Act does not reach a departing tenant — they are not a landlord's agent. But **§ 238-a names "lessor, sub-lessor or grantor"**. A departing tenant charging the incoming one an access, key or takeover fee is caught by the same rule as a landlord, statewide, with no rent-regulation predicate. The "access fee" model Flip was built on is not available, and current NYC practitioner guidance now says the outgoing tenant charges **$0** — the market appears to have already moved, and § 238-a is the likely reason.
+
+Three further constraints now in the product:
+
+- **Unlicensed brokerage.** RPL §§ 440 / 440-a reach anyone paid "for another" to rent real estate. A sublandlord is a principal to their own sublease — a weak case. An **assignor is not a party to the resulting tenancy at all** and is being paid to introduce two other people, which is the classic description of brokerage. Penalties under § 442-e run to a misdemeanour, administrative fines, and liability to the payer for **up to four times** the sum received. § 442-d bars any NY court action to recover unlicensed brokerage compensation — which is why the platform must never escrow, remit or enforce a handover fee on the assignment route.
+- **Regulated sublets.** RSC § 2525.6(b): the legal regulated rent **plus no more than 10%** and only where fully furnished. Overcharging is profiteering — **treble damages** to the subtenant, and per *BLF Realty Holding Corp. v. Kasher* (1st Dep't 2002) an **incurable** ground for eviction. No cure by refund; the tenancy is forfeit. The 10% is a *sublet* allowance and **does not travel to an assignment**.
+- **Roommates are a different rule.** RSC § 2525.7(b) caps an occupant's rent at their **proportionate share** of the legal regulated rent, with no furnished uplift — and the roommate profiteering cases came out the other way from the sublet ones. Directly relevant to the rooms product, and it must not be collapsed into the sublet rule.
+
+**Shipped for this:** a *The deal* panel on every listing (who listed it, whether a broker is in it, and an itemised legality verdict on every charge); an ownership-proof ladder for owner-listed homes — deed or tax record, utility or mortgage statement, ID match, and a code posted to the property; a **By owner** card chip and a **For rent by owner** browse facet; and a *What the departing tenant may charge you* block on every lease-break carrying the § 238-a bar, the screening and deposit caps, the regulated surcharge cap with its eviction consequence, and a licensing-exposure flag that reads **high** on assignments.
+
+**Still unresolved, flagged rather than guessed:** whether the FARE Act reaches sublets and assignments at all is the largest gap in the research — DCWP has published nine FAQ questions and none mentions a sublet, and there is no case law. Whether an *assignor* is a "grantor" within § 238-a is unresolved. Whether § 440's exclusion of "lease assignments" is broad enough to cut against the brokerage analysis needs someone to read the section verbatim. And whether a marketplace that escrows an unlicensed lister's fee is itself engaging in brokerage has no NY authority either way — that one needs counsel before launch, not a rules-engine flag.
+
+---
+
+## 7. The no-money position, and what it costs
+
+Colonel confirmed the model: **RentLeaks handles no renter money at all** — no escrow, no booking payment, no application fee. Deposits exist but go direct to the landlord, with the platform not a party to them. That is the Wunderflats stance on deposits combined with the SpareRoom / Leasebreak stance on payments.
+
+**What it buys, and it is a lot.** It removes the unlicensed-brokerage exposure in §6 almost entirely: RPL § 442-d and § 442-e bite hardest at a platform that collects, remits or enforces a lister's fee, and a platform that never touches money is not doing that. It removes money-transmitter licensing, PCI scope, chargeback liability, the deposit-return dispute queue, and the entire regulatory surface that comes with holding other people's funds. For a lease-break product specifically — where the departing tenant's fee is the legally fraught part — it is the difference between a hard question and no question.
+
+**What it costs, stated plainly.** The 48-hour post-move-in release is the strongest convergent standard in this category: four independent European platforms landed on the identical window. Not having it puts RentLeaks in the trust tier occupied by SpareRoom, Kamernet and Leasebreak rather than the one occupied by HousingAnywhere and Spotahome. The research on Kamernet is blunt about where that leads — it takes no payments, disclaims any role in them, and has a high scam surface by design. Escrow is not decoration; it removes the economic basis of the deposit scam outright, and RentLeaks now has to get that result another way.
+
+**So the trust story had to be rebuilt rather than trimmed.** Three claims were live and false and are now gone: the Trust Ledger said the first month and deposit were held and released 48 hours after move-in; the Takeover Desk said the deposit moved into escrow; and the fee table said the same. Replaced with:
+
+- **A fifth real check in place of the fake one.** The ledger row that claimed escrow is now *Availability re-confirmed by the host* — 14-day re-confirmation or the listing drops out of search. Stale inventory is both a top renter complaint and a fraud signal, and it is a check a platform can actually make without touching money. The score is honest again.
+- **"How to pay" promoted from footnote to primary control.** Card keeps a chargeback; a bank transfer to a named account is traceable and should match the verified identity; Zelle, Venmo, Cash App, wire, gift cards and crypto are one-way. This is the control that still works against a listing generated entirely by a machine, because the payment ask is the one part of the script a scammer cannot drop.
+- **A rule that is stronger for being absolute.** "RentLeaks never takes your money — anyone asking you to pay RentLeaks anything is running a scam, with no exceptions" is easier for a renter to hold in their head than any escrow policy, and it cannot be socially engineered around. The no-money position turns out to be a *better* anti-fraud message than escrow, provided the site says it everywhere and never contradicts itself.
+- **Honest deposit language on every surface.** The deposit is shown, capped against the market, and labelled: paid direct, not held by RentLeaks, cannot be returned by RentLeaks. On takeovers it adds the practical advice — pay the building's owner rather than the departing tenant wherever the paperwork allows, because once they have moved out and stopped replying there is no counterparty.
+
+**The one thing worth reconsidering.** The condition report needs no money to change hands and is now the highest-value unbuilt item: timestamped two-sided photo sets at move-in and move-out, held by the platform. When a renter's deposit is withheld by a landlord RentLeaks never touched, that evidence is the only leverage they have — and no competitor ships it. It is how a no-money platform gets most of the trust benefit of escrow without any of its liability.
+
+---
+
+## 8. Honest notes
 
 - The catalogue is synthetic. The trust ledger, the reviews and the takeover consent states are derived deterministically from the listing id, exactly like the rest of the seeded data — consistent with the product as it stands, and they must be wired to real sources before anything here is presented as a factual claim about a real home.
 - The jurisdiction table is research, not legal advice, and carries its sources so counsel can audit it. Ireland and Switzerland are explicitly marked unassessed rather than guessed.

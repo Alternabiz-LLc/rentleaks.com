@@ -61,6 +61,7 @@ export async function createListingAction(formData: FormData) {
       furnishedLevel,
       verified: false,
       noFee: true,
+      featured: String(formData.get("featured") || "") === "1",
       amenitiesJson: JSON.stringify(["wifi", "workspace"]),
     },
   });

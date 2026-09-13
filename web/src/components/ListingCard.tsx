@@ -61,11 +61,14 @@ export function ListingCard({
   return (
     <article
       id={`stay-${listing.id}`}
-      className={active ? "rl-stay is-on" : "rl-stay"}
+      className={[active ? "rl-stay is-on" : "rl-stay", listing.featured ? "is-sponsored" : ""]
+        .filter(Boolean)
+        .join(" ")}
       onMouseEnter={() => onHover?.(listing.id)}
       onMouseLeave={() => onHover?.(null)}
     >
-      <div className="rl-stay__media">
+      <div className={listing.featured ? "rl-stay__media is-sponsored" : "rl-stay__media"}>
+        {listing.featured ? <span className="rl-stay__sponsor">Sponsored</span> : null}
         <button
           type="button"
           className="rl-stay__hero"
@@ -99,6 +102,7 @@ export function ListingCard({
         ) : null}
       </div>
       <Link className="rl-stay__body" href={`/listings/${listing.id}`}>
+        {listing.featured ? <p className="rl-stay__ad">Sponsored</p> : null}
         <p className="rl-stay__price">
           {money(listing.allIn)}
           <span> all-in /mo</span>
