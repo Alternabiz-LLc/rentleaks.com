@@ -165,7 +165,50 @@ export type ListingFilters = {
   q?: string;
   max?: number;
   stay?: number;
+  /** ISO dates. The window the renter actually needs. */
+  from?: string;
+  to?: string;
 };
+
+const ISO = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * The stay-window filter — the question this catalogue exists to answer and
+ * could not, until now.
+ *
+ * A mid-term renter does not browse, they arrive with two dates. "Free from
+ * the 3rd of March until the end of June" has one correct answer set and every
+ * other listing is noise. The columns to answer it have been here since the
+ * composer shipped; nothing asked them.
+ *
+ * Three conditions, and the third is the one people get wrong:
+ *   - the home is free by the date they move in,
+ *   - it is still free on the date they leave (open-ended counts),
+ *   - and their window is at least as long as the minimum stay. A 90-day
+ *     minimum is not a match for a 45-day trip however well the dates overlap.
+ *
+ * Dates are stored as ISO text, so lexicographic comparison is date
+ * comparison. That is only true while the format is exactly YYYY-MM-DD, which
+ * is why anything else is dropped rather than passed to the database.
+ */
+export function stayWindowWhere(from?: string, to?: string) {
+  const start = from && ISO.test(from) ? from : undefined;
+  const end = to && ISO.test(to) ? to : undefined;
+  if (!start && !end) return {};
+
+  const clauses: Record<string, unknown>[] = [];
+  if (start) clauses.push({ availableFrom: { lte: start } });
+  if (end) clauses.push({ OR: [{ availableUntil: null }, { availableUntil: "" }, { availableUntil: { gte: end } }] });
+
+  if (start && end) {
+    const days = Math.round(
+      (new Date(`${end}T00:00:00Z`).getTime() - new Date(`${start}T00:00:00Z`).getTime()) / 86_400_000,
+    );
+    if (days > 0) clauses.push({ minStayMonths: { lte: Math.max(1, Math.floor(days / 30)) } });
+  }
+
+  return clauses.length ? { AND: clauses } : {};
+}
 
 export async function publicListingCount() {
   return prisma.listing.count({ where: liveListingWhere() });
@@ -182,6 +225,7 @@ export async function publicListings(filters?: ListingFilters) {
           ...(filters?.housingType ? { housingType: filters.housingType } : {}),
           ...(filters?.max ? { allIn: { lte: filters.max } } : {}),
           ...(filters?.stay ? { minStayMonths: { lte: filters.stay } } : {}),
+          ...stayWindowWhere(filters?.from, filters?.to),
           ...(q
             ? {
                 OR: [

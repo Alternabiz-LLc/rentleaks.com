@@ -18,6 +18,8 @@ export default async function StaysPage({
     q?: string;
     max?: string;
     stay?: string;
+    from?: string;
+    to?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -26,12 +28,16 @@ export default async function StaysPage({
   const q = params.q || "";
   const max = params.max || "";
   const stay = params.stay || "";
+  const from = params.from || "";
+  const to = params.to || "";
   const rows = await publicListings({
     cityId: cityId || undefined,
     housingType: housingType || undefined,
     q: q || undefined,
     max: asPositiveInt(max),
     stay: asPositiveInt(stay),
+    from,
+    to,
   });
 
   return (
@@ -43,6 +49,8 @@ export default async function StaysPage({
         q={q}
         max={max}
         stay={stay}
+        from={from}
+        to={to}
       />
       <BrowseWorkspace
         listings={rows.map(toBrowseListing)}
@@ -51,6 +59,8 @@ export default async function StaysPage({
         q={q}
         max={max}
         stay={stay}
+        from={from}
+        to={to}
         view={params.view}
       />
     </Shell>

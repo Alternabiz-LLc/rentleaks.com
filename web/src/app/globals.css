@@ -331,7 +331,9 @@ textarea {
 
 .rl-search {
   display: grid;
-  grid-template-columns: 1fr 1fr minmax(180px, 1.4fr) 110px 140px auto;
+  /* auto-fit, because this row has gained fields twice now and a hand-counted
+     template breaks silently every time. */
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
   gap: 0.55rem;
   align-items: end;
   padding: 0.85rem;
@@ -627,7 +629,7 @@ textarea {
 
 .rl-filters {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr auto;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
   gap: 0.65rem;
   margin-bottom: 1rem;
   position: sticky;
@@ -1509,7 +1511,6 @@ body.rl-lb-lock {
     box-shadow: 0 12px 30px rgba(16, 36, 42, 0.16);
   }
 
-  .rl-filters,
   .rl-listing__grid,
   .rl-form__row,
   .rl-type-grid {

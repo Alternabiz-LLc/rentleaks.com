@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CITIES, HOUSING_TYPES } from "@/lib/catalog";
 import type { BrowseListing } from "@/lib/listings";
@@ -23,6 +24,8 @@ export function BrowseWorkspace({
   q = "",
   max = "",
   stay = "",
+  from = "",
+  to = "",
   view: initialView = "split",
 }: {
   listings: BrowseListing[];
@@ -31,6 +34,8 @@ export function BrowseWorkspace({
   q?: string;
   max?: string;
   stay?: string;
+  from?: string;
+  to?: string;
   view?: string;
 }) {
   const router = useRouter();
@@ -62,8 +67,23 @@ export function BrowseWorkspace({
     if (q) params.set("q", q);
     if (max) params.set("max", max);
     if (stay) params.set("stay", stay);
+    if (from) params.set("from", from);
+    if (to) params.set("to", to);
     if (next !== "split") params.set("view", next);
     return params.toString();
+  }
+
+  /* Same query minus the dates. */
+  function withoutDates() {
+    const params = new URLSearchParams();
+    if (cityId) params.set("city", cityId);
+    if (housingType) params.set("type", housingType);
+    if (q) params.set("q", q);
+    if (max) params.set("max", max);
+    if (stay) params.set("stay", stay);
+    if (view !== "split") params.set("view", view);
+    const query = params.toString();
+    return query ? `/stays?${query}` : "/stays";
   }
 
   function setView(next: View) {
@@ -102,6 +122,16 @@ export function BrowseWorkspace({
           {q ? <input type="hidden" name="q" value={q} /> : null}
           {max ? <input type="hidden" name="max" value={max} /> : null}
           {stay ? <input type="hidden" name="stay" value={stay} /> : null}
+          {/* First, because a mid-term renter arrives with two dates and
+              everything else is a refinement of them. */}
+          <label>
+            Move in
+            <input type="date" name="from" defaultValue={from} />
+          </label>
+          <label>
+            Move out
+            <input type="date" name="to" defaultValue={to} />
+          </label>
           <label>
             City
             <select name="city" defaultValue={cityId}>
@@ -154,6 +184,13 @@ export function BrowseWorkspace({
             Apply
           </button>
         </form>
+
+        {from || to ? (
+          <p className="rl-window-note">
+            Showing homes free {from ? <b>from {from}</b> : "any time"} {to ? <b>through {to}</b> : "onwards"} whose
+            minimum stay fits that window. <Link href={withoutDates()}>Clear the dates</Link>.
+          </p>
+        ) : null}
 
         {pinned.length ? (
           <div className="rl-browse__sponsored">

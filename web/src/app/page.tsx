@@ -4,6 +4,7 @@ import { HomeHero } from "@/components/HomeHero";
 import { ListingCard } from "@/components/ListingCard";
 import { Shell } from "@/components/Shell";
 import { CITIES, HOUSING_TYPES } from "@/lib/catalog";
+import { money } from "@/lib/site";
 import { heroSlidePicks, publicListingCount, publicListings, sponsoredListings, toBrowseListing } from "@/lib/listings";
 
 const TYPE_COPY: Record<(typeof HOUSING_TYPES)[number]["id"], string> = {
@@ -29,10 +30,12 @@ export default async function HomePage({
     q?: string;
     max?: string;
     stay?: string;
+    from?: string;
+    to?: string;
   }>;
 }) {
   const params = await searchParams;
-  if (params.city || params.type || params.view || params.q || params.max || params.stay) {
+  if (params.city || params.type || params.view || params.q || params.max || params.stay || params.from || params.to) {
     const query = new URLSearchParams();
     if (params.city) query.set("city", params.city);
     if (params.type) query.set("type", params.type);
@@ -40,6 +43,8 @@ export default async function HomePage({
     const max = asPositiveInt(params.max);
     if (max) query.set("max", String(max));
     if (params.stay) query.set("stay", params.stay);
+    if (params.from) query.set("from", params.from);
+    if (params.to) query.set("to", params.to);
     if (params.view) query.set("view", params.view);
     const qs = query.toString();
     redirect(qs ? `/stays?${qs}` : "/stays");
@@ -52,7 +57,41 @@ export default async function HomePage({
   const listings = rows.map(toBrowseListing);
   const sponsored = sponsoredListings(listings, 8);
   const slides = heroSlidePicks(listings, 6);
-  const markets = CITIES.filter((city) => city.featured).slice(0, 8);
+  /* Featured markets, ranked by what is actually in them.
+     Two things this replaces. It used to be CITIES.filter(featured).slice(0, 8)
+     — a hand-picked constant, so a market with three homes could sit above one
+     with two hundred and the visitor found out only after clicking into an
+     empty grid. And because every European city sits at rank 32+, the slice cut
+     all of them: a visitor in Berlin met an all-American featured block on a
+     product that calls itself "U.S. + Europe" two hundred pixels higher up.
+     Four and four, ranked by live inventory, with the count and median on the
+     card so the click is informed. */
+  const byCity = new Map<string, { n: number; prices: number[] }>();
+  for (const row of rows) {
+    const entry = byCity.get(row.cityId) || { n: 0, prices: [] };
+    entry.n += 1;
+    const usd = row.allInUsd || row.allIn;
+    if (usd > 0) entry.prices.push(usd);
+    byCity.set(row.cityId, entry);
+  }
+
+  const ranked = CITIES.map((city) => {
+    const entry = byCity.get(city.id);
+    const prices = (entry?.prices || []).slice().sort((a, b) => a - b);
+    return {
+      ...city,
+      count: entry?.n || 0,
+      median: prices.length ? prices[Math.floor(prices.length / 2)] : 0,
+      european: city.rank > 31,
+    };
+  })
+    .filter((city) => city.count > 0)
+    .sort((a, b) => b.count - a.count);
+
+  const markets = [
+    ...ranked.filter((c) => !c.european).slice(0, 4),
+    ...ranked.filter((c) => c.european).slice(0, 4),
+  ];
 
   /* Hero figures, from the live set rather than a constant in the markup. */
   const allIns = rows.map((row) => row.allInUsd || row.allIn).filter((n) => n > 0).sort((a, b) => a - b);
@@ -113,6 +152,10 @@ export default async function HomePage({
               <Link key={city.id} className="rl-city-card" href={`/stays?city=${city.id}`}>
                 <strong>{city.name}</strong>
                 <span>{city.state}</span>
+                <em>
+                  {city.count} home{city.count === 1 ? "" : "s"}
+                  {city.median ? ` · ${money(city.median)} median` : ""}
+                </em>
               </Link>
             ))}
           </div>

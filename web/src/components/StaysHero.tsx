@@ -92,6 +92,8 @@ export function StaysHero({
   q = "",
   max = "",
   stay = "",
+  from = "",
+  to = "",
 }: {
   rows: Row[];
   housingType?: string;
@@ -99,6 +101,8 @@ export function StaysHero({
   q?: string;
   max?: string;
   stay?: string;
+  from?: string;
+  to?: string;
 }) {
   const copy = COPY[housingType] || COPY[""];
   const city = CITIES.find((c) => c.id === cityId);
@@ -119,6 +123,8 @@ export function StaysHero({
     if (q) params.set("q", q);
     if (max) params.set("max", max);
     if (stay) params.set("stay", stay);
+    if (from) params.set("from", from);
+    if (to) params.set("to", to);
     const query = params.toString();
     return query ? `/stays?${query}` : "/stays";
   }
@@ -168,7 +174,9 @@ export function StaysHero({
           </dl>
         ) : (
           <p className="rl-shero__stats rl-shero__stats--empty">
-            Nothing matches these filters yet. Widen the budget or clear the city — every category below is live.
+            {from || to
+              ? "Nothing is free for those dates in this category. Try a different category below, widen the window by a week, or drop the move-out date — a lot of homes here are open-ended."
+              : "Nothing matches these filters yet. Widen the budget or clear the city — every category below is live."}
           </p>
         )}
       </div>

@@ -95,6 +95,14 @@ export function HomeHero({
           </dl>
 
           <form className="rl-search" action="/stays" method="get" aria-label="Search flexible housing">
+            <label className="rl-search__field rl-search__field--date">
+              <span>Move in</span>
+              <input type="date" name="from" />
+            </label>
+            <label className="rl-search__field rl-search__field--date">
+              <span>Move out</span>
+              <input type="date" name="to" />
+            </label>
             <label className="rl-search__field">
               <span>City</span>
               <select name="city" defaultValue={cityId}>
