@@ -2014,3 +2014,32 @@
 @media (prefers-reduced-motion: reduce) {
   .rl-shero__type { transition: none; }
 }
+
+/* Home shares the browse hero's chassis; only the search card and the reel
+   below it are particular to the front door. */
+.rl-shero--home .rl-shero__title { max-width: 17ch; }
+
+.rl-shero--home .rl-search {
+  margin-top: clamp(1.25rem, 3vw, 1.75rem);
+  box-shadow: 0 24px 60px rgba(6, 18, 22, 0.38);
+}
+
+.rl-shero__hint {
+  margin: 0.9rem 0 0;
+  font-size: var(--text-sm);
+  color: rgba(242, 247, 247, 0.78);
+}
+
+.rl-shero__hint a {
+  color: #fff;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.rl-homereel {
+  width: min(1180px, calc(100% - 2.5rem));
+  margin: clamp(1.5rem, 3vw, 2.25rem) auto 0;
+}
+
+.rl-homereel .rl-hero-carousel { padding-inline: 0; }

@@ -54,9 +54,24 @@ export default async function HomePage({
   const slides = heroSlidePicks(listings, 6);
   const markets = CITIES.filter((city) => city.featured).slice(0, 8);
 
+  /* Hero figures, from the live set rather than a constant in the markup. */
+  const allIns = rows.map((row) => row.allInUsd || row.allIn).filter((n) => n > 0).sort((a, b) => a - b);
+  const medianAllIn = allIns.length
+    ? allIns.length % 2
+      ? allIns[(allIns.length - 1) / 2]
+      : Math.round((allIns[allIns.length / 2 - 1] + allIns[allIns.length / 2]) / 2)
+    : 0;
+  const leaseBreakCount = rows.filter((row) => row.housingType === "lease-break").length;
+
   return (
     <Shell wide>
-      <HomeHero listingCount={listingCount} cityCount={CITIES.length} slides={slides} />
+      <HomeHero
+        listingCount={listingCount}
+        cityCount={CITIES.length}
+        medianAllIn={medianAllIn}
+        leaseBreakCount={leaseBreakCount}
+        slides={slides}
+      />
 
       <div className="rl-home">
         {sponsored.length ? (
