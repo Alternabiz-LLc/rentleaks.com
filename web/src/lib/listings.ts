@@ -211,7 +211,7 @@ export function stayWindowWhere(from?: string, to?: string) {
 }
 
 export async function publicListingCount() {
-  return prisma.listing.count({ where: liveListingWhere() });
+  return prisma.listing.count({ where: await liveListingWhere() });
 }
 
 export async function publicListings(filters?: ListingFilters) {
@@ -219,7 +219,7 @@ export async function publicListings(filters?: ListingFilters) {
   return prisma.listing.findMany({
     where: {
       AND: [
-        liveListingWhere(),
+        await liveListingWhere(),
         {
           ...(filters?.cityId ? { cityId: filters.cityId } : {}),
           ...(filters?.housingType ? { housingType: filters.housingType } : {}),

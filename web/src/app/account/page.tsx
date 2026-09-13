@@ -41,8 +41,8 @@ export default async function AccountPage() {
       availableFrom: l.availableFrom,
       availableUntil: l.availableUntil,
       photoCount: photos || (l.image ? 1 : 0),
-      moderation: l.moderation,
-      moderationNote: l.moderationNote,
+      moderation: l.moderation ?? "approved",
+      moderationNote: l.moderationNote ?? null,
       href: `/listings/${l.id}`,
     };
   });

@@ -103,7 +103,7 @@ export default async function AdminPage() {
   /* The queue. Oldest first: a seller waiting three days should not be behind
      one who submitted this morning. */
   const queue: QueueItem[] = reviewed
-    .filter((x) => x.listing.moderation === "pending")
+    .filter((x) => (x.listing.moderation ?? "approved") === "pending")
     .reverse()
     .map(({ listing: l, fees, blocked, warned }) => {
       const detail = (l.detail ?? {}) as { photos?: unknown; images?: unknown };
@@ -131,8 +131,8 @@ export default async function AdminPage() {
         availableFrom: l.availableFrom,
         availableUntil: l.availableUntil,
         createdAt: l.createdAt.toISOString().slice(0, 10),
-        moderation: l.moderation,
-        moderationNote: l.moderationNote,
+        moderation: l.moderation ?? "approved",
+        moderationNote: l.moderationNote ?? null,
         blockers: blocked.map((c) => c.title),
         warnings: warned.map((c) => c.title),
       };
