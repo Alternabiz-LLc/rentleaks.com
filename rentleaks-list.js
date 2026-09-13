@@ -114,6 +114,23 @@
     ['key', 'Key fee', 'once']
   ];
 
+  /* What the LISTER pays. Renters pay nothing, on any plan, ever — that is
+     the whole monetisation position and it is why there is no renter-side
+     fee anywhere in this composer. Lease-breaks publish free: an empty month
+     helps nobody, and charging someone to escape a lease they cannot afford
+     is the wrong business. */
+  var PLANS = {
+    week:  { label: 'Weekly',  listing: 14, sponsored: 45,  per: 'week' },
+    month: { label: 'Monthly', listing: 60, sponsored: 120, per: 'month' }
+  };
+
+  function planCost() {
+    var pl = PLANS[draft.plan] || PLANS.week;
+    var listing = isLeaseBreak() ? 0 : pl.listing;
+    var sponsored = draft.sponsored ? pl.sponsored : 0;
+    return { plan: pl, listing: listing, sponsored: sponsored, total: listing + sponsored };
+  }
+
   var ROOM_LABELS = ['Bedroom', 'Bathroom', 'Kitchen', 'Living room', 'Workspace', 'Building', 'Outdoor', 'Floor plan', 'Other'];
 
   var AMENITIES = [
@@ -162,6 +179,14 @@
     amenities: [],
     access: [],
     photos: [],          // { url, label, quality, name }
+    floorPlans: [],      // { url, name }
+    videoUrl: '',
+    tourUrl: '',
+    documents: [],       // { name, size, kind, url }
+    viewings: [],        // { date, start, end }
+    addressPrivacy: 'street-only',
+    status: 'active',
+    scheduledAt: '',
     description: '',
     sponsored: false,
     plan: 'week'
@@ -188,6 +213,72 @@
   }
 
   function isLeaseBreak() { return draft.housingType === 'lease-break'; }
+
+  /* How much of the address a renter sees before they are in contact. A room
+     in someone's home is a different privacy proposition from a vacant unit,
+     and the lister is the only one who knows which this is. The full address
+     is always held for the map pin and for matching against an ownership
+     document — this only controls display. */
+  var ADDRESS_PRIVACY = [
+    ['full', 'Full address', 'Street, unit and all. Right for a vacant unit you want viewed quickly.'],
+    ['hide-unit', 'Street, no unit number', 'They can find the building; they cannot knock on your door.'],
+    ['street-only', 'Street name only', 'No house number. The default, and right for most rooms.'],
+    ['hidden', 'Neighbourhood only', 'Nothing but the area until you share it. Slows enquiries down — worth it if you live there.']
+  ];
+
+  function addressAsShown() {
+    var street = (draft.address || '').trim();
+    var unit = (draft.unit || '').trim();
+    var hood = (draft.neighborhood || '').trim();
+    var city = (cityOf(draft.cityId) || {}).name || '';
+    switch (draft.addressPrivacy) {
+      case 'full':      return [street + (unit ? ', #' + unit : ''), hood, city].filter(Boolean).join(', ');
+      case 'hide-unit': return [street, hood, city].filter(Boolean).join(', ');
+      case 'hidden':    return [hood, city].filter(Boolean).join(', ');
+      default:          return [street.replace(/^[\d\-\s]+/, '').trim(), hood, city].filter(Boolean).join(', ');
+    }
+  }
+
+  /* ---------------------------------------------------------------------
+     Stages. A nine-section scroll is a wall — and on a phone it is a wall
+     you cannot see the end of. Staging it also creates somewhere for a real
+     review step to live, which is the part most listing flows skip: you
+     submit and then find out what you published.
+     --------------------------------------------------------------------- */
+
+  var stage = 0;
+
+  function stages() {
+    var out = [
+      { id: 'who',    label: 'Who & where' },
+      { id: 'home',   label: 'The home' },
+      { id: 'photos', label: 'Photos' },
+      { id: 'money',  label: 'Dates & money' }
+    ];
+    if (isLeaseBreak()) out.push({ id: 'lease', label: 'The lease' });
+    out.push({ id: 'extras', label: 'Viewings & files' });
+    out.push({ id: 'review', label: 'Review' });
+    return out;
+  }
+
+  /* Which blocking checks belong to which stage, so the stepper can show
+     where the problem actually is rather than just refusing at the end. */
+  var STAGE_CHECKS = {
+    who: ['basics'],
+    home: ['wording', 'description'],
+    photos: ['photos'],
+    money: ['fees', 'minstay', 'window', 'deposit', 'broker', 'movein', 'registration'],
+    lease: ['leaseend', 'consent'],
+    extras: [],
+    review: ['verified']
+  };
+
+  function stageState(id) {
+    var ids = STAGE_CHECKS[id] || [];
+    var cs = checks().filter(function (c) { return ids.indexOf(c.id) !== -1; });
+    if (cs.some(function (c) { return c.blocking && !c.ok; })) return 'todo';
+    return cs.length && cs.every(function (c) { return c.ok; }) ? 'done' : 'todo';
+  }
 
   /* =======================================================================
      Derived numbers
@@ -348,22 +439,182 @@
     var cur = currencyFor(draft.cityId);
     var r = rulesNow();
 
+    var st = stages();
+    if (stage >= st.length) stage = st.length - 1;
+    var now = st[stage].id;
+
+    var body =
+      now === 'who'    ? sectionWho(r) + sectionWhere(cur)
+    : now === 'home'   ? sectionHome(cur) + sectionAccess(r) + sectionWords()
+    : now === 'photos' ? sectionPhotos()
+    : now === 'money'  ? sectionDates(r) + sectionMoney(cur, r)
+    : now === 'lease'  ? sectionTakeover(r)
+    : now === 'extras' ? sectionViewings() + sectionDocs()
+    :                    sectionReview(cur, r);
+
     el.innerHTML =
+      stepper(st) +
       '<div class="c-shell">' +
-        '<div>' +
-          sectionWho(r) +
-          sectionHome(cur) +
-          sectionPhotos() +
-          sectionDates(r) +
-          sectionMoney(cur, r) +
-          (isLeaseBreak() ? sectionTakeover(r) : '') +
-          sectionAccess(r) +
-          sectionWords() +
-        '</div>' +
+        '<div>' + body + navBar(st) + '</div>' +
         '<aside class="c-aside">' + aside(cur, r) + '</aside>' +
       '</div>';
 
     bind();
+    var top = document.querySelector('.c-steps');
+    if (top && stage > 0) top.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function stepper(st) {
+    return '<ol class="c-steps" aria-label="Listing progress">' +
+      st.map(function (x, i) {
+        var state = i === stage ? 'now' : (i < stage || stageState(x.id) === 'done') ? 'done' : 'todo';
+        return '<li class="c-step" data-state="' + state + '">' +
+          '<button type="button" class="c-step__btn" data-c-stage="' + i + '">' +
+            '<span class="c-step__dot" aria-hidden="true">' + (state === 'done' && i !== stage ? '\u2713' : (i + 1)) + '</span>' +
+            '<span class="c-step__label">' + esc(x.label) + '</span>' +
+          '</button></li>';
+      }).join('') + '</ol>' +
+      '<div class="c-draftbar">' +
+        '<span>' + (lastSaved ? 'Draft saved ' + lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Draft saves as you type') + '</span>' +
+        '<button type="button" class="v-link" id="c-draftsave">Save draft</button>' +
+        '<button type="button" class="v-link" id="c-draftdiscard">Discard</button>' +
+      '</div>';
+  }
+
+  var lastSaved = null;
+
+  function navBar(st) {
+    var last = stage >= st.length - 1;
+    var blocked = blockers();
+    return '<div class="c-nav">' +
+      (stage > 0 ? '<button type="button" class="btn btn--ghost" id="c-prev">Back</button>' : '<span></span>') +
+      (last
+        ? '<button type="button" class="btn btn--primary btn--lg" id="c-publish-main"' + (blocked.length ? ' disabled' : '') + '>' +
+            (blocked.length ? blocked.length + ' thing' + (blocked.length === 1 ? '' : 's') + ' to fix' : 'Publish listing') + '</button>'
+        : '<button type="button" class="btn btn--primary" id="c-next">Continue</button>') +
+    '</div>';
+  }
+
+  function sectionWhere(cur) {
+    var types = DATA.housingTypes || [];
+    return sec('What and where', 'Prices are held in the market\u2019s own currency and converted for whoever is browsing, so a Paris flat is never quoted in dollars.',
+      '<div class="c-row">' +
+        field('Stay type', '<select data-c="housingType">' + types.map(function (t) {
+          return '<option value="' + t.id + '"' + (draft.housingType === t.id ? ' selected' : '') + '>' + esc(t.label) + '</option>';
+        }).join('') + '</select>') +
+        field('City', '<select data-c="cityId">' + (DATA.cities || []).map(function (c) {
+          return '<option value="' + c.id + '"' + (draft.cityId === c.id ? ' selected' : '') + '>' + esc(c.name) + (c.state ? ', ' + esc(c.state) : '') + '</option>';
+        }).join('') + '</select>', 'Priced in ' + cur + '.') +
+        field('Neighbourhood', '<input type="text" data-c="neighborhood" value="' + esc(draft.neighborhood) + '" placeholder="Bushwick">') +
+      '</div>' +
+      '<div class="c-row">' +
+        field('Street address', '<input type="text" data-c="address" value="' + esc(draft.address) + '" placeholder="294 Lenox Ave" autocomplete="street-address">', 'Never shown in full. Sets the map pin, and is what an ownership document gets matched against.') +
+        field('Unit', '<input type="text" data-c="unit" value="' + esc(draft.unit) + '" placeholder="5R">') +
+      '</div>' +
+      '<div class="c-field"><label>Title</label>' +
+        '<input type="text" data-c="title" value="' + esc(draft.title) + '" placeholder="Private room with its own bath, two stops from the L" maxlength="90">' +
+        '<small>' + draft.title.length + '/90</small></div>' +
+      '<div class="c-field" style="margin-top:var(--s-3)"><label>How much of the address renters see</label>' +
+        '<select data-c="addressPrivacy">' + ADDRESS_PRIVACY.map(function (a) {
+          return '<option value="' + a[0] + '"' + (draft.addressPrivacy === a[0] ? ' selected' : '') + '>' + esc(a[1]) + ' \u2014 ' + esc(a[2]) + '</option>';
+        }).join('') + '</select>' +
+        '<small id="c-addrshown">Shown publicly as: <b>' + esc(addressAsShown() || '\u2014') + '</b>. We always hold the full address for the map pin and to match against your ownership document; this only controls display.</small>' +
+      '</div>');
+  }
+
+  /* The review step renders the listing the way a renter meets it — the card
+     as it appears in search, then the numbers. Reading your own listing as a
+     stranger is the cheapest quality check there is, and almost no listing
+     flow offers it before you commit. */
+  function sectionReview(cur, r) {
+    var cs = checks();
+    var open = cs.filter(function (c) { return !c.ok; });
+    var cover = draft.photos[0];
+    var w = windowDays();
+    var typeLabel = ((DATA.housingTypes || []).filter(function (t) { return t.id === draft.housingType; })[0] || {}).label || draft.housingType;
+    var city = cityOf(draft.cityId) || {};
+    var monthly = monthlyFees();
+
+    var card =
+      '<article class="c-preview-card">' +
+        '<div class="c-preview-card__img">' +
+          (cover ? '<img src="' + cover.url + '" alt="' + esc(draft.title) + '">' : '<div class="c-preview-card__empty">No cover photograph</div>') +
+          '<span class="c-preview-card__badge">' + esc(typeLabel) + '</span>' +
+          (draft.photos.length > 1 ? '<span class="c-preview-card__shots">' + draft.photos.length + ' photos</span>' : '') +
+        '</div>' +
+        '<div class="c-preview-card__body">' +
+          '<p class="c-preview-card__price">' + esc(money(allIn(), cur)) + '<span>all-in /mo</span></p>' +
+          '<p class="c-preview-card__sub">Base ' + esc(money(draft.price, cur)) + (monthly ? ' + ' + esc(money(monthly, cur)) + ' fees' : ' \u00b7 no fees') + '</p>' +
+          '<h3>' + esc(draft.title || 'Untitled listing') + '</h3>' +
+          '<p class="c-preview-card__addr">' + esc((city.name || '') + ' \u00b7 ' + (draft.neighborhood || '\u2014')) + '</p>' +
+          '<p class="c-preview-card__specs">' + esc([draft.beds + ' bed', draft.baths + ' bath', draft.sqft ? draft.sqft + ' sqft' : null].filter(Boolean).join(' \u00b7 ')) +
+            (draft.availableFrom ? ' \u00b7 from ' + esc(draft.availableFrom) : '') + '</p>' +
+          '<div class="x-chiprow">' +
+            (draft.role === 'owner' ? '<span class="x-chip x-chip--owner">By owner</span>' : '') +
+            (draft.vouchers ? '<span class="x-chip x-chip--voucher">Vouchers ok</span>' : '') +
+            (draft.access.indexOf('step-free') !== -1 ? '<span class="x-chip x-chip--access">Step-free</span>' : '') +
+            (w ? '<span class="x-fit x-fit--yes">' + w + ' days open</span>' : '<span class="x-fit x-fit--no">No window</span>') +
+          '</div>' +
+        '</div>' +
+      '</article>';
+
+    var feeLines = draft.fees.filter(function (f) { return Number(f.amount) > 0; }).map(function (f) {
+      var meta = FEE_TYPES.filter(function (t) { return t[0] === f.type; })[0];
+      return '<div class="c-allin__row" style="color:var(--ink-2)"><span>' + esc(meta ? meta[1] : f.type) + (f.cadence === 'once' ? ' (one-off)' : '') + '</span><span>' + esc(money(f.amount, cur)) + '</span></div>';
+    }).join('');
+
+    var cost = planCost();
+    var planBlock =
+      '<h3 style="font-size:var(--text-md);margin:var(--s-6) 0 var(--s-3);color:var(--ink)">What this costs you</h3>' +
+      '<div class="c-plans">' +
+        Object.keys(PLANS).map(function (k) {
+          var pl = PLANS[k];
+          return '<label class="c-plan' + (draft.plan === k ? ' is-on' : '') + '">' +
+            '<input type="radio" name="c-plan" value="' + k + '"' + (draft.plan === k ? ' checked' : '') + '>' +
+            '<span><b>' + esc(pl.label) + '</b>' +
+            (isLeaseBreak() ? 'Free \u2014 lease-breaks always are' : '$' + pl.listing + ' per ' + pl.per) +
+            '</span></label>';
+        }).join('') +
+      '</div>' +
+      '<label class="c-plan c-plan--addon' + (draft.sponsored ? ' is-on' : '') + '">' +
+        '<input type="checkbox" data-c="sponsored"' + (draft.sponsored ? ' checked' : '') + '>' +
+        '<span><b>Sponsored placement \u2014 +$' + cost.plan.sponsored + ' per ' + cost.plan.per + '</b>' +
+        'Under the homepage hero and at the top of results for your stay type. It buys position, not a badge: sponsored listings are labelled as sponsored and are held to exactly the same verification and compliance checks as everything else. A listing that has not earned its badges will not rank well no matter what you pay for it.</span>' +
+      '</label>' +
+      '<div class="c-review-nums" style="margin-top:var(--s-4)">' +
+        '<div class="c-allin__row" style="color:var(--ink-2)"><span>Listing, per ' + cost.plan.per + '</span><span>' + (cost.listing ? '$' + cost.listing : 'Free') + '</span></div>' +
+        (cost.sponsored ? '<div class="c-allin__row" style="color:var(--ink-2)"><span>Sponsored placement</span><span>+$' + cost.sponsored + '</span></div>' : '') +
+        '<div class="c-allin__row" style="font-weight:600;color:var(--ink);border-top:1px solid var(--x-rule);padding-top:0.4rem;margin-top:0.3rem"><span>Total per ' + cost.plan.per + '</span><span>' + (cost.total ? '$' + cost.total : 'Free') + '</span></div>' +
+        '<div class="c-allin__row" style="color:var(--ink-3)"><span>What the renter pays us</span><span>Nothing</span></div>' +
+      '</div>';
+
+    var publishBlock =
+      planBlock +
+      '<div class="c-row" style="margin-top:var(--s-5)">' +
+        field('Status', '<select data-c="status">' +
+          [['active', 'Live \u2014 taking enquiries'], ['coming-soon', 'Coming soon \u2014 visible, not yet bookable'], ['paused', 'Paused \u2014 hidden from search']].map(function (o) {
+            return '<option value="' + o[0] + '"' + (draft.status === o[0] ? ' selected' : '') + '>' + o[1] + '</option>';
+          }).join('') + '</select>', 'A listing you forget to pause is the one that wastes a renter\u2019s afternoon.') +
+        field('Go live on', '<input type="date" data-c="scheduledAt" value="' + esc(draft.scheduledAt) + '" min="' + todayISO() + '">', 'Leave blank to publish now.') +
+      '</div>';
+
+    return sec('Review', 'This is what a renter sees first. Read it as though you were the one moving in \u2014 the listings that convert say the awkward thing before the viewing does.',
+      card +
+      '<div class="c-review-nums">' +
+        '<div class="c-allin__row" style="font-weight:600;color:var(--ink)"><span>Base rent</span><span>' + esc(money(draft.price, cur)) + '</span></div>' +
+        feeLines +
+        '<div class="c-allin__row" style="font-weight:600;color:var(--ink);border-top:1px solid var(--x-rule);padding-top:0.4rem;margin-top:0.3rem"><span>All-in per month</span><span>' + esc(money(allIn(), cur)) + '</span></div>' +
+        (draft.deposit ? '<div class="c-allin__row" style="color:var(--ink-3)"><span>Deposit, paid direct to you</span><span>' + esc(money(draft.deposit, cur)) + '</span></div>' : '') +
+      '</div>' +
+      (open.length
+        ? '<h3 style="font-size:var(--text-md);margin:var(--s-5) 0 var(--s-3);color:var(--ink)">Before you publish</h3>' +
+          '<ul class="c-checks">' + open.map(function (c) {
+            return '<li class="c-check" data-ok="' + (c.blocking ? 'block' : '0') + '">' +
+              '<span class="c-check__m" aria-hidden="true">' + (c.blocking ? '!' : '\u2013') + '</span>' +
+              '<span><b>' + esc(c.title) + '</b>' + esc(c.why) + '</span></li>';
+          }).join('') + '</ul>'
+        : '<p class="v-note"><b>Everything checks out.</b> The listing carries its availability window, itemised fees, accessibility attributes and market compliance \u2014 so it can answer a date-range search and be read properly by an assistant, not just by a person scrolling.</p>') +
+      publishBlock);
   }
 
   function sec(title, sub, body, id) {
@@ -396,24 +647,7 @@
   }
 
   function sectionHome(cur) {
-    var types = DATA.housingTypes || [];
-    return sec('The home', 'Facts about the property. We never ask anything about who you want living in it — a structured question on that is the line a listings platform cannot cross.',
-      '<div class="c-row">' +
-        field('Stay type', '<select data-c="housingType">' + types.map(function (t) {
-          return '<option value="' + t.id + '"' + (draft.housingType === t.id ? ' selected' : '') + '>' + esc(t.label) + '</option>';
-        }).join('') + '</select>') +
-        field('City', '<select data-c="cityId">' + (DATA.cities || []).map(function (c) {
-          return '<option value="' + c.id + '"' + (draft.cityId === c.id ? ' selected' : '') + '>' + esc(c.name) + (c.state ? ', ' + esc(c.state) : '') + '</option>';
-        }).join('') + '</select>', 'Prices in ' + cur + ' — the market’s own currency, converted for renters browsing in another.') +
-        field('Neighbourhood', '<input type="text" data-c="neighborhood" value="' + esc(draft.neighborhood) + '" placeholder="Bushwick">') +
-      '</div>' +
-      '<div class="c-row">' +
-        field('Street address', '<input type="text" data-c="address" value="' + esc(draft.address) + '" placeholder="294 Lenox Ave" autocomplete="street-address">', 'Never shown in full. Sets the map pin and gets matched against your ownership document.') +
-        field('Unit', '<input type="text" data-c="unit" value="' + esc(draft.unit) + '" placeholder="5R">') +
-      '</div>' +
-      '<div class="c-field" style="margin-bottom:var(--s-3)"><label>Title</label>' +
-        '<input type="text" data-c="title" value="' + esc(draft.title) + '" placeholder="Private room with its own bath, two stops from the L" maxlength="90">' +
-        '<small>' + draft.title.length + '/90</small></div>' +
+    return sec('The home', 'Facts about the property. We never ask anything about who you want living in it \u2014 a structured question on that is the line a listings platform cannot cross.',
       '<div class="c-row">' +
         field('Bedrooms', '<input type="number" min="0" max="10" data-c="beds" value="' + esc(draft.beds) + '">') +
         field('Bathrooms', '<input type="number" min="0" max="10" step="0.5" data-c="baths" value="' + esc(draft.baths) + '">') +
@@ -458,8 +692,73 @@
         'Four minimum. A bedroom, the bathroom, the kitchen and the common space beats eight angles of the same sofa. Each one is checked for blur, glare and darkness as it lands.' +
         '<input type="file" accept="image/*" multiple id="c-photos">' +
       '</label>' +
-      (shots ? '<div class="c-shots">' + shots + '</div>' : '') +
-      '<p class="v-note">Photographs stay in this browser until you publish. Nothing is uploaded from this screen.</p>');
+      (shots ? '<div class="c-shots" id="c-shots">' + shots + '</div>' : '') +
+      '<p class="v-note">Drag to reorder \u2014 the first is the cover. Photographs stay in this browser until you publish; nothing is uploaded from this screen.</p>' +
+      '<div class="c-row" style="margin-top:var(--s-5)">' +
+        field('Video walkthrough URL', '<input type="url" data-c="videoUrl" value="' + esc(draft.videoUrl) + '" placeholder="https://\u2026">',
+          'A phone walkthrough beats a produced film. It is also the thing to offer when someone asks to see the place live before paying anything.') +
+        field('3D or virtual tour URL', '<input type="url" data-c="tourUrl" value="' + esc(draft.tourUrl) + '" placeholder="https://\u2026">',
+          'Optional. Around a third of renters call a tour essential and far more say it helps \u2014 it converts, but photographs and a floor plan come first.') +
+      '</div>' +
+      '<div class="c-field"><label>Floor plan</label>' +
+        '<label class="c-drop c-drop--sm"><b>Add a floor plan</b>' +
+          'Nearly half of renters call one essential, and almost nobody in this category publishes one. A phone photo of the letting agent\u2019s sheet counts.' +
+          '<input type="file" accept="image/*,application/pdf" id="c-floorplan" multiple></label>' +
+        (draft.floorPlans.length
+          ? '<ul class="v-doclist">' + draft.floorPlans.map(function (f, i) {
+              return '<li class="v-doc"><span class="v-doc__mark" aria-hidden="true">\u2713</span>' +
+                '<span class="v-doc__body"><b>Floor plan</b><span>' + esc(f.name) + '</span></span>' +
+                '<button type="button" class="v-link" data-c-fprm="' + i + '">Remove</button></li>';
+            }).join('') + '</ul>'
+          : '') +
+      '</div>');
+  }
+
+  /* Documents. On a platform whose trust product is paperwork, these are not
+     an afterthought — the lease copy and the landlord's consent are exactly
+     what the verification desk asks a departing tenant for. */
+  var DOC_KINDS_C = [
+    ['lease', 'Lease copy', 'For a lease-break. The pages showing your name, the address, the term and the sublet clause.'],
+    ['consent', 'Landlord consent', 'Written permission to sublet or assign, or proof you served the request.'],
+    ['rules', 'House rules', 'Quiet hours, guests, shared-space arrangements. Better agreed now than argued later.'],
+    ['energy', 'Energy certificate', 'Required to advertise a let in several European markets.'],
+    ['inventory', 'Furniture inventory', 'What "furnished" actually means here, itemised.']
+  ];
+
+  function sectionDocs() {
+    return sec('Documents', 'Held against the listing, shown to a renter only when you send them. The lease and the consent here are the same ones the verification desk asks for \u2014 upload once.',
+      '<div class="c-row">' +
+        DOC_KINDS_C.map(function (k) {
+          return '<label class="v-docpick"><input type="file" accept="image/*,application/pdf" data-c-doc="' + k[0] + '">' +
+            '<span><b>' + esc(k[1]) + '</b>' + esc(k[2]) + '</span></label>';
+        }).join('') +
+      '</div>' +
+      (draft.documents.length
+        ? '<ul class="v-doclist">' + draft.documents.map(function (d, i) {
+            var k = DOC_KINDS_C.filter(function (x) { return x[0] === d.kind; })[0];
+            return '<li class="v-doc"><span class="v-doc__mark" aria-hidden="true">\u2713</span>' +
+              '<span class="v-doc__body"><b>' + esc(k ? k[1] : d.kind) + '</b><span>' + esc(d.name) + ' \u00b7 ' + Math.round(d.size / 1024) + ' KB</span></span>' +
+              '<button type="button" class="v-link" data-c-docrm="' + i + '">Remove</button></li>';
+          }).join('') + '</ul>'
+        : ''));
+  }
+
+  /* Viewing slots. Renters shop in parallel across a median of five sites and
+     contact four or more landlords; the one who can be seen first usually
+     wins. Published slots remove a whole round of messages. */
+  function sectionViewings() {
+    var rows = draft.viewings.map(function (v, i) {
+      return '<div class="c-fee">' +
+        '<input type="date" data-c-vdate="' + i + '" value="' + esc(v.date) + '" min="' + todayISO() + '">' +
+        '<input type="time" data-c-vstart="' + i + '" value="' + esc(v.start) + '">' +
+        '<input type="time" data-c-vend="' + i + '" value="' + esc(v.end) + '">' +
+        '<span></span>' +
+        '<button type="button" class="c-fee__rm" data-c-vrm="' + i + '" aria-label="Remove slot">\u2715</button>' +
+      '</div>';
+    }).join('');
+    return sec('Viewing times', 'Publish when you can show it and renters book themselves in. Most renters say they would rather schedule online than trade messages, and they are talking to several landlords at once \u2014 whoever can be seen first tends to win.',
+      '<div class="c-fees">' + rows + '</div>' +
+      '<button type="button" class="btn btn--outline btn--sm" id="c-addviewing" style="margin-top:var(--s-2)">Add a viewing slot</button>');
   }
 
   function sectionDates(r) {
@@ -480,6 +779,38 @@
         ? '<div class="c-row">' + field('Registration number', '<input type="text" data-c="registrationNumber" value="' + esc(draft.registrationNumber) + '" placeholder="Registry reference">',
             'Required on the listing here' + (r.registrationSrc ? ' — ' + esc(r.registrationSrc.label) : '') + '.') + '</div>'
         : ''));
+  }
+
+  /* Price guidance from the catalogue we already hold, not from a vendor.
+     The same percentile engine the public listing shows renters — pointed at
+     the lister before they set a number, which is the only moment it can
+     change anything. */
+  function priceGuide(cur) {
+    var peers = (DATA.listings || []).filter(function (x) {
+      return x.cityId === draft.cityId && x.housingType === draft.housingType;
+    });
+    if (peers.length < 6) {
+      peers = (DATA.listings || []).filter(function (x) { return x.housingType === draft.housingType; });
+    }
+    if (!peers.length) return '';
+    var vals = peers.map(function (x) { return x.allInUsd || x.allIn || x.price; }).sort(function (a, b) { return a - b; });
+    function q(t) { var i = (vals.length - 1) * t, lo = Math.floor(i), hi = Math.ceil(i); return Math.round(vals[lo] + (vals[hi] - vals[lo]) * (i - lo)); }
+    var mine = DATA.toUsd ? DATA.toUsd(allIn(), cur) : allIn();
+    var below = 0; vals.forEach(function (v) { if (v < mine) below++; });
+    var pct = vals.length > 1 ? Math.round((below / (vals.length - 1)) * 100) : 50;
+    var med = q(0.5);
+    var delta = med ? Math.round(((mine - med) / med) * 100) : 0;
+    var verdict = delta <= -12 ? 'under the median' : delta >= 12 ? 'over the median' : 'about the median';
+    var tone = delta <= -12 ? 'ok' : delta >= 12 ? 'warn' : '';
+
+    return '<div class="c-guide" data-tone="' + tone + '">' +
+      '<div><span class="c-guide__k">Against ' + vals.length + ' comparable homes in ' + esc((cityOf(draft.cityId) || {}).name || '') + '</span>' +
+      '<b>' + (delta ? Math.abs(delta) + '% ' : '') + esc(verdict) + '</b>' +
+      '<span class="c-guide__sub">You are at the ' + pct + 'th percentile. The middle half of this market charges ' +
+        esc(money(DATA.convert ? DATA.convert(q(0.25), 'USD', cur) : q(0.25), cur)) + ' to ' +
+        esc(money(DATA.convert ? DATA.convert(q(0.75), 'USD', cur) : q(0.75), cur)) + ' all-in. ' +
+        (delta >= 25 ? 'Well above this is where listings sit unlet for months.' : delta <= -25 ? 'Far under market is also the oldest hook in rental fraud, so expect renters to be careful.' : 'A sensible place to be.') +
+      '</span></div></div>';
   }
 
   function sectionMoney(cur, r) {
@@ -510,6 +841,7 @@
             ? 'Capped at ' + money(depCap, cur) + ' here' + (r.depositSrc ? ' — ' + esc(r.depositSrc.label) : '') + '. RentLeaks never holds it; it goes direct to you.'
             : 'RentLeaks never holds this. It goes direct to you.') +
       '</div>' +
+      priceGuide(cur) +
       '<div class="c-field"><label>Fees</label><div class="c-fees">' + rows + '</div>' +
         '<button type="button" class="btn btn--outline btn--sm" id="c-addfee" style="margin-top:var(--s-2);justify-self:start">Add a fee</button>' +
         (r.applicationFeeBanned ? '<small>Application fees are barred outright in this market, and so is any charge demanded before or at the start of the tenancy. Background and credit may be recovered up to ' + money(r.screeningFeeCap || 20, cur) + ', waived if the renter brings their own report from the last 30 days.</small>' : '') +
@@ -611,7 +943,7 @@
         '<p class="v-note" style="margin-top:var(--s-2)">' +
           (isLeaseBreak()
             ? 'Lease-breaks publish free. Empty months help nobody.'
-            : 'Listing fee applies once you publish. Nothing is charged to renters, ever.') +
+            : '$' + planCost().total + ' per ' + planCost().plan.per + (draft.sponsored ? ', sponsored included' : '') + '. Nothing is charged to renters, ever.') +
         '</p>' +
       '</div>';
   }
@@ -628,10 +960,31 @@
        caret never moves. */
     clearTimeout(rerenderTimer);
     rerenderTimer = setTimeout(function () {
+      var cur = currencyFor(draft.cityId);
       var side = $('.c-aside');
-      if (side) side.innerHTML = aside(currencyFor(draft.cityId), rulesNow());
-      bindAside();
-    }, 180);
+      if (side) { side.innerHTML = aside(cur, rulesNow()); bindAside(); }
+
+      /* Live regions that sit inside the section body. Rewriting the whole
+         section would move the caret out from under whoever is typing. */
+      var addr = $('#c-addrshown');
+      if (addr) {
+        addr.innerHTML = 'Shown publicly as: <b>' + esc(addressAsShown() || '\u2014') + '</b>. ' +
+          'We always hold the full address for the map pin and to match against your ownership document; this only controls display.';
+      }
+      var guide = $('.c-guide');
+      if (guide) {
+        var wrap = document.createElement('div');
+        wrap.innerHTML = priceGuide(cur);
+        if (wrap.firstChild) guide.replaceWith(wrap.firstChild);
+      }
+      var steps = $('.c-steps');
+      if (steps) {
+        var sw = document.createElement('div');
+        sw.innerHTML = stepper(stages());
+        var newOl = sw.querySelector('.c-steps');
+        if (newOl) { steps.replaceWith(newOl); bindStages(); }
+      }
+    }, 200);
   }
 
   function bind() {
@@ -647,13 +1000,18 @@
         draft[key] = val;
         /* Anything that changes the SHAPE of the form redraws it; plain text
            does not, so typing stays smooth. */
-        var structural = ['cityId', 'housingType', 'availableFrom', 'takeoverType'].indexOf(key) !== -1;
+        var structural = ['cityId', 'housingType', 'availableFrom', 'takeoverType',
+                          'sponsored', 'addressPrivacy', 'status'].indexOf(key) !== -1;
         touch(structural);
       });
     });
 
     $$('input[name="c-role"]').forEach(function (el) {
       el.addEventListener('change', function () { draft.role = el.value; touch(true); });
+    });
+
+    $$('input[name="c-plan"]').forEach(function (el) {
+      el.addEventListener('change', function () { draft.plan = el.value; touch(true); });
     });
 
     $$('[data-c-amenity]').forEach(function (el) {
@@ -678,7 +1036,118 @@
 
     bindFees();
     bindPhotos();
+    bindMedia();
+    bindViewings();
+    bindDocs();
     bindAside();
+    bindStages();
+    bindDraftBar();
+  }
+
+  /* --- floor plans, documents, viewings --------------------------------- */
+
+  function bindMedia() {
+    var fp = $('#c-floorplan');
+    if (fp) fp.addEventListener('change', function () {
+      Array.prototype.slice.call(fp.files || []).forEach(function (f) {
+        draft.floorPlans.push({ url: URL.createObjectURL(f), name: f.name, size: f.size });
+      });
+      fp.value = '';
+      touch(true);
+    });
+    $$('[data-c-fprm]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var i = Number(b.getAttribute('data-c-fprm'));
+        try { URL.revokeObjectURL(draft.floorPlans[i].url); } catch (e) {}
+        draft.floorPlans.splice(i, 1);
+        touch(true);
+      });
+    });
+  }
+
+  function bindDocs() {
+    $$('[data-c-doc]').forEach(function (input) {
+      input.addEventListener('change', function () {
+        var f = input.files && input.files[0];
+        if (!f) return;
+        if (f.size > 12 * 1024 * 1024) { alert('That file is over 12 MB. A photograph of the pages is plenty.'); input.value = ''; return; }
+        draft.documents.push({ name: f.name, size: f.size, kind: input.getAttribute('data-c-doc'), url: URL.createObjectURL(f) });
+        input.value = '';
+        touch(true);
+      });
+    });
+    $$('[data-c-docrm]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var i = Number(b.getAttribute('data-c-docrm'));
+        try { URL.revokeObjectURL(draft.documents[i].url); } catch (e) {}
+        draft.documents.splice(i, 1);
+        touch(true);
+      });
+    });
+  }
+
+  function bindViewings() {
+    var add = $('#c-addviewing');
+    if (add) add.addEventListener('click', function () {
+      draft.viewings.push({ date: todayISO(), start: '18:00', end: '19:00' });
+      touch(true);
+    });
+    [['vdate', 'date'], ['vstart', 'start'], ['vend', 'end']].forEach(function (pair) {
+      $$('[data-c-' + pair[0] + ']').forEach(function (el) {
+        el.addEventListener('change', function () {
+          draft.viewings[Number(el.getAttribute('data-c-' + pair[0]))][pair[1]] = el.value;
+          touch();
+        });
+      });
+    });
+    $$('[data-c-vrm]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        draft.viewings.splice(Number(b.getAttribute('data-c-vrm')), 1);
+        touch(true);
+      });
+    });
+  }
+
+  /* --- the draft bar ---------------------------------------------------- */
+
+  function bindDraftBar() {
+    var save = $('#c-draftsave');
+    if (save) save.addEventListener('click', function () {
+      saveDraft();
+      lastSaved = new Date();
+      save.textContent = 'Saved';
+      setTimeout(function () { save.textContent = 'Save draft'; }, 1800);
+    });
+    var discard = $('#c-draftdiscard');
+    if (discard) discard.addEventListener('click', function () {
+      if (!confirm('Discard this draft and start over? Photographs and files you added will be cleared.')) return;
+      try { localStorage.removeItem(STORE.draft); } catch (e) {}
+      draft.photos.forEach(function (x) { try { URL.revokeObjectURL(x.url); } catch (e) {} });
+      Object.keys(defaults).forEach(function (k) {
+        draft[k] = Array.isArray(defaults[k]) ? defaults[k].slice() : defaults[k];
+      });
+      draft.fees = [{ type: 'utilities', amount: 0, cadence: 'monthly', mandatory: true }];
+      stage = 0;
+      lastSaved = null;
+      render();
+    });
+  }
+
+  function bindStages() {
+    var st = stages();
+    var prev = $('#c-prev'), next = $('#c-next'), pub = $('#c-publish-main');
+    if (prev) prev.addEventListener('click', function () { stage = Math.max(0, stage - 1); render(); });
+    if (next) next.addEventListener('click', function () { stage = Math.min(st.length - 1, stage + 1); render(); });
+    if (pub) pub.addEventListener('click', publish);
+    /* Free navigation between stages. Refusing to let someone jump back to a
+       finished step is a pattern that only ever helps the form, never the
+       person filling it in. */
+    $$('[data-c-stage]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        stage = Number(b.getAttribute('data-c-stage'));
+        render();
+      });
+    });
   }
 
   function bindFees() {
@@ -784,6 +1253,32 @@
         touch();
       });
     });
+
+    /* Drag to reorder. Order is the edit that matters most — the cover photo
+       is the whole of the first impression in a search result. */
+    var dragFrom = null;
+    $$('.c-shot').forEach(function (el, i) {
+      el.setAttribute('draggable', 'true');
+      el.addEventListener('dragstart', function (e) {
+        dragFrom = i;
+        el.classList.add('is-dragging');
+        if (e.dataTransfer) { e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', String(i)); } catch (x) {} }
+      });
+      el.addEventListener('dragend', function () { el.classList.remove('is-dragging'); $$('.c-shot').forEach(function (n) { n.classList.remove('is-target'); }); });
+      el.addEventListener('dragover', function (e) { e.preventDefault(); el.classList.add('is-target'); });
+      el.addEventListener('dragleave', function () { el.classList.remove('is-target'); });
+      el.addEventListener('drop', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var from = dragFrom;
+        if (from == null && e.dataTransfer) from = Number(e.dataTransfer.getData('text/plain'));
+        if (from == null || isNaN(from) || from === i) return;
+        var moved = draft.photos.splice(from, 1)[0];
+        draft.photos.splice(i, 0, moved);
+        dragFrom = null;
+        touch(true);
+      });
+    });
   }
 
   function bindAside() {
@@ -845,6 +1340,18 @@
       images: draft.photos.map(function (p) { return p.url; }),
       gallery: draft.photos.map(function (p) { return { kind: 'photo', src: p.url, caption: p.label, alt: draft.title + ' — ' + p.label }; }),
       listedBy: draft.role,
+      addressPrivacy: draft.addressPrivacy,
+      addressShown: addressAsShown(),
+      floorPlans: draft.floorPlans.map(function (f) { return f.url; }),
+      video: draft.videoUrl ? { src: draft.videoUrl } : null,
+      tourUrl: draft.tourUrl || null,
+      documents: draft.documents.map(function (d) { return { kind: d.kind, name: d.name }; }),
+      viewings: draft.viewings.slice(),
+      status: draft.status,
+      scheduledAt: draft.scheduledAt || null,
+      plan: draft.plan,
+      sponsored: !!draft.sponsored,
+      planCost: planCost().total,
       postedAt: new Date().toISOString(),
       location: (city.name || '') + ' · ' + draft.neighborhood
     };
@@ -871,6 +1378,7 @@
       if (again) again.addEventListener('click', function () {
         draft.photos = [];
         draft.title = ''; draft.description = ''; draft.address = '';
+        stage = 0;
         render();
       });
     }
@@ -898,6 +1406,12 @@
     checks: checks,
     blockers: blockers,
     allIn: allIn,
-    render: render
+    render: render,
+    stage: function () { return stages()[stage].id; },
+    goTo: function (id) {
+      var st = stages();
+      for (var i = 0; i < st.length; i++) if (st[i].id === id) { stage = i; render(); return true; }
+      return false;
+    }
   };
 })();
