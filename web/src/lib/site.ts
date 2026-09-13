@@ -25,6 +25,24 @@ export function money(n: number) {
   return `$${Math.round(n).toLocaleString()}`;
 }
 
+/**
+ * The same number in the market's own currency. `money()` is USD-only, which
+ * is right for the cross-market comparisons that run on allInUsd and wrong
+ * everywhere else — a €900 room rendered as "$900" is not a rounding problem,
+ * it is a different price.
+ */
+export function fmtMoney(n: number, currency = "USD") {
+  try {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency,
+      maximumFractionDigits: 0,
+    }).format(Math.round(n) || 0);
+  } catch {
+    return `${Math.round(n) || 0} ${currency}`;
+  }
+}
+
 export function formatDate(iso: string) {
   if (!iso) return "Flexible";
   const date = new Date(`${iso}T12:00:00`);

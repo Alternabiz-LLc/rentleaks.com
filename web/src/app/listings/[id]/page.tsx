@@ -4,10 +4,12 @@ import { ListingCard } from "@/components/ListingCard";
 import { ListingGallery } from "@/components/ListingGallery";
 import { ListingMap } from "@/components/ListingMap";
 import { Shell } from "@/components/Shell";
+import { ListingEvidence } from "@/components/evidence/ListingEvidence";
 import { listingGallery } from "@/lib/catalog";
+import { evidenceFor, type EvidenceListing } from "@/lib/listing-evidence";
 import { toBrowseListing, toMapPin } from "@/lib/listings";
 import { prisma } from "@/lib/prisma";
-import { catalogOrigin, money, typeLabel } from "@/lib/site";
+import { catalogOrigin, fmtMoney, typeLabel } from "@/lib/site";
 
 export default async function ListingPage({
   params,
@@ -27,6 +29,56 @@ export default async function ListingPage({
     orderBy: [{ featured: "desc" }, { createdAt: "desc" }],
     take: 4,
   });
+
+  /* The comparison pool for the price panel. Same housing type, live listings
+     only — a paused listing is not a home you could take, so it has no
+     business setting the percentile you are measured against. The city filter
+     happens in the evidence module, which widens the pool when this market is
+     too thin to say anything honest. */
+  const peers = await prisma.listing.findMany({
+    where: { housingType: listing.housingType, status: "active", allInUsd: { gt: 0 } },
+    select: { allInUsd: true, housingType: true, cityId: true },
+    take: 2000,
+  });
+
+  const subject: EvidenceListing = {
+    id: listing.id,
+    title: listing.title,
+    address: listing.address,
+    neighborhood: listing.neighborhood,
+    cityId: listing.cityId,
+    citySlug: listing.city.slug,
+    cityName: listing.city.name,
+    cityState: listing.city.state,
+    cityCountry: listing.city.country,
+    currency: listing.currency,
+    housingType: listing.housingType,
+    price: listing.price,
+    allIn: listing.allIn,
+    allInUsd: listing.allInUsd,
+    deposit: listing.deposit,
+    sqft: listing.sqft,
+    feesJson: listing.feesJson,
+    amenitiesJson: listing.amenitiesJson,
+    accessibilityJson: listing.accessibilityJson,
+    listedBy: listing.listedBy,
+    addressPrivacy: listing.addressPrivacy,
+    verified: listing.verified,
+    vouchersAccepted: listing.vouchersAccepted,
+    registrationNumber: listing.registrationNumber,
+    availableFrom: listing.availableFrom,
+    availableUntil: listing.availableUntil,
+    minStayMonths: listing.minStayMonths,
+    maxStayMonths: listing.maxStayMonths,
+    leaseEnd: listing.leaseEnd,
+    takeoverType: listing.takeoverType,
+    consentStatus: listing.consentStatus,
+    status: listing.status,
+    sponsored: listing.sponsored,
+    updatedAt: listing.updatedAt,
+  };
+
+  const evidence = evidenceFor(subject, peers, (n) => fmtMoney(n, listing.currency));
 
   return (
     <Shell wide>
@@ -55,15 +107,15 @@ export default async function ListingPage({
             <dl className="rl-dl">
               <div>
                 <dt>All-in</dt>
-                <dd>{money(listing.allIn)} /mo</dd>
+                <dd>{fmtMoney(listing.allIn, listing.currency)} /mo</dd>
               </div>
               <div>
                 <dt>Base rent</dt>
-                <dd>{money(listing.price)}</dd>
+                <dd>{fmtMoney(listing.price, listing.currency)}</dd>
               </div>
               <div>
                 <dt>Deposit</dt>
-                <dd>{money(listing.deposit)}</dd>
+                <dd>{fmtMoney(listing.deposit, listing.currency)}</dd>
               </div>
               <div>
                 <dt>Available</dt>
@@ -103,6 +155,7 @@ export default async function ListingPage({
             className="rl-map--detail"
           />
         </div>
+        <ListingEvidence evidence={evidence} listing={subject} />
         {nearby.length ? (
           <section className="rl-listing__more">
             <h2>More in {listing.city.name}</h2>

@@ -452,6 +452,15 @@ textarea {
   margin: 0;
 }
 
+.rl-home__row p {
+  margin: 0.35rem 0 0;
+  color: var(--rl-muted);
+}
+
+.rl-home__block--sponsored {
+  padding-bottom: 0.25rem;
+}
+
 .rl-type-grid,
 .rl-city-grid {
   display: grid;
@@ -736,7 +745,8 @@ textarea {
 }
 
 .rl-stay__badge,
-.rl-clock {
+.rl-clock,
+.rl-stay__sponsor {
   position: absolute;
   top: 0.7rem;
   left: 0.7rem;
@@ -747,6 +757,18 @@ textarea {
   color: #fff;
   font-size: 0.72rem;
   font-weight: 800;
+}
+
+.rl-stay__sponsor {
+  background: var(--rl-warm);
+}
+
+.rl-stay.is-sponsored .rl-stay__badge {
+  top: 2.55rem;
+}
+
+.rl-stay.is-sponsored .rl-clock {
+  top: 2.55rem;
 }
 
 .rl-clock {
@@ -798,6 +820,23 @@ textarea {
 
 .rl-stay__save.is-on {
   color: var(--rl-warm);
+}
+
+.rl-stay__ad {
+  margin: 0 0 0.2rem;
+  color: var(--rl-warm);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.rl-browse__sponsored {
+  margin: 0 0 1.15rem;
+}
+
+.rl-browse__sponsored .rl-kicker {
+  margin-bottom: 0.65rem;
 }
 
 .rl-stay__price,
@@ -957,6 +996,60 @@ textarea {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 0.65rem;
+}
+
+.rl-addon {
+  margin: 0;
+  padding: 0.9rem 1rem;
+  border: 1px dashed var(--rl-line);
+  border-radius: 1rem;
+  background: var(--rl-paper);
+}
+
+.rl-addon legend {
+  padding: 0 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--rl-ink);
+}
+
+.rl-addon__check {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: flex-start;
+  gap: 0.7rem;
+  font-weight: 500 !important;
+  color: var(--rl-ink) !important;
+}
+
+.rl-addon__check input {
+  margin-top: 0.2rem;
+  width: 1rem;
+  height: 1rem;
+}
+
+.rl-addon__check span {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.rl-addon__check em {
+  font-style: normal;
+  color: var(--rl-muted);
+  font-weight: 600;
+}
+
+.rl-listing__more {
+  margin-top: 2.5rem;
+}
+
+.rl-listing__more h2 {
+  margin: 0 0 0.35rem;
+}
+
+.rl-listing__more-note {
+  margin: 0 0 1rem;
+  color: var(--rl-muted);
 }
 
 .rl-error {

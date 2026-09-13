@@ -8,6 +8,7 @@ import {
   SITE,
 } from "@/lib/seo";
 import "./globals.css";
+import "./evidence.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

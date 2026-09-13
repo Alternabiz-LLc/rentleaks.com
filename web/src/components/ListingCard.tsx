@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type MouseEvent } from "react";
+import { useCallback, useState, useSyncExternalStore, type MouseEvent } from "react";
 import Link from "next/link";
 import type { BrowseListing } from "@/lib/listings";
 import { formatDate, listingSpecs, money, remainingMonths, typeLabel } from "@/lib/site";
@@ -8,14 +8,69 @@ import { GalleryLightbox } from "./GalleryLightbox";
 
 const SAVED_KEY = "rl-saved";
 
-function readSaved() {
+/**
+ * Saved listings, as one store rather than one useState per card.
+ *
+ * The previous version read localStorage in an effect and mirrored it into
+ * component state. That has three problems and only one of them is the lint
+ * rule: the same listing rendered twice (grid and map rail) kept two answers,
+ * a save made in another tab never arrived, and the effect fired a second
+ * render on every card on the page. useSyncExternalStore fixes all three, and
+ * the server snapshot is the empty string so the markup React renders on the
+ * server matches what it renders before hydration.
+ */
+const listeners = new Set<() => void>();
+let snapshot: string | null = null;
+
+function subscribe(fn: () => void) {
+  listeners.add(fn);
+  const onStorage = (e: StorageEvent) => {
+    if (e.key === SAVED_KEY) {
+      snapshot = null;
+      listeners.forEach((l) => l());
+    }
+  };
+  window.addEventListener("storage", onStorage);
+  return () => {
+    listeners.delete(fn);
+    window.removeEventListener("storage", onStorage);
+  };
+}
+
+/* Must return a referentially stable value between changes, or React loops. */
+function getSnapshot() {
+  if (snapshot === null) {
+    try {
+      snapshot = window.localStorage.getItem(SAVED_KEY) || "[]";
+    } catch {
+      snapshot = "[]";
+    }
+  }
+  return snapshot;
+}
+
+function getServerSnapshot() {
+  return "[]";
+}
+
+function parseSaved(raw: string) {
   try {
-    const raw = window.localStorage.getItem(SAVED_KEY);
-    const value = raw ? (JSON.parse(raw) as unknown) : [];
+    const value = JSON.parse(raw) as unknown;
     return Array.isArray(value) ? value.filter((id): id is string => typeof id === "string") : [];
   } catch {
     return [];
   }
+}
+
+function writeSaved(next: string[]) {
+  try {
+    window.localStorage.setItem(SAVED_KEY, JSON.stringify(next));
+  } catch {
+    /* Private windows and blocked site data. The toggle still works for this
+       view; it just will not survive a reload, which is the right failure. */
+  }
+  snapshot = null;
+  listeners.forEach((l) => l());
 }
 
 export function ListingCard({
@@ -27,7 +82,8 @@ export function ListingCard({
   active?: boolean;
   onHover?: (id: string | null) => void;
 }) {
-  const [saved, setSaved] = useState(false);
+  const rawSaved = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const saved = parseSaved(rawSaved).includes(listing.id);
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const clock = remainingMonths(listing.title, listing.housingType, listing.minStayMonths);
   const extras = [
@@ -40,19 +96,17 @@ export function ListingCard({
   const hasVideo = listing.gallery.some((item) => item.kind === "video");
   const thumbs = photos.slice(1, 4);
 
-  useEffect(() => {
-    setSaved(readSaved().includes(listing.id));
-  }, [listing.id]);
-
-  function toggleSave(event: MouseEvent<HTMLButtonElement>) {
-    event.preventDefault();
-    event.stopPropagation();
-    const next = readSaved().includes(listing.id)
-      ? readSaved().filter((id) => id !== listing.id)
-      : [...readSaved(), listing.id];
-    window.localStorage.setItem(SAVED_KEY, JSON.stringify(next));
-    setSaved(next.includes(listing.id));
-  }
+  const toggleSave = useCallback(
+    (event: MouseEvent<HTMLButtonElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const current = parseSaved(getSnapshot());
+      writeSaved(
+        current.includes(listing.id) ? current.filter((id) => id !== listing.id) : [...current, listing.id],
+      );
+    },
+    [listing.id],
+  );
 
   function openGallery(index: number) {
     setOpenIndex(index);

@@ -158,7 +158,7 @@ export function BrowseWorkspace({
         {pinned.length ? (
           <div className="rl-browse__sponsored">
             <p className="rl-kicker">Sponsored</p>
-            <div className={view === "list" ? "rl-stay-grid" : "rl-stay-stack"}>
+            <div className="rl-stay-grid">
               {pinned.map((listing) => (
                 <ListingCard
                   key={listing.id}
@@ -172,7 +172,7 @@ export function BrowseWorkspace({
         ) : null}
 
         {rest.length ? (
-          <div className={view === "list" ? "rl-stay-grid" : "rl-stay-stack"}>
+          <div className="rl-stay-grid">
             {rest.map((listing) => (
               <ListingCard
                 key={listing.id}

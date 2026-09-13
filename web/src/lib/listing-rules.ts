@@ -40,6 +40,22 @@ export function convert(amount: number, from: string, to: string) {
   return toUsd(amount, from) * (FX_PER_USD[to] ?? 1);
 }
 
+/**
+ * The sublet/assignment rule for a market. Typed rather than cast at the call
+ * site: the deemed-consent clock is the one piece of this book that a renter
+ * may act on by counting days, so it should not reach a component through an
+ * `as unknown as` and hope.
+ */
+export type SubletRule = {
+  statute: string;
+  src: string | null;
+  infoWindowDays: number | null;
+  decisionWindowDays: number | null;
+  silenceIsConsent: boolean;
+  appliesTo: string | null;
+  assignmentNote: string | null;
+};
+
 export type Rules = {
   cityName: string;
   country: string;
@@ -69,6 +85,7 @@ export type Rules = {
   listingFeeDisclosureSrc: Source | null;
   subletSurchargePct: number | null;
   subletSurchargeSrc: Source | null;
+  sublet: SubletRule | null;
   contractType: string | null;
   unassessed: boolean;
   notes: string[];
@@ -114,6 +131,11 @@ export function rulesFor(input: { cityId: string; citySlug?: string; cityName?: 
     const value = out[field];
     if (typeof value === "string") out[field] = SOURCES[value] ?? null;
   }
+
+  /* Absent means "this market has no codified sublet route we have checked",
+     which is a different statement from "silence is not consent here". A null
+     reaches the panel and the panel stays quiet. */
+  if (!out.sublet) out.sublet = null;
 
   out.cityName = input.cityName || "";
   out.country = input.country || "US";

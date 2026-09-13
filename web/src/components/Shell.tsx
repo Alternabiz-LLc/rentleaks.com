@@ -8,15 +8,17 @@ import { catalogOrigin } from "@/lib/site";
 export async function Shell({
   children,
   wide = false,
+  fill = false,
 }: {
   children: React.ReactNode;
   wide?: boolean;
+  fill?: boolean;
 }) {
   const user = await getCurrentUser();
   const catalog = catalogOrigin();
 
   return (
-    <div className="rl-app">
+    <div className={fill ? "rl-app rl-app--fill" : "rl-app"}>
       <header className="rl-top">
         <div className="rl-top__inner">
           <Link className="rl-mark" href="/">

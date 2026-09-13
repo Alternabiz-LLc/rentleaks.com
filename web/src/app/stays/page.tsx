@@ -34,7 +34,7 @@ export default async function StaysPage({
   });
 
   return (
-    <Shell wide>
+    <Shell wide fill>
       <BrowseWorkspace
         listings={rows.map(toBrowseListing)}
         cityId={cityId}
