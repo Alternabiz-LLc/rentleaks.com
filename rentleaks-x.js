@@ -1884,6 +1884,89 @@
     });
   }
 
+  /* --- sponsored placement, scoped to geography ---------------------------
+     A paid slot only makes sense where it is relevant: a sponsored listing in
+     Berlin has no business ranking above organic results for someone browsing
+     Brooklyn. So the boost applies only when the search actually resolves to
+     that listing's market — an explicit city filter, or a city page. With no
+     city in scope there is no geography to be appropriate to, and nothing is
+     promoted at all.
+
+     Two rules that are not negotiable, because they are what stops paid
+     placement corroding the rest of the product:
+       1. Every promoted card is labelled, visibly, as sponsored.
+       2. Paying reorders results. It does not alter a trust score, waive a
+          compliance check, or add a badge. A listing that has not earned its
+          badges still shows up without them, in a paid slot.
+     ----------------------------------------------------------------------- */
+
+  function scopeCityId() {
+    /* A city page states its market in the body dataset or the path. */
+    var m = location.pathname.match(/\/cities\/([^/]+)\.html/);
+    if (m) {
+      var c = DATA.getCity ? DATA.getCity(decodeURIComponent(m[1])) : null;
+      if (c) return c.id;
+    }
+    try {
+      var q = new URLSearchParams(location.search).get('city');
+      if (q) {
+        var c2 = DATA.getCity ? DATA.getCity(q) : null;
+        if (c2) return c2.id;
+      }
+    } catch (e) { /* ignore */ }
+    /* Fall back to whatever the base renderer has in its own city select. */
+    var sel = document.querySelector('#city, [name="city"]');
+    if (sel && sel.value) {
+      var c3 = DATA.getCity ? DATA.getCity(sel.value) : null;
+      if (c3) return c3.id;
+    }
+    return null;
+  }
+
+  function sponsoredIn(cityId) {
+    if (!cityId) return [];
+    return (DATA.listings || []).filter(function (l) {
+      return l.sponsored && l.cityId === cityId && l.status !== 'paused';
+    });
+  }
+
+  function applySponsored() {
+    /* Pre-rendered city and type pages carry a .listings__grid with no id —
+       the client renderer never touches them — so look for both. */
+    var grid = $('#listings-grid') || $('.listings__grid');
+    if (!grid) return;
+    var city = scopeCityId();
+
+    /* Clear any previous promotion before deciding again — the scope changes
+       as the visitor filters, and a slot that is no longer relevant must stop
+       being promoted rather than linger. */
+    $$('.listing-card.x-sponsored', grid).forEach(function (card) {
+      card.classList.remove('x-sponsored');
+      var tag = card.querySelector('.x-sponsor-tag');
+      if (tag) tag.remove();
+    });
+
+    if (!city) return;
+    var ids = sponsoredIn(city).map(function (l) { return l.id; });
+    if (!ids.length) return;
+
+    /* Walk backwards so multiple promoted cards keep their relative order. */
+    ids.slice().reverse().forEach(function (id) {
+      var card = grid.querySelector('.listing-card[data-id="' + (window.CSS && CSS.escape ? CSS.escape(id) : id) + '"]');
+      if (!card) return;
+      card.classList.add('x-sponsored');
+      if (!card.querySelector('.x-sponsor-tag')) {
+        var tag = document.createElement('span');
+        tag.className = 'x-sponsor-tag';
+        tag.textContent = 'Sponsored';
+        tag.title = 'A paid placement in this market. It changes where this listing sits in the results and nothing else — the same verification and compliance checks apply.';
+        var wrap = card.querySelector('.listing-card__img-wrap') || card;
+        wrap.appendChild(tag);
+      }
+      if (grid.firstChild !== card) grid.insertBefore(card, grid.firstChild);
+    });
+  }
+
   /* --- browse rail facets ------------------------------------------------ */
 
   var facetState = read('rl_x_facets', { byOwner: false, vouchers: false, access: false, consent: false, hideMisses: true });
@@ -1940,6 +2023,7 @@
         saveFacets();
         applyFacets();
         enhanceCards();
+        applySponsored();
       });
     });
   }
@@ -2031,6 +2115,7 @@
     injectHomeWindow();
     enhanceCards();
     applyFacets();
+    applySponsored();
     $$('textarea, input[type="text"][name="headline"], #listing-title, #listing-description').forEach(attachGuard);
   }
 
@@ -2096,6 +2181,8 @@
     derive: derive,
     fitFor: fitFor,
     setWindow: setWindow,
+    scopeCityId: scopeCityId,
+    sponsoredIn: sponsoredIn,
     getWindow: function () { return { from: stayWindow.from, to: stayWindow.to, nights: windowNights() }; },
     scanText: scanText,
     passport: passport,

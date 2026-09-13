@@ -215,7 +215,10 @@ function chrome(depth, bodyAttrs, main) {
 function card(l, depth) {
   const prefix = depth ? "../" : "";
   const shots = (l.images || []).length;
-  return `<article class="listing-card" itemscope itemtype="https://schema.org/Accommodation">
+  // data-id lets the client layer find these pre-rendered cards. Without it,
+  // nothing on a static city page can be annotated after the fact — no stay-
+  // window fit verdict, no owner or voucher chip, no sponsored placement.
+  return `<article class="listing-card" data-id="${esc(l.id)}" itemscope itemtype="https://schema.org/Accommodation">
     <a href="${prefix}${l.path}" class="listing-card__link" itemprop="url">
       <div class="listing-card__img-wrap">
         <img class="listing-card__photo" src="${l.image}" alt="${esc(l.imageAlt)}" width="1400" height="933" loading="lazy" decoding="async" itemprop="image">

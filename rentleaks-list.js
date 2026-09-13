@@ -564,6 +564,7 @@
     }).join('');
 
     var cost = planCost();
+    var cityName = (cityOf(draft.cityId) || {}).name || 'your market';
     var planBlock =
       '<h3 style="font-size:var(--text-md);margin:var(--s-6) 0 var(--s-3);color:var(--ink)">What this costs you</h3>' +
       '<div class="c-plans">' +
@@ -579,8 +580,12 @@
       '<label class="c-plan c-plan--addon' + (draft.sponsored ? ' is-on' : '') + '">' +
         '<input type="checkbox" data-c="sponsored"' + (draft.sponsored ? ' checked' : '') + '>' +
         '<span><b>Sponsored placement \u2014 +$' + cost.plan.sponsored + ' per ' + cost.plan.per + '</b>' +
-        'Under the homepage hero and at the top of results for your stay type. It buys position, not a badge: sponsored listings are labelled as sponsored and are held to exactly the same verification and compliance checks as everything else. A listing that has not earned its badges will not rank well no matter what you pay for it.</span>' +
+        'Top of results in <b>' + esc(cityName) + '</b>, and only there. A paid slot in a market the searcher is not looking at is worth nothing to you and is noise to them, so the boost applies when the search resolves to your city and stays out of the way otherwise. ' +
+        'It buys position, not a badge: promoted cards are labelled as sponsored, and the same verification and compliance checks apply. A listing that has not earned its badges shows up without them, in a paid slot.</span>' +
       '</label>' +
+      (draft.sponsored
+        ? '<p class="v-note" style="margin-top:var(--s-2)">Where it will appear: the <b>' + esc(cityName) + '</b> city page, and search results filtered to ' + esc(cityName) + ' \u2014 including when a renter narrows by stay type or dates within that market. It will not surface in another city\u2019s results, or in an unfiltered browse where there is no market in scope.</p>'
+        : '') +
       '<div class="c-review-nums" style="margin-top:var(--s-4)">' +
         '<div class="c-allin__row" style="color:var(--ink-2)"><span>Listing, per ' + cost.plan.per + '</span><span>' + (cost.listing ? '$' + cost.listing : 'Free') + '</span></div>' +
         (cost.sponsored ? '<div class="c-allin__row" style="color:var(--ink-2)"><span>Sponsored placement</span><span>+$' + cost.sponsored + '</span></div>' : '') +

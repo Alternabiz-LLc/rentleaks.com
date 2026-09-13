@@ -1589,3 +1589,29 @@
 .c-plan--addon { margin-top: var(--s-2); }
 .c-plan--addon.is-on { border-color: var(--value); background: var(--value-soft); box-shadow: inset 0 0 0 1px var(--value); }
 .c-plan--addon.is-on b { color: var(--value); }
+
+/* --- sponsored placement -------------------------------------------------- */
+
+.listing-card.x-sponsored { position: relative; box-shadow: 0 0 0 1px var(--ochre-300), var(--shadow-md); }
+
+.x-sponsor-tag {
+  position: absolute;
+  left: 0.6rem;
+  bottom: 0.6rem;
+  z-index: 2;
+  padding: 0.16rem 0.5rem;
+  border-radius: var(--r-full);
+  background: var(--ochre-100);
+  color: var(--ochre-700);
+  font-family: var(--x-ledger-font);
+  font-size: var(--text-micro);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  box-shadow: var(--shadow-xs);
+}
+
+[data-theme="dark"] .x-sponsor-tag { background: var(--ochre-800); color: var(--ochre-200); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .x-sponsor-tag { background: var(--ochre-800); color: var(--ochre-200); }
+}
