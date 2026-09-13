@@ -17,6 +17,19 @@ vm.runInContext(fs.readFileSync(path.join(ROOT, "data.js"), "utf8"), ctx);
 const DATA = ctx.window.RENTLEAKS_DATA;
 const listings = DATA.listings.filter((l) => !String(l.id).startsWith("mine-"));
 
+// End of the availability window. A lease-break ends when the lease ends;
+// everything else runs to its maximum stay. Emitting a window is what makes
+// "available March through June" answerable by a machine.
+function xAvailabilityEnds(l) {
+  if (l.housingType === "lease-break" && l.leaseEnd) return l.leaseEnd;
+  const d = new Date(String(l.availableFrom) + "T00:00:00");
+  if (isNaN(d.getTime())) return undefined;
+  const day = d.getDate();
+  d.setMonth(d.getMonth() + (l.maxStayMonths || 12));
+  if (d.getDate() < day) d.setDate(0);
+  return d.toISOString().slice(0, 10);
+}
+
 function esc(s) {
   return String(s == null ? "" : s)
     .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -194,6 +207,7 @@ function chrome(depth, bodyAttrs, main) {
   <script src="${base}data.js"></script>
   <script src="${base}data-source.js"></script>
   <script src="${base}script.js"></script>
+  <script src="${base}rentleaks-x.js?v=20260913" defer></script>
 </body>
 </html>`;
 }
@@ -269,8 +283,8 @@ const TYPE_COPY = {
   },
 };
 
-const cssRoot = '<link rel="stylesheet" href="styles.css">';
-const cssNested = '<link rel="stylesheet" href="../styles.css">';
+const cssRoot = '<link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="rentleaks-x.css?v=20260913">';
+const cssNested = '<link rel="stylesheet" href="../styles.css"><link rel="stylesheet" href="../rentleaks-x.css?v=20260913">';
 
 function writeTypePages() {
   Object.entries(TYPE_COPY).forEach(([id, copy]) => {
@@ -405,12 +419,38 @@ function writeListingPages() {
       floorSize: { "@type": "QuantitativeValue", value: l.sqft, unitCode: "FTK" },
       amenityFeature: (l.amenities || []).map((a) => ({ "@type": "LocationFeatureSpecification", name: a })),
       geo: city && city.lat ? { "@type": "GeoCoordinates", latitude: city.lat, longitude: city.lng } : undefined,
+      petsAllowed: !!l.pets,
+      occupancy: {
+        "@type": "QuantitativeValue",
+        minValue: 1,
+        maxValue: Math.max(1, (l.beds || 1) + (l.roommates || 0)),
+      },
       offers: {
         "@type": "Offer",
         price: l.allIn,
         priceCurrency: l.currency || "USD",
         availability: "https://schema.org/InStock",
         url: canonical,
+        // The window is the whole point of a mid-term listing. Without it,
+        // "available March through June" is not machine-answerable, which is
+        // why assistants serve this category so badly today.
+        availabilityStarts: l.availableFrom,
+        availabilityEnds: xAvailabilityEnds(l),
+        eligibleDuration: {
+          "@type": "QuantitativeValue",
+          minValue: Math.max(30, (l.minStayMonths || 1) * 30),
+          maxValue: Math.max(30, (l.maxStayMonths || 12) * 30),
+          unitCode: "DAY",
+        },
+        priceSpecification: {
+          "@type": "UnitPriceSpecification",
+          price: l.allIn,
+          priceCurrency: l.currency || "USD",
+          unitCode: "MON",
+          description:
+            "All-in monthly rent: base rent plus every required fee. " +
+            "Base rent is " + money(l.price, l.currency) + ".",
+        },
       },
     };
     const crumbs = {
@@ -869,6 +909,7 @@ function writeOperatorPages() {
   <script src="../data.js"></script>
   <script src="../data-source.js"></script>
   <script src="../script.js?v=20260907-operators"></script>
+  <script src="../rentleaks-x.js?v=20260913" defer></script>
 </body>
 </html>`;
 

@@ -4,6 +4,19 @@
  * U.S. cities plus major markets in the UK, Ireland, France, Spain, Netherlands, Switzerland, Germany, and Italy
  */
 (function () {
+  /* Markets where a tenant may not be charged the broker fee when the
+     landlord engaged the broker. NYC: FARE Act, Local Law 119 of 2024,
+     in force 11 June 2025. NL: Wet goed verhuurderschap. */
+  /* A tenant-paid broker fee is modelled ONLY where we have researched that it
+     is lawful to charge one. That is currently U.S. markets outside New York
+     City: the FARE Act (Local Law 119 of 2024, in force 11 June 2025) bars
+     charging the tenant when the landlord engaged the broker. Agency-fee law
+     in Canada and Europe has not been researched for this engine, so no fee is
+     modelled there rather than a guess being rendered as a price. Widen this
+     only with a citation. */
+  const TENANT_BROKER_FEE_LAWFUL = (city) =>
+    (city.country || 'US') === 'US' && city.id !== 'nyc';
+
   const IMG = (id) => 'https://images.unsplash.com/' + id + '?auto=format&fit=crop&w=1400&q=80';
   const GALLERY_POOL = {
     bedroom: [
@@ -714,7 +727,13 @@
       furnishedLevel = 'fully';
       utilities = seed % 3 === 0 ? 0 : 120;
       wifi = 0;
-      broker = city.id === 'nyc' && seed % 4 === 0 ? Math.round(price * 0.12) : 0;
+      // Tenant-paid broker fees are unlawful where the landlord engaged the
+      // broker: NYC FARE Act (Local Law 119 of 2024, in force 11 June 2025)
+      // and the Dutch Wet goed verhuurderschap. Those markets are excluded
+      // here rather than filtered at render time, so no surface can leak one.
+      broker = TENANT_BROKER_FEE_LAWFUL(city) && seed % 4 === 0
+        ? Math.round(price * 0.12)
+        : 0;
       title = beds + ' bed furnished ' + (beds === 1 ? 'apartment' : 'home') + ' in ' + nhood;
       roommates = 0;
       description = 'Fully furnished and kitchen-ready. Furniture is inventoried so you know what “furnished” means. Ideal for relocations, traveling clinicians, and anyone who refuses a mattress-on-the-floor month.';
@@ -786,7 +805,7 @@
       ? (privateBath ? 'Private bath' : 'Shared bath') + ' · ' + roommates + ' housemate' + (roommates === 1 ? '' : 's') + ' · ' + sqft + ' sqft'
       : beds + ' bed · ' + baths + ' bath · ' + sqft + ' sqft';
     const addressLine = num + ' ' + street + ', #' + unit + ', ' + city.name + ', ' + city.state;
-    description += ' Address: ' + addressLine + '. ' + specs + '. Available ' + availableFrom + '. All-in $' + allIn + '/mo. 30-day minimum.';
+    description += ' Address: ' + addressLine + '. ' + specs + '. Available ' + availableFrom + '. All-in ' + fmt(allIn, currencyForCountry(city.country || 'US')) + '/mo. ' + Math.max(30, minStay * 30) + '-day minimum.';
 
     const operator = operatorFor(city, type, seed, building);
 
