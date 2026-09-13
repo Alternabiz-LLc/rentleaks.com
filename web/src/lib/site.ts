@@ -7,7 +7,7 @@ export function catalogOrigin() {
 }
 
 export function appUrl() {
-  return process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || "http://localhost:3000";
+  return process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || "http://localhost:3100";
 }
 
 export function typeLabel(type: string) {

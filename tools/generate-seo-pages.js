@@ -251,6 +251,14 @@ const TYPE_COPY = {
     keywords: "1 month apartment, monthly rental, mid-term rental, short term apartment 30 days, temporary housing",
     blurb: "Short-term on RentLeaks always means 30 days or more. We do not list weekend stays. Utilities and wifi appear in All-in rent.",
   },
+  aparthotel: {
+    file: "aparthotel.html",
+    h1: "Aparthotels and serviced apartments, by the month",
+    title: "Aparthotels &amp; Serviced Apartments — 30-Day Minimum | RentLeaks",
+    description: "Serviced apartments from hotel operators in the U.S., Canada and Europe, let by the month rather than the night. Housekeeping, linen and utilities inside all-in rent. Minimum stay 30 days.",
+    keywords: "aparthotel, serviced apartment, extended stay apartment, monthly hotel apartment, corporate housing, 30 day minimum stay",
+    blurb: "Hotel groups can list here, on one condition: a 30-day minimum. You get the housekeeping, front desk and linen — and a monthly rate with everything inside it. What you will not find is a nightly booking, because that is not what this site is for.",
+  },
   "lease-break": {
     file: "lease-break.html",
     h1: "Lease-break and lease takeover listings",
@@ -480,6 +488,7 @@ function writeFeeds() {
     ["/coliving.html", "0.95", "daily"],
     ["/furnished.html", "0.95", "daily"],
     ["/short-term.html", "0.95", "daily"],
+    ["/aparthotel.html", "0.95", "daily"],
     ["/lease-break.html", "0.95", "daily"],
     ["/rent.html", "0.9", "daily"],
     ["/cities.html", "0.9", "weekly"],
@@ -668,7 +677,7 @@ ${imageUrls.join("\n")}
   writeCoreHeads();
 
   console.log("Generated", {
-    types: 5,
+    types: Object.keys(TYPE_COPY).length,
     cities: DATA.cities.length,
     listings: listings.length,
     operators: operatorCount,
@@ -859,7 +868,7 @@ function writeOperatorPages() {
   </div>
   <script src="../data.js"></script>
   <script src="../data-source.js"></script>
-  <script src="../script.js"></script>
+  <script src="../script.js?v=20260907-operators"></script>
 </body>
 </html>`;
 

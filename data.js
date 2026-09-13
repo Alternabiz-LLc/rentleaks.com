@@ -88,6 +88,14 @@
       promise: 'Stay length is a first-class filter. Built for relos, contracts, and pilots.'
     },
     {
+      id: 'aparthotel',
+      label: 'Aparthotel',
+      short: 'Aparthotel',
+      href: 'aparthotel.html',
+      blurb: 'Serviced apartments from hotel operators — housekeeping in, nightly rates out.',
+      promise: 'Hotel groups can list here, but only stays of 30 days or more. Still no nightly bookings.'
+    },
+    {
       id: 'lease-break',
       label: 'Lease-break',
       short: 'Lease-break',
@@ -187,6 +195,7 @@
     coliving: 'coliving.html',
     furnished: 'furnished.html',
     'short-term': 'short-term.html',
+    aparthotel: 'aparthotel.html',
     'lease-break': 'lease-break.html'
   };
   const CITY_GEO = {
@@ -515,6 +524,13 @@
     { name: 'Alder Property Group', tagline: 'Long-term care for short-term stays.', since: 2011 }
   ];
 
+  const HOTEL_BRANDS = [
+    { name: 'Ledger House', tagline: 'Serviced apartments, monthly only.', since: 2017 },
+    { name: 'Meridian Residences', tagline: 'Hotel service, tenancy terms.', since: 2013 },
+    { name: 'Anchor & Key Suites', tagline: 'Housekeeping in, nightly rates out.', since: 2020 },
+    { name: 'Solstice Stay', tagline: 'A front desk and a real lease.', since: 2018 }
+  ];
+
   const COLIVING_TAGLINES = {
     'Commonline': 'Buildings that feel like a neighbourhood.',
     'Outpost House': 'Land somewhere that already works.',
@@ -546,6 +562,18 @@
         tagline: COLIVING_TAGLINES[building.brand] || 'Purpose-built co-living.',
         since: 2014 + (hash(building.brand) % 8),
         scope: 'national'
+      };
+    }
+
+    if (type === 'aparthotel') {
+      const b = HOTEL_BRANDS[hash(city.group + '|hotel') % HOTEL_BRANDS.length];
+      return {
+        id: 'op-' + operatorSlugOf(b.name),
+        name: b.name,
+        kind: 'hotel',
+        tagline: b.tagline,
+        since: b.since,
+        scope: 'regional'
       };
     }
 
@@ -703,6 +731,24 @@
       title = '1-month+ furnished stay · ' + nhood;
       roommates = 0;
       description = 'Minimum stay is 30 days — this is housing, not a weekend rental. Utilities and wifi are listed in All-in Rent. Built for contract work, apartment hunting buffers, and city pilots.';
+    } else if (type === 'aparthotel') {
+      // A serviced apartment let by the month. The 30-day floor is not a
+      // default here, it is the reason this type is allowed to exist.
+      beds = seed % 3 === 0 ? 0 : 1;
+      baths = 1;
+      sqft = 320 + (seed % 220);
+      price = jitter(Math.round(city.avgFurnished * 0.82), seed, 300);
+      furnishedLevel = 'fully';
+      utilities = 0;
+      wifi = 0;
+      cleaning = 120 + (seed % 90);
+      privateBath = true;
+      roommates = 0;
+      minStay = 1;
+      maxStay = 6 + (seed % 7);
+      availableFrom = dateFrom(seed, 2, 24);
+      title = (beds === 0 ? 'Serviced studio' : 'Serviced 1-bed') + ' · ' + nhood;
+      description = 'A serviced apartment let by the month, not the night. Weekly housekeeping, linen and utilities are inside All-in Rent. Minimum stay is 30 days — this operator cannot take nightly bookings here.';
     } else {
       beds = 1 + (seed % 3);
       baths = beds === 1 ? 1 : 1 + (seed % 2);
@@ -847,7 +893,7 @@
     };
   }
 
-  const FEATURED_TYPES = ['room', 'coliving', 'furnished', 'short-term', 'lease-break'];
+  const FEATURED_TYPES = ['room', 'coliving', 'furnished', 'short-term', 'aparthotel', 'lease-break'];
   const listings = [];
 
   CITIES.forEach((city) => {

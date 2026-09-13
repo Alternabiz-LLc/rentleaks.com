@@ -304,7 +304,7 @@
 
   function appOrigin() {
     if (window.RL_APP_URL) return String(window.RL_APP_URL).replace(/\/$/, '');
-    if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') return 'http://localhost:3000';
+    if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') return 'http://localhost:3100';
     return '';
   }
   function appHref(path, fallback) {
@@ -750,7 +750,7 @@
 
   function assetBase() {
     const path = window.location.pathname || '';
-    if (/\/(listings|cities)\//.test(path)) return '../';
+    if (/\/(listings|cities|operators)\//.test(path)) return '../';
     return '';
   }
 
@@ -772,7 +772,7 @@
   function navLink(href, label, key) {
     const page = pageName();
     const type = params().get('type') || params().get('category') || document.body.dataset.type || '';
-    const typeKeys = { room: 1, coliving: 1, furnished: 1, 'short-term': 1, 'lease-break': 1 };
+    const typeKeys = { room: 1, coliving: 1, furnished: 1, 'short-term': 1, aparthotel: 1, 'lease-break': 1 };
     const active = page === key || (typeKeys[key] && type === key);
     return '<li><a href="' + href + '" class="nav__link' + (active ? ' nav__link--active' : '') + '">' + label + '</a></li>';
   }
@@ -797,6 +797,7 @@
                 ${navLink(base + 'coliving.html', 'Co-living', 'coliving')}
                 ${navLink(base + 'furnished.html', 'Furnished', 'furnished')}
                 ${navLink(base + 'short-term.html', '1-month+', 'short-term')}
+                ${navLink(base + 'aparthotel.html', 'Aparthotel', 'aparthotel')}
                 ${navLink(base + 'lease-break.html', 'Lease-break', 'lease-break')}
                 ${navLink(base + 'cities.html', 'Cities', 'cities')}
                 ${navLink(base + 'operators.html', 'Operators', 'operators')}
@@ -1687,7 +1688,7 @@
   /* ---------------------------------------------------------------------
    * Operator boutiques
    * ------------------------------------------------------------------- */
-  const OPERATOR_KIND_LABEL = { coliving: 'Co-living operator', portfolio: 'Furnished operator', landlord: 'Independent landlord' };
+  const OPERATOR_KIND_LABEL = { coliving: 'Co-living operator', portfolio: 'Furnished operator', hotel: 'Aparthotel operator', landlord: 'Independent landlord' };
 
   function operatorHref(o) {
     if (!o) return assetBase() + 'operators.html';
@@ -2030,6 +2031,7 @@
         <button type="button" class="rl-chip is-on" data-op-kind="">All operators</button>
         <button type="button" class="rl-chip" data-op-kind="coliving">Co-living</button>
         <button type="button" class="rl-chip" data-op-kind="portfolio">Furnished portfolios</button>
+        <button type="button" class="rl-chip" data-op-kind="hotel">Hotel groups</button>
         <button type="button" class="rl-chip" data-op-kind="landlord">Independent landlords</button>
         <label class="rl-check rl-check--inline"><input type="checkbox" id="op-verified"> Verified only</label>
       </div>
@@ -2573,6 +2575,25 @@
       const type = form.housingType.value;
       $('#rl-lease-fields').hidden = type !== 'lease-break';
       $$('.rl-kind').forEach((el) => el.classList.toggle('is-on', el.querySelector('input').checked));
+      // Aparthotels exist here only because of the 30-day floor: hold it.
+      const kindNow = (form.querySelector('input[name="housingType"]:checked') || {}).value;
+      const minStayEl = form.querySelector('[name="minStayMonths"]');
+      if (minStayEl) {
+        const locked = kindNow === 'aparthotel';
+        minStayEl.min = '1';
+        if (locked && Number(minStayEl.value || 0) < 1) minStayEl.value = '1';
+        minStayEl.setAttribute('aria-describedby', locked ? 'rl-minstay-note' : '');
+        let note = form.querySelector('#rl-minstay-note');
+        if (locked && !note) {
+          note = document.createElement('p');
+          note.id = 'rl-minstay-note';
+          note.className = 'pricing-note';
+          note.textContent = 'Aparthotel listings are monthly only — RentLeaks does not take nightly bookings.';
+          minStayEl.parentNode.appendChild(note);
+        } else if (!locked && note) {
+          note.remove();
+        }
+      }
     };
     form.addEventListener('input', syncAllIn);
     form.addEventListener('change', syncAllIn);

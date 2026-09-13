@@ -1,7 +1,9 @@
+import { Suspense } from "react";
 import Link from "next/link";
+import { logoutAction } from "@/app/actions/auth";
+import { AppNav } from "@/components/AppNav";
 import { getCurrentUser } from "@/lib/auth";
 import { catalogOrigin } from "@/lib/site";
-import { logoutAction } from "@/app/actions/auth";
 
 export async function Shell({
   children,
@@ -20,17 +22,9 @@ export async function Shell({
           <Link className="rl-mark" href="/">
             <span>RL</span> RentLeaks
           </Link>
-          <nav className="rl-nav" aria-label="App">
-            <Link href="/stays?type=room">Rooms</Link>
-            <Link href="/stays?type=coliving">Co-living</Link>
-            <Link href="/stays?type=furnished">Furnished</Link>
-            <Link href="/stays?type=short-term">1-month+</Link>
-            <Link href="/stays?type=lease-break">Lease-break</Link>
-            <Link href="/stays?view=map">Map</Link>
-            <Link href="/stays">Stays</Link>
-            <Link href="/list">List a place</Link>
-            {user ? <Link href="/account">{user.name.split(" ")[0]}</Link> : null}
-          </nav>
+          <Suspense fallback={<nav className="rl-nav" aria-label="App" />}>
+            <AppNav accountName={user?.name.split(" ")[0]} />
+          </Suspense>
           {user ? (
             <form action={logoutAction}>
               <button className="rl-ghost" type="submit">
