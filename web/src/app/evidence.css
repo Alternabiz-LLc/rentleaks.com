@@ -1845,3 +1845,172 @@
   .s-row { grid-template-columns: minmax(0, 1fr); }
   .s-verify { flex-direction: column; align-items: flex-start; }
 }
+
+/* ==========================================================================
+   Browse hero — the image band above the results grid.
+   --------------------------------------------------------------------------
+   Full-bleed photograph, a scrim heavy enough that white text clears WCAG AA
+   over the brightest part of any of the six images, and the figures computed
+   from the rows underneath it. The category row lives inside the hero rather
+   than above the grid, because on a filtered URL the first useful action is
+   almost always "show me a different category in the same city".
+   ========================================================================== */
+
+.rl-shero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: var(--surface-inv);
+  color: var(--ink-on-dark);
+}
+
+.rl-shero__media {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-size: cover;
+  background-position: center 58%;
+  background-repeat: no-repeat;
+}
+
+/* Two layers: a flat wash so the type never sits on a hot highlight, and a
+   bottom-weighted gradient so the stat row stays legible over sky or window. */
+.rl-shero__media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to top, rgba(10, 26, 32, 0.94) 0%, rgba(10, 26, 32, 0.62) 46%, rgba(10, 26, 32, 0.48) 100%),
+    linear-gradient(105deg, rgba(10, 26, 32, 0.72) 0%, rgba(10, 26, 32, 0.22) 62%);
+}
+
+.rl-shero__inner {
+  position: relative;
+  width: min(1180px, calc(100% - 2.5rem));
+  margin-inline: auto;
+  padding: clamp(2.75rem, 7vw, 5.5rem) 0 clamp(1.5rem, 3vw, 2.25rem);
+}
+
+.rl-shero__kicker {
+  margin: 0 0 0.7rem;
+  font-family: var(--x-ledger-font);
+  font-size: var(--text-micro);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(242, 247, 247, 0.72);
+}
+
+.rl-shero__title {
+  margin: 0 0 0.85rem;
+  max-width: 20ch;
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 1.2rem + 3.4vw, 3.5rem);
+  font-weight: 600;
+  line-height: 1.03;
+  letter-spacing: -0.035em;
+  color: #fff;
+  text-wrap: balance;
+}
+
+.rl-shero__lede {
+  margin: 0;
+  max-width: 58ch;
+  font-size: clamp(0.95rem, 0.9rem + 0.25vw, 1.075rem);
+  line-height: 1.6;
+  color: rgba(242, 247, 247, 0.9);
+  text-wrap: pretty;
+}
+
+.rl-shero__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 clamp(1.25rem, 3vw, 2.75rem);
+  margin: clamp(1.5rem, 3vw, 2.25rem) 0 0;
+  padding-top: var(--s-4);
+  border-top: 1px solid rgba(242, 247, 247, 0.22);
+}
+
+.rl-shero__stats > div { padding-block: 0.35rem; }
+
+.rl-shero__stats dt {
+  margin-bottom: 0.2rem;
+  font-family: var(--x-ledger-font);
+  font-size: var(--text-micro);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(242, 247, 247, 0.62);
+}
+
+.rl-shero__stats dd {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 600;
+  line-height: 1;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+
+.rl-shero__stats dd span {
+  font-size: var(--text-xs);
+  font-weight: 400;
+  color: rgba(242, 247, 247, 0.7);
+}
+
+.rl-shero__stats--empty {
+  display: block;
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  color: rgba(242, 247, 247, 0.85);
+  max-width: 58ch;
+}
+
+.rl-shero__types {
+  position: relative;
+  width: min(1180px, calc(100% - 2.5rem));
+  margin-inline: auto;
+  padding-bottom: clamp(1.25rem, 3vw, 2rem);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.rl-shero__type {
+  padding: 0.44rem 0.95rem;
+  border-radius: var(--r-full);
+  border: 1px solid rgba(242, 247, 247, 0.32);
+  background: rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(6px);
+  color: rgba(242, 247, 247, 0.92);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background var(--t-fast), border-color var(--t-fast), color var(--t-fast);
+}
+
+.rl-shero__type:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(242, 247, 247, 0.6);
+}
+
+.rl-shero__type[data-on="1"] {
+  background: #fff;
+  border-color: #fff;
+  color: var(--surface-inv);
+}
+
+.rl-shero__type:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+@media (max-width: 720px) {
+  .rl-shero__stats { gap: 0 var(--s-5); }
+  .rl-shero__stats dd { font-size: 1.15rem; }
+  .rl-shero__types { overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; }
+  .rl-shero__types::-webkit-scrollbar { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rl-shero__type { transition: none; }
+}

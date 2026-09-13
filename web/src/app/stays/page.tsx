@@ -1,5 +1,6 @@
 import { BrowseWorkspace } from "@/components/BrowseWorkspace";
 import { Shell } from "@/components/Shell";
+import { StaysHero } from "@/components/StaysHero";
 import { publicListings, toBrowseListing } from "@/lib/listings";
 
 function asPositiveInt(value?: string) {
@@ -34,7 +35,15 @@ export default async function StaysPage({
   });
 
   return (
-    <Shell wide fill>
+    <Shell wide>
+      <StaysHero
+        rows={rows}
+        housingType={housingType}
+        cityId={cityId}
+        q={q}
+        max={max}
+        stay={stay}
+      />
       <BrowseWorkspace
         listings={rows.map(toBrowseListing)}
         cityId={cityId}

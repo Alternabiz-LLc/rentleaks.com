@@ -675,10 +675,17 @@ textarea {
   gap: 0.65rem;
   margin-bottom: 1rem;
   position: sticky;
-  top: -1.25rem;
+  /* Sticks under the site header when the page scrolls. In fill mode the list
+     is its own scroll container and the header is static, so it pins to the
+     top of that instead. */
+  top: calc(var(--header) + 0.5rem);
   z-index: 5;
   background: var(--rl-white);
   padding: 1.25rem 0 0.75rem;
+}
+
+.rl-app--fill .rl-filters {
+  top: -1.25rem;
 }
 
 .rl-filters label,
@@ -938,8 +945,11 @@ textarea {
 .rl-browse__map {
   position: sticky;
   top: calc(var(--header) + 0.75rem);
-  height: 640px;
-  min-height: 640px;
+  /* Fills the viewport beside a list that scrolls with the page — the pattern
+     every map-search product converged on, and the reason /stays no longer
+     locks the document: a hero cannot scroll away inside a 100dvh shell. */
+  height: calc(100dvh - var(--header) - 1.5rem);
+  min-height: 540px;
   border: 1px solid var(--rl-line);
   border-radius: 1.15rem;
   overflow: hidden;
