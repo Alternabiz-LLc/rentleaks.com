@@ -134,6 +134,26 @@ model Listing {
   takeoverType    String?
   postedAt        DateTime @default(now())
 
+  // --- Composer fields. Real columns where something filters, sorts or
+  //     ranks on them; JSON strings for the arrays that only ever render.
+  //     availableUntil is the one that unlocks date-range search: without an
+  //     end date "available March through June" is not answerable. ---
+  availableUntil  String?
+  listedBy        String   @default("owner")
+  addressPrivacy  String   @default("street-only")
+  status          String   @default("active")
+  scheduledAt     String?
+  vouchersAccepted Boolean @default(true)
+  registrationNumber String?
+  consentStatus   String?
+  accessibilityJson String @default("[]")
+  feesJson        String   @default("[]")
+
+  // --- Paid placement. Scoped to the listing's own market: a sponsored slot
+  //     is only ever promoted where the search resolves to that city. ---
+  sponsored       Boolean  @default(false)
+  plan            String   @default("week")
+
   // --- Presentational detail. One JSON column rather than ~15 sparse
   //     columns nothing ever filters on: fees, housemates, furniture,
   //     images, specs, neighborhoodScores, host, building, commuteNote. ---
@@ -154,6 +174,10 @@ model Listing {
   @@index([availableFrom])
   @@index([featured])
   @@index([housingType, cityId])
+  @@index([availableUntil])
+  @@index([status])
+  @@index([sponsored, cityId])
+  @@index([vouchersAccepted])
 }
 
 /// A landlord, portfolio or co-living brand. Holds identity only — counts,

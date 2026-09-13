@@ -1,126 +1,43 @@
-import Link from "next/link";
-import { createListingAction } from "@/app/actions/listings";
 import { Shell } from "@/components/Shell";
-import { getCurrentUser } from "@/lib/auth";
-import { FEATURED_MONTHLY, FEATURED_WEEKLY, MONTHLY_PLAN, WEEKLY_PLAN } from "@/lib/billing";
-import { CITIES, HOUSING_TYPES } from "@/lib/catalog";
+import ListingComposer from "@/components/ListingComposer";
+import { createListingFromComposer } from "@/app/actions/listings";
+import { prisma } from "@/lib/prisma";
 
-export default async function ListPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ error?: string }>;
-}) {
-  const user = await getCurrentUser();
-  const params = await searchParams;
+export const metadata = {
+  title: "List a place — RentLeaks",
+  description:
+    "Publish a room, a co-living bed, a furnished apartment, a 1-month+ stay or a lease-break. Itemised fees, a real availability window, and the market's own rules checked as you go.",
+};
+
+const HOUSING_TYPES = [
+  { id: "room", label: "Rooms" },
+  { id: "coliving", label: "Co-living" },
+  { id: "furnished", label: "Furnished" },
+  { id: "short-term", label: "1-month+" },
+  { id: "aparthotel", label: "Aparthotel" },
+  { id: "lease-break", label: "Lease-break" },
+];
+
+export default async function ListPage() {
+  const cities = await prisma.city.findMany({
+    orderBy: [{ rank: "asc" }, { name: "asc" }],
+    select: { id: true, name: true, state: true, country: true, currency: true },
+  });
 
   return (
     <Shell>
-      <section className="rl-auth">
+      <section className="container page-hero">
         <h1>List a place</h1>
-        <p>Writes a live listing to Postgres. It appears on the map and the public listing page immediately.</p>
-        {!user ? (
-          <p>
-            <Link className="rl-cta" href="/login?next=/list">
-              Sign in to list
-            </Link>
-          </p>
-        ) : (
-          <form action={createListingAction} className="rl-form">
-            {params.error === "invalid" ? (
-              <p className="rl-error">Add a title, city, neighborhood, address, and description.</p>
-            ) : null}
-            <label>
-              Stay type
-              <select name="housingType" defaultValue="room">
-                {HOUSING_TYPES.map((type) => (
-                  <option key={type.id} value={type.id}>
-                    {type.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              City
-              <select name="cityId" defaultValue="nyc">
-                {CITIES.map((city) => (
-                  <option key={city.id} value={city.id}>
-                    {city.name}, {city.state}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Title
-              <input name="title" required placeholder="Private room near the G train" />
-            </label>
-            <label>
-              Neighborhood
-              <input name="neighborhood" required placeholder="Williamsburg" />
-            </label>
-            <label>
-              Address
-              <input name="address" required placeholder="184 Berry St, Brooklyn, NY" />
-            </label>
-            <label>
-              Monthly rent (USD)
-              <input name="price" type="number" min={1} defaultValue={1450} required />
-            </label>
-            <label>
-              Utilities not included (USD)
-              <input name="utilities" type="number" min={0} defaultValue={0} />
-            </label>
-            <div className="rl-form__row">
-              <label>
-                Beds
-                <input name="beds" type="number" min={1} defaultValue={1} />
-              </label>
-              <label>
-                Baths
-                <input name="baths" type="number" min={1} step={0.5} defaultValue={1} />
-              </label>
-              <label>
-                Sqft
-                <input name="sqft" type="number" min={80} defaultValue={220} />
-              </label>
-            </div>
-            <label>
-              Minimum stay (months)
-              <input name="minStayMonths" type="number" min={1} defaultValue={1} />
-            </label>
-            <label>
-              Available from
-              <input name="availableFrom" type="date" defaultValue="2026-09-15" />
-            </label>
-            <label>
-              Furnished
-              <select name="furnishedLevel" defaultValue="fully">
-                <option value="fully">Fully furnished</option>
-                <option value="partial">Partial</option>
-                <option value="unfurnished">Unfurnished</option>
-              </select>
-            </label>
-            <label>
-              Description
-              <textarea name="description" rows={5} required placeholder="Who it is for, what is included, and move-in timing." />
-            </label>
-            <fieldset className="rl-addon">
-              <legend>Optional extra</legend>
-              <label className="rl-addon__check">
-                <input type="checkbox" name="featured" value="1" />
-                <span>
-                  <strong>Sponsored placement</strong> {FEATURED_WEEKLY.label} or {FEATURED_MONTHLY.label}
-                  <em>
-                    {FEATURED_WEEKLY.blurb}. Listing fee stays {WEEKLY_PLAN.label} or {MONTHLY_PLAN.label}.
-                    Lease-break posts stay free to publish.
-                  </em>
-                </span>
-              </label>
-            </fieldset>
-            <button className="rl-cta" type="submit">
-              Publish to map
-            </button>
-          </form>
-        )}
+        <p>
+          Writes a live listing to the database — it appears on the map and on the public listing page immediately.
+          Lease-breaks publish free. Everything else carries an all-in price, so renters see the real number rather
+          than a base rent with the fees hidden behind it.
+        </p>
+      </section>
+      <section className="rl-page">
+        <div className="container">
+          <ListingComposer cities={cities} housingTypes={HOUSING_TYPES} action={createListingFromComposer} />
+        </div>
       </section>
     </Shell>
   );
