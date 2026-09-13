@@ -426,6 +426,13 @@ textarea {
   grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
+/* auto-fit rather than a fixed count: the featured list is filtered from
+   CITIES, so it is eight today and need not be eight tomorrow. A hard
+   repeat(4) leaves a half-empty last row the moment that number changes. */
+.rl-city-grid {
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+}
+
 .rl-home .rl-stay-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
@@ -440,6 +447,20 @@ textarea {
   background: var(--rl-white);
 }
 
+.rl-city-card {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.85rem 1rem;
+}
+
+.rl-city-card strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .rl-type-card:hover,
 .rl-city-card:hover {
   border-color: var(--rl-accent);
@@ -450,6 +471,12 @@ textarea {
   color: var(--rl-muted);
   font-size: 0.88rem;
   line-height: 1.4;
+}
+
+.rl-city-card span {
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
 }
 
 .rl-home__cta {
@@ -1491,8 +1518,7 @@ body.rl-lb-lock {
   .rl-filters,
   .rl-listing__grid,
   .rl-form__row,
-  .rl-type-grid,
-  .rl-city-grid {
+  .rl-type-grid {
     grid-template-columns: 1fr;
   }
 
