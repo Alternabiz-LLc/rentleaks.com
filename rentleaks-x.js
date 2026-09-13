@@ -188,7 +188,13 @@
     ll18: { label: 'NYC Local Law 18 — short-term rental registration', eff: '2023-09-05', url: 'https://www.nyc.gov/site/specialenforcement/registration-law/registration.page' },
     gol7108: { label: 'NY General Obligations Law § 7-108 (HSTPA)', eff: '2019-06-14', url: 'https://law.justia.com/codes/new-york/gob/article-7/title-1/7-108/' },
     rpl238a: { label: 'NY Real Property Law § 238-a — $20 application fee cap', eff: '2019-06-14', url: 'https://www.gdblaw.com/Guidance-Issued-Regarding-the-20-Cap-on-Application-Fees' },
-    rpl226b: { label: 'NY Real Property Law § 226-b — sublet and assignment', eff: '1983-01-01', url: 'https://law.justia.com/codes/new-york/rpp/article-7/226-b/' },
+    rpl226b: { label: 'NY Real Property Law § 226-b — sublet and assignment', eff: '1983-01-01', url: 'https://www.nysenate.gov/legislation/laws/RPP/226-B' },
+    rpl238a: { label: 'NY Real Property Law § 238-a — application and move-in charges', eff: '2019-06-14', url: 'https://www.nysenate.gov/legislation/laws/RPP/238-A' },
+    rpl440: { label: 'NY Real Property Law §§ 440, 440-a — broker licensing', eff: '1922-01-01', url: 'https://www.nysenate.gov/legislation/laws/RPP/440' },
+    rpl442e: { label: 'NY Real Property Law § 442-e — penalties for unlicensed brokerage', eff: '1922-01-01', url: 'https://www.nysenate.gov/legislation/laws/RPP/442-E' },
+    rsc25256: { label: 'Rent Stabilization Code § 2525.6 — subletting', eff: '1987-05-01', url: 'https://www.law.cornell.edu/regulations/new-york/9-NYCRR-2525.6' },
+    rsc25257: { label: 'Rent Stabilization Code § 2525.7 — occupants', eff: '1987-05-01', url: 'https://www.law.cornell.edu/regulations/new-york/9-NYCRR-2525.7' },
+    fareDisc: { label: 'NYC Admin. Code § 20-699.22 — fee disclosure on every listing', eff: '2025-06-11', url: 'https://www.nyc.gov/assets/dca/downloads/pdf/about/FAQ-Broker-Fees.pdf' },
     rpl235f: { label: 'NY Real Property Law § 235-f — Roommate Law', eff: '1983-01-01', url: 'https://sites.lawschool.cornell.edu/tenants-advocacy/family-and-other-occupants' },
     nycSoi: { label: 'NYC Human Rights Law — source of income', eff: '2008-03-01', url: 'https://www.nyc.gov/site/cchr/media/source-of-income.page' },
     fcha: { label: 'NYC Fair Chance for Housing Act, Local Law 24 of 2024', eff: '2025-01-01', url: 'https://www.hklaw.com/en/insights/publications/2025/02/new-york-citys-fair-chance-housing-law-restricts-criminal-background' },
@@ -214,14 +220,93 @@
     gdpr: { label: 'GDPR Arts. 5, 6 and 22', eff: '2018-05-25', url: 'https://eur-lex.europa.eu/eli/reg/2016/679/oj' }
   };
 
+  /* =======================================================================
+     1a. Deal structure — who listed it, who engaged a broker, who may pay
+     -----------------------------------------------------------------------
+     The first version of this layer treated the FARE Act as a flat ban and
+     zeroed every tenant-paid broker fee in New York. That was wrong in both
+     directions. NYC Admin. Code § 20-699.21(a) binds a *landlord's agent*,
+     not everyone — a broker the tenant themselves retained may still charge
+     the tenant, and an owner letting their own place has no agent at all. So
+     "may a fee be charged" is a function of three independent facts, not one
+     boolean, and this is the model that expresses them.
+     ======================================================================= */
+
+  var LISTED_BY = {
+    'owner-direct': {
+      label: 'Listed by the owner',
+      short: 'By owner',
+      blurb: 'The person letting this home owns it and is handling the let themselves. There is no agent in the transaction, so there is no broker fee to argue about.',
+      brokerInDeal: false
+    },
+    'landlord-broker': {
+      label: 'Listed by the landlord’s broker',
+      short: 'Landlord’s agent',
+      blurb: 'A licensed broker retained by the landlord published this. They act for the landlord, not for you.',
+      brokerInDeal: true
+    },
+    'operator': {
+      label: 'Listed by the operator',
+      short: 'Operator',
+      blurb: 'A co-living or serviced-apartment operator lets this directly from its own portfolio. No third-party agent sits in between.',
+      brokerInDeal: false
+    },
+    'incumbent-tenant-sublandlord': {
+      label: 'Listed by the departing tenant, as sub-landlord',
+      short: 'Sublet',
+      blurb: 'The current tenant stays on the original lease and lets to you underneath it. They are your landlord for the sublease; the building’s owner is not.',
+      brokerInDeal: false
+    },
+    'incumbent-tenant-assignor': {
+      label: 'Listed by the departing tenant, for assignment',
+      short: 'Takeover',
+      blurb: 'The current tenant leaves the lease entirely and you step into it with the building’s owner. The departing tenant is not a party to your tenancy at all.',
+      brokerInDeal: false
+    }
+  };
+
+  /* Fee catalogue. `payer` is who is being asked to pay; `legality` is
+     resolved per market by feeVerdict() below. */
+  var FEE_META = {
+    broker:      { label: 'Broker fee',            type: 'broker',      timing: 'at move-in' },
+    application: { label: 'Application fee',       type: 'application', timing: 'at application' },
+    screening:   { label: 'Background & credit',   type: 'screening',   timing: 'at application' },
+    utilities:   { label: 'Utilities',             type: 'recurring',   timing: 'monthly' },
+    wifi:        { label: 'Wi-Fi',                 type: 'recurring',   timing: 'monthly' },
+    cleaning:    { label: 'Cleaning',              type: 'recurring',   timing: 'monthly' },
+    parking:     { label: 'Parking',               type: 'recurring',   timing: 'monthly' },
+    amenity:     { label: 'Amenity fee',           type: 'recurring',   timing: 'monthly' },
+    admin:       { label: 'Admin fee',             type: 'move-in',     timing: 'at move-in' },
+    move_in:     { label: 'Move-in fee',           type: 'move-in',     timing: 'at move-in' },
+    key:         { label: 'Key fee',               type: 'move-in',     timing: 'at move-in' },
+    access:      { label: 'Takeover access fee',   type: 'move-in',     timing: 'at move-in' }
+  };
+
   var DEFAULTS = {
     minStayDays: 30,
     minStaySrc: null,
     depositCapMonths: null,
     appFeeCap: null,
     appFeeCurrency: 'USD',
-    tenantBrokerFeeAllowed: true,
+    /* Whether a LANDLORD'S AGENT may pass a broker fee to the tenant. A
+       broker the tenant retained is governed separately — see feeVerdict(). */
+    landlordAgentMayChargeTenant: true,
     tenantBrokerFeeSrc: null,
+    /* Charges the departing tenant or owner may levy at the start of a tenancy. */
+    applicationFeeBanned: false,
+    applicationFeeSrc: null,
+    screeningFeeCap: null,
+    moveInFeesBarred: false,
+    moveInFeesSrc: null,
+    /* Named sub-lessors in the statute? Decides whether the lease-break
+       lister is caught by the same rule as a landlord. */
+    subLessorNamed: false,
+    /* Rent-regulated sublet surcharge, where one exists. */
+    subletSurchargePct: null,
+    subletSurchargeSrc: null,
+    roommateProportionateShare: false,
+    brokerLicenceSrc: null,
+    listingFeeDisclosureSrc: null,
     soiProtected: false,
     soiSrc: null,
     fairChance: false,
@@ -242,7 +327,8 @@
         minStayDays: 30, minStaySrc: SRC.ll18,
         depositCapMonths: 1, depositSrc: SRC.gol7108,
         appFeeCap: 20, appFeeCurrency: 'USD', appFeeSrc: SRC.rpl238a,
-        tenantBrokerFeeAllowed: false, tenantBrokerFeeSrc: SRC.fare,
+        landlordAgentMayChargeTenant: false, tenantBrokerFeeSrc: SRC.fare,
+        listingFeeDisclosureSrc: SRC.fareDisc,
         soiProtected: true, soiSrc: SRC.nycSoi,
         fairChance: true, fairChanceSrc: SRC.fcha,
         allInDisclosure: true, allInSrc: SRC.fare,
@@ -288,7 +374,7 @@
       amsterdam: {
         minStayDays: 30,
         depositCapMonths: 2, depositSrc: SRC.nlGoed,
-        tenantBrokerFeeAllowed: false, tenantBrokerFeeSrc: SRC.nlGoed,
+        landlordAgentMayChargeTenant: false, tenantBrokerFeeSrc: SRC.nlGoed,
         notes: ['A stay of 30 days or more is a tenancy with full protection, and fixed terms are largely unavailable since July 2024.']
       },
       toronto:   { minStayDays: 28, minStaySrc: SRC.toronto },
@@ -304,7 +390,21 @@
 
     /* ---------------- state / region level ---------------- */
     region: {
-      NY: { depositCapMonths: 1, depositSrc: SRC.gol7108, appFeeCap: 20, appFeeSrc: SRC.rpl238a, reusableReport: true },
+      NY: {
+        depositCapMonths: 1, depositSrc: SRC.gol7108,
+        appFeeCap: 20, appFeeSrc: SRC.rpl238a, reusableReport: true,
+        /* § 238-a(1)(a) bars an application fee outright and bars "any other
+           payment, fee or charge before or at the beginning of the tenancy" —
+           and it names "landlord, lessor, SUB-LESSOR or grantor", which is
+           what catches the departing tenant on a lease-break. */
+        applicationFeeBanned: true, applicationFeeSrc: SRC.rpl238a,
+        screeningFeeCap: 20,
+        moveInFeesBarred: true, moveInFeesSrc: SRC.rpl238a,
+        subLessorNamed: true,
+        subletSurchargePct: 10, subletSurchargeSrc: SRC.rsc25256,
+        roommateProportionateShare: true,
+        brokerLicenceSrc: SRC.rpl440
+      },
       CO: { allInDisclosure: true, allInSrc: SRC.coHb1090 },
       MN: { allInDisclosure: true, allInSrc: SRC.mnTotal },
       MA: { soiProtected: true, allInDisclosure: true, allInSrc: SRC.ftcFees },
@@ -330,7 +430,7 @@
       IE: { minStayDays: 30, unassessed: true, notes: ['Irish law was not assessed in the source research. Treat Dublin, Cork and Galway as unverified until counsel reviews.'] },
       FR: { minStayDays: 30, contractType: 'Bail mobilité or bail meublé', registrationRequired: true, registrationSrc: SRC.euStr, dataLaw: SRC.gdpr },
       ES: { minStayDays: 30, registrationRequired: true, registrationSrc: SRC.esReg, contractType: 'Arrendamiento de temporada', dataLaw: SRC.gdpr },
-      NL: { minStayDays: 30, depositCapMonths: 2, depositSrc: SRC.nlGoed, tenantBrokerFeeAllowed: false, tenantBrokerFeeSrc: SRC.nlGoed, dataLaw: SRC.gdpr, notes: ['Written, published, non-discriminatory selection criteria are required on every listing, and a rejected applicant is owed an explanation.'] },
+      NL: { minStayDays: 30, depositCapMonths: 2, depositSrc: SRC.nlGoed, landlordAgentMayChargeTenant: false, tenantBrokerFeeSrc: SRC.nlGoed, dataLaw: SRC.gdpr, notes: ['Written, published, non-discriminatory selection criteria are required on every listing, and a rejected applicant is owed an explanation.'] },
       DE: { minStayDays: 30, contractType: 'Zeitmietvertrag', registrationRequired: true, registrationSrc: SRC.euStr, dataLaw: SRC.gdpr },
       IT: { minStayDays: 30, registrationRequired: true, registrationSrc: SRC.itCin, contractType: 'Locazione transitoria', dataLaw: SRC.gdpr },
       CH: { minStayDays: 30, unassessed: true, notes: ['Swiss law was not assessed in the source research. Treat Zurich, Geneva, Basel and Bern as unverified until counsel reviews.'] }
@@ -381,6 +481,101 @@
      seeded off the listing id so a value never changes between renders.
      ======================================================================= */
 
+  /** Who published this listing, and is there a broker in the deal at all. */
+  function dealFor(l, seed) {
+    var kind;
+    if (l.housingType === 'lease-break') {
+      kind = (l.takeoverType === 'assignment' || (seed % 2 === 0 && !l.takeoverType))
+        ? 'incumbent-tenant-assignor'
+        : 'incumbent-tenant-sublandlord';
+    } else if (l.operatorId && l.operatorKind === 'coliving') {
+      kind = 'operator';
+    } else if (l.operatorId) {
+      /* A portfolio or landlord storefront. Small owners letting their own
+         place are the majority of the US rental stock — individual investors
+         own around 70% of rental properties — so the split here is weighted
+         toward owner-direct rather than toward agents. */
+      kind = (seed % 4 === 0) ? 'landlord-broker' : 'owner-direct';
+    } else {
+      kind = (seed % 5 === 0) ? 'landlord-broker' : 'owner-direct';
+    }
+
+    var meta = LISTED_BY[kind];
+    return {
+      kind: kind,
+      meta: meta,
+      /* In a marketplace of landlord-published inventory, any broker in the
+         deal is the landlord's. A tenant-retained broker is a relationship
+         the tenant brings, never something a listing can assert for them. */
+      brokerEngagement: meta.brokerInDeal ? 'landlord-engaged' : 'none',
+      byOwner: kind === 'owner-direct',
+      byDepartingTenant: kind.indexOf('incumbent-tenant') === 0
+    };
+  }
+
+  /**
+   * Is this charge lawful, against this market, for this deal structure?
+   * Returns {state, why, src, cap}.
+   *   ok       — permitted
+   *   capped   — permitted up to a limit, and this one is within it
+   *   over     — permitted in principle, but this amount exceeds the cap
+   *   barred   — may not be charged to the tenant at all
+   */
+  function feeVerdict(key, amount, l, rules, deal) {
+    var meta = FEE_META[key] || { label: key, type: 'recurring' };
+
+    if (meta.type === 'broker') {
+      if (!amount) {
+        return { state: 'ok', why: deal.meta.brokerInDeal
+          ? 'No broker fee is being passed to you.'
+          : 'There is no broker in this deal.' };
+      }
+      if (rules.landlordAgentMayChargeTenant === false && deal.brokerEngagement === 'landlord-engaged') {
+        return {
+          state: 'barred',
+          why: 'The broker here acts for the landlord, and a landlord’s agent may not charge you a fee in this market. A broker you retained yourself is a different matter and may still charge you.',
+          src: rules.tenantBrokerFeeSrc
+        };
+      }
+      if (rules.landlordAgentMayChargeTenant === false) {
+        return { state: 'barred', why: 'A landlord’s agent may not charge the tenant here.', src: rules.tenantBrokerFeeSrc };
+      }
+      return { state: 'ok', why: 'Lawful in this market. It must still be disclosed in the listing before you apply.' };
+    }
+
+    if (meta.type === 'application') {
+      if (rules.applicationFeeBanned && amount > 0) {
+        return { state: 'barred', why: 'An application, processing or acceptance fee may not be demanded in this market at all.', src: rules.applicationFeeSrc };
+      }
+      if (rules.appFeeCap != null && amount > rules.appFeeCap) {
+        return { state: 'over', why: 'Over the cap for this market.', src: rules.appFeeSrc, cap: rules.appFeeCap };
+      }
+      return { state: 'ok', why: amount ? 'Within the cap for this market.' : 'Nothing charged.' };
+    }
+
+    if (meta.type === 'screening') {
+      if (rules.screeningFeeCap != null) {
+        return amount > rules.screeningFeeCap
+          ? { state: 'over', why: 'Background and credit checks are capped at the lesser of actual cost or the statutory figure, and must be waived if you supply your own report from the last 30 days.', src: rules.appFeeSrc, cap: rules.screeningFeeCap }
+          : { state: 'capped', why: 'Capped at the lesser of actual cost or ' + money(rules.screeningFeeCap, rules.appFeeCurrency || 'USD') + ', and waived entirely if you supply your own report from the last 30 days.', src: rules.appFeeSrc, cap: rules.screeningFeeCap };
+      }
+      return { state: 'ok', why: 'No statutory cap recorded for this market.' };
+    }
+
+    if (meta.type === 'move-in') {
+      if (!amount) return { state: 'ok', why: 'Not charged.' };
+      if (rules.moveInFeesBarred) {
+        var whoBarred = deal.byDepartingTenant && rules.subLessorNamed
+          ? 'The statute names sub-lessors as well as landlords, so a departing tenant cannot charge this either.'
+          : 'A charge of this kind, demanded before or at the start of the tenancy, is not permitted here.';
+        return { state: 'barred', why: whoBarred, src: rules.moveInFeesSrc };
+      }
+      return { state: 'ok', why: 'Permitted, and disclosed up front.' };
+    }
+
+    return { state: 'ok', why: 'A recurring charge, inside the all-in figure above.' };
+  }
+
   var derivedCache = {};
 
   function derive(l) {
@@ -389,6 +584,7 @@
 
     var seed = hash(l.id);
     var rules = rulesFor(l);
+    var deal = dealFor(l, seed);
 
     /* --- availability window ------------------------------------------- */
     var from = l.availableFrom;
@@ -500,13 +696,46 @@
     /* --- compliance checks against the rules engine --------------------- */
     var fees = l.fees || {};
     var checks = [];
-    if (rules.tenantBrokerFeeAllowed === false) {
+
+    /* Every charge the tenant could be asked for, run through the engine. */
+    var feeLedger = ['broker', 'application', 'screening', 'admin', 'move_in', 'key', 'access']
+      .map(function (k) {
+        var amount = Number(fees[k] != null ? fees[k] : 0) || 0;
+        return { key: k, meta: FEE_META[k], amount: amount, verdict: feeVerdict(k, amount, l, rules, deal) };
+      })
+      .filter(function (row) {
+        /* A zero charge is worth showing only where the market actually bars
+           it — that absence is the interesting fact. The rest is noise. */
+        return row.amount > 0 || row.verdict.state === 'barred' || row.verdict.state === 'capped';
+      });
+
+    if (rules.landlordAgentMayChargeTenant === false) {
       checks.push({
-        k: 'Tenant-paid broker fee',
-        detail: 'Cannot be charged to the tenant where the landlord engaged the broker',
+        k: 'Broker fee charged to you',
+        detail: deal.meta.brokerInDeal
+          ? 'The broker here acts for the landlord, so may not charge you'
+          : 'No broker in this deal at all',
         v: fees.broker ? money(fees.broker, l) : 'None',
         pass: !fees.broker,
         src: rules.tenantBrokerFeeSrc
+      });
+    }
+    if (rules.applicationFeeBanned) {
+      checks.push({
+        k: 'Application fee',
+        detail: 'May not be demanded at all; background and credit capped at ' + money(rules.screeningFeeCap || 20, rules.appFeeCurrency || 'USD'),
+        v: money(0, l),
+        pass: true,
+        src: rules.applicationFeeSrc
+      });
+    }
+    if (rules.listingFeeDisclosureSrc) {
+      checks.push({
+        k: 'Every fee disclosed in the listing',
+        detail: 'Binds the listing itself — owner-listed and sublet listings included',
+        v: 'Itemised',
+        pass: true,
+        src: rules.listingFeeDisclosureSrc
       });
     }
     if (rules.depositCapMonths != null) {
@@ -570,7 +799,7 @@
     /* --- takeover (lease-break) ---------------------------------------- */
     var takeover = null;
     if (l.housingType === 'lease-break') {
-      var isAssign = l.takeoverType === 'assignment' || (seed % 2 === 0 && !l.takeoverType);
+      var isAssign = deal.kind === 'incumbent-tenant-assignor';
       var consentStates = ['granted', 'requested', 'not-started'];
       var consent = consentStates[seed % 3];
       var requestedOn = addMonths(todayISO(), 0);
@@ -588,6 +817,33 @@
       };
       takeover.deemedConsent = !!(takeover.rules && takeover.rules.silenceIsConsent &&
         takeover.mode === 'sublet' && takeover.daysElapsed >= 30);
+
+      /* What the DEPARTING tenant may lawfully charge the incoming one.
+         This is a separate question from the FARE Act, which binds a
+         landlord's agent — a departing tenant is neither. The binding rule
+         is the statewide charge ban, which names sub-lessors by name, plus
+         the licensing regime and, for regulated units, the surcharge cap. */
+      var regulated = rules.subletSurchargePct != null && (seed % 3 === 0);
+      takeover.charges = {
+        regulated: regulated,
+        /* Under a statute that names sub-lessors, an "access fee" collected
+           at the start of the tenancy is the exact thing barred. */
+        accessFeeAllowed: !(rules.moveInFeesBarred && rules.subLessorNamed),
+        accessFeeSrc: rules.moveInFeesSrc,
+        screeningCap: rules.screeningFeeCap,
+        depositCapMonths: rules.depositCapMonths,
+        surchargePct: regulated && takeover.mode === 'sublet' ? rules.subletSurchargePct : null,
+        surchargeSrc: rules.subletSurchargeSrc,
+        /* Licensing exposure is highest on an assignment, where the departing
+           tenant is not a party to the resulting tenancy at all and is being
+           paid for introducing two other people. */
+        licenceRisk: takeover.mode === 'assignment' ? 'high' : 'moderate',
+        licenceSrc: rules.brokerLicenceSrc,
+        maxTotal: 0
+      };
+      takeover.charges.maxTotal = takeover.charges.accessFeeAllowed
+        ? Math.round(l.price * 0.5)
+        : (rules.screeningFeeCap || 0);
     }
 
     /* --- verified-stay record ------------------------------------------ */
@@ -596,6 +852,8 @@
     var d = {
       seed: seed,
       rules: rules,
+      deal: deal,
+      feeLedger: feeLedger,
       window: { from: from, until: until, minDays: minDays, maxDays: maxDays },
       price: { mine: mine, pct: pct, stats: stats, vsMedian: vsMedian, perSqft: perSqft },
       ledger: ledger,
@@ -860,6 +1118,74 @@
     return panel('Trust ledger', 'What we checked, and how', 'Five separate checks, not one badge.', body, 'x-trust');
   }
 
+  /* --- 4.2b Who you are dealing with, and what they may charge ----------- */
+
+  var VERDICT_CHIP = {
+    ok:     '<span class="x-verdict x-verdict--pass">allowed</span>',
+    capped: '<span class="x-verdict x-verdict--pass">capped</span>',
+    over:   '<span class="x-verdict x-verdict--fail">over cap</span>',
+    barred: '<span class="x-verdict x-verdict--fail">not allowed</span>'
+  };
+
+  function dealPanel(l) {
+    var d = derive(l);
+    var deal = d.deal;
+    var r = d.rules;
+
+    /* Owner-verification ladder. An owner letting their own place has no
+       agent to vouch for them, so the proof has to come from the property. */
+    var ownerProof = '';
+    if (deal.byOwner) {
+      var steps = [
+        ['Deed or tax record matched', d.ledger[1] && d.ledger[1].state === 'pass',
+         'The name on the account was matched against the record for ' + esc(l.address) + '.'],
+        ['Utility or mortgage statement', (d.seed % 3) !== 0,
+         'A recent statement at this address in the same name.'],
+        ['Government ID matched to that name', !!l.verified,
+         'Document and selfie checked, then the image discarded.'],
+        ['Code posted to the property', (d.seed % 4) === 0,
+         'A code mailed to the address of record and entered back here — the check a scammer who cannot reach the building cannot pass.']
+      ];
+      ownerProof =
+        '<h3 style="font-size:var(--text-md);margin:var(--s-5) 0 var(--s-3);color:var(--ink)">Proving they own it</h3>' +
+        '<div class="x-ledger">' + steps.map(function (s) {
+          return '<div class="x-ledger__row">' +
+            '<span class="x-ledger__mark" data-state="' + (s[1] ? 'pass' : 'none') + '" aria-hidden="true">' + (s[1] ? '✓' : '–') + '</span>' +
+            '<span class="x-ledger__what">' + esc(s[0]) + '<span class="x-ledger__how">' + esc(s[2]) + '</span></span>' +
+            '<span class="x-ledger__when">' + (s[1] ? 'done' : 'not done') + '</span>' +
+          '</div>';
+        }).join('') + '</div>';
+    }
+
+    var feeRows = d.feeLedger.length
+      ? '<div class="x-rules">' + d.feeLedger.map(function (row) {
+          return '<div class="x-rule-row">' +
+            '<span class="x-rule-row__k"><b>' + esc(row.meta.label) + '</b>' + esc(row.verdict.why) +
+              (row.verdict.src ? ' <span class="x-cite">· ' + esc(row.verdict.src.label) + ', in force ' + esc(row.verdict.src.eff) + '</span>' : '') +
+            '</span>' +
+            '<span class="x-rule-row__v">' + esc(row.amount ? money(row.amount, l) : 'None') + ' ' + (VERDICT_CHIP[row.verdict.state] || '') + '</span>' +
+          '</div>';
+        }).join('') + '</div>'
+      : '<p class="x-note" style="border:0;padding:0">No one-off charge of any kind sits on this listing. The all-in figure is the whole of it.</p>';
+
+    var body =
+      '<p class="x-desk__lede">' + esc(deal.meta.blurb) + '</p>' +
+      '<p><span class="x-chip' + (deal.byOwner ? ' x-chip--owner' : '') + '">' + esc(deal.meta.short) + '</span> ' +
+      '<span class="x-chip">' + (deal.meta.brokerInDeal ? 'Broker acts for the landlord' : 'No broker in this deal') + '</span></p>' +
+      '<h3 style="font-size:var(--text-md);margin:var(--s-5) 0 var(--s-3);color:var(--ink)">What you can be asked to pay</h3>' +
+      feeRows +
+      ownerProof +
+      '<p class="x-note">' +
+        (r.landlordAgentMayChargeTenant === false
+          ? '<b>The rule people get wrong here.</b> The ban is on a <em>landlord’s agent</em> charging you — not on broker fees as such. A broker you retain yourself may still charge you, and an owner letting their own place has no agent in the first place. What binds every one of them equally is the disclosure duty: it is written against the listing, so it catches an owner and a departing tenant exactly as it catches an agency.'
+          : 'A broker fee is lawful in this market, and must be disclosed in the listing before you apply rather than produced at signing.') +
+      '</p>';
+
+    return panel('The deal', deal.meta.label, deal.byOwner
+      ? 'Individual owners hold around 70% of US rental properties. Most of this market is people, not agencies.'
+      : 'Who published this, who they act for, and what that means for your money.', body, 'x-deal');
+  }
+
   /* --- 4.3 Local Rules --------------------------------------------------- */
 
   function localRules(l) {
@@ -1068,12 +1394,74 @@
         '<p class="x-step__body">The incoming tenant presents a RentLeaks passport rather than being re-screened from scratch, which is the step that usually costs a takeover two to three weeks. The ' + esc(money(t.depositHeld, l)) + ' deposit moves into escrow against a timestamped condition report instead of sitting with a departing tenant who has become an accidental escrow agent — the point where these deals actually go wrong.</p>' +
       '</div>';
 
+    /* What the departing tenant may charge you. This is the question every
+       lease-takeover site leaves to the parties, and it is the one where the
+       answer has actually changed. */
+    var c = t.charges;
+    var chargeRows = [];
+    chargeRows.push([
+      'A fee for the handover itself',
+      c.accessFeeAllowed ? money(c.maxTotal, l) + ' ceiling' : 'None',
+      c.accessFeeAllowed ? 'ok' : 'barred',
+      c.accessFeeAllowed
+        ? 'No statutory bar recorded in this market, so RentLeaks caps it at half a month’s rent — the convention the early takeover sites settled on.'
+        : 'The statute barring a charge “before or at the beginning of the tenancy” names sub-lessors alongside landlords, so an access, key or takeover fee is not something a departing tenant may charge you here either.',
+      c.accessFeeSrc
+    ]);
+    if (c.screeningCap != null) {
+      chargeRows.push([
+        'Background and credit check',
+        'Up to ' + money(c.screeningCap, l),
+        'capped',
+        'The lesser of actual cost or the statutory figure, and waived entirely if you hand over your own report from the last 30 days — which is what your passport is.',
+        c.accessFeeSrc
+      ]);
+    }
+    if (c.depositCapMonths != null) {
+      chargeRows.push([
+        'Deposit taken by the departing tenant',
+        c.depositCapMonths + ' month' + (c.depositCapMonths === 1 ? '' : 's') + ' maximum',
+        'capped',
+        'The cap reaches advances as well as deposits, so “first, last and security” does not work here. On RentLeaks it sits in escrow rather than in a departing tenant’s account.',
+        d.rules.depositSrc
+      ]);
+    }
+    if (c.surchargePct != null) {
+      chargeRows.push([
+        'Furnished surcharge on a regulated unit',
+        'Up to ' + c.surchargePct + '% over the legal rent',
+        'capped',
+        'Only on a sublet, only where the unit is fully furnished, and only over the legal regulated rent. Charging more is profiteering: the subtenant is owed treble damages, and it is an incurable ground for eviction — the prime tenant loses the apartment rather than getting a chance to refund.',
+        c.surchargeSrc
+      ]);
+    }
+
+    var chargeBlock =
+      '<h3 style="font-size:var(--text-md);margin:var(--s-6) 0 var(--s-3);color:var(--ink)">What the departing tenant may charge you</h3>' +
+      '<div class="x-rules">' + chargeRows.map(function (row) {
+        return '<div class="x-rule-row">' +
+          '<span class="x-rule-row__k"><b>' + esc(row[0]) + '</b>' + esc(row[3]) +
+            (row[4] ? ' <span class="x-cite">· ' + esc(row[4].label) + ', in force ' + esc(row[4].eff) + '</span>' : '') +
+          '</span>' +
+          '<span class="x-rule-row__v">' + esc(row[1]) + ' ' + (VERDICT_CHIP[row[2]] || '') + '</span>' +
+        '</div>';
+      }).join('') + '</div>' +
+      '<div class="x-flags" style="margin-top:var(--s-4)">' +
+        '<div class="x-flag' + (c.licenceRisk === 'high' ? '' : ' x-flag--ok') + '"><span>' +
+          '<strong>' + (c.licenceRisk === 'high' ? 'Licensing exposure: high' : 'Licensing exposure: moderate') + '</strong> — ' +
+          (t.mode === 'assignment'
+            ? 'On an assignment the departing tenant is not a party to your tenancy at all. Being paid to introduce two other people is the classic description of brokerage, and doing it without a licence is a misdemeanour that also exposes them to up to four times the sum they took. RentLeaks does not escrow, remit or enforce a handover fee on this route.'
+            : 'On a sublet the departing tenant is a principal — they are your landlord under the sublease — which is a far weaker footing for a brokerage argument. It is not nothing, and it gets worse if the same account does it repeatedly across units.') +
+        '</span></div>' +
+      '</div>';
+
     var body = '' +
       '<p class="x-desk__lede">' + esc(t.remainingMonths) + ' months remain on this lease at ' + esc(money(l.price, l)) + ' base. ' +
       'The desk runs the route, the packet, the clock and the handoff, so the deal does not die in the post.</p>' +
       '<p><span class="x-chip ' + (t.deemedConsent || t.consent === 'granted' ? 'x-chip--consent' : 'x-chip--pending') + '">' + esc(consentLabel) + '</span> ' +
       '<span class="x-chip">' + (isSublet ? 'Sublet' : 'Assignment') + '</span></p>' +
       '<div class="x-track" style="margin-top:1.25rem">' + steps + '</div>' +
+      chargeBlock +
       '<p class="x-note">Windows shown here are those of ' + esc(d.rules.cityName) + '. ' +
       (clockApplies
         ? esc(r.statute) + ' governs this route; other markets differ in both the deadline and in whether silence means anything at all.'
@@ -1359,6 +1747,7 @@
       block.id = 'x-detail-block';
       block.innerHTML =
         priceTruth(l) +
+        dealPanel(l) +
         trustLedger(l) +
         localRules(l) +
         affordability(l) +
@@ -1416,6 +1805,7 @@
       if (fit) {
         chips.push('<span class="x-fit x-fit--' + (fit.state === 'fit' ? 'yes' : fit.state === 'near' ? 'near' : 'no') + '" title="' + esc(fit.why) + '">' + esc(fit.label) + '</span>');
       }
+      if (d.deal.byOwner) chips.push('<span class="x-chip x-chip--owner" title="' + esc(d.deal.meta.blurb) + '">By owner</span>');
       if (d.vouchers) chips.push('<span class="x-chip x-chip--voucher" title="Housing vouchers and subsidies are accepted on this home">Vouchers ok</span>');
       if (d.access.stepFree) chips.push('<span class="x-chip x-chip--access" title="Step-free route from the street to the front door">Step-free</span>');
       if (d.takeover && (d.takeover.consent === 'granted' || d.takeover.deemedConsent)) {
@@ -1430,7 +1820,7 @@
 
   /* --- browse rail facets ------------------------------------------------ */
 
-  var facetState = read('rl_x_facets', { vouchers: false, access: false, consent: false, hideMisses: true });
+  var facetState = read('rl_x_facets', { byOwner: false, vouchers: false, access: false, consent: false, hideMisses: true });
 
   function saveFacets() { write('rl_x_facets', facetState); }
 
@@ -1441,6 +1831,7 @@
       if (!l) return;
       var d = derive(l);
       var hide = false;
+      if (facetState.byOwner && !d.deal.byOwner) hide = true;
       if (facetState.vouchers && !d.vouchers) hide = true;
       if (facetState.access && !d.access.stepFree) hide = true;
       if (facetState.consent && !(d.takeover && (d.takeover.consent === 'granted' || d.takeover.deemedConsent))) hide = true;
@@ -1461,6 +1852,8 @@
       '<div class="x-facets" style="margin-top:var(--s-4)">' +
         '<label class="x-facet"><input type="checkbox" data-x-facet="hideMisses"' + (facetState.hideMisses ? ' checked' : '') + '>' +
           '<span>Only homes that fit my window<small>Hides anything that cannot be stretched to your dates</small></span></label>' +
+        '<label class="x-facet"><input type="checkbox" data-x-facet="byOwner"' + (facetState.byOwner ? ' checked' : '') + '>' +
+          '<span>For rent by owner<small>No agent in the deal, so no broker fee to argue about</small></span></label>' +
         '<label class="x-facet"><input type="checkbox" data-x-facet="vouchers"' + (facetState.vouchers ? ' checked' : '') + '>' +
           '<span>Accepts vouchers and subsidies<small>Source of income, not a tenant characteristic</small></span></label>' +
         '<label class="x-facet"><input type="checkbox" data-x-facet="access"' + (facetState.access ? ' checked' : '') + '>' +

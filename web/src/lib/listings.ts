@@ -134,6 +134,26 @@ export function toMapPin(listing: BrowseListing | {
   };
 }
 
+export function heroSlidePicks(listings: BrowseListing[], limit = 6) {
+  const seenCity = new Set<string>();
+  const seenType: Record<string, number> = {};
+  const picks: BrowseListing[] = [];
+  for (const listing of listings) {
+    if (picks.length >= limit) break;
+    if (!listing.image) continue;
+    if (seenCity.has(listing.cityId)) continue;
+    if ((seenType[listing.housingType] || 0) >= 2) continue;
+    seenCity.add(listing.cityId);
+    seenType[listing.housingType] = (seenType[listing.housingType] || 0) + 1;
+    picks.push(listing);
+  }
+  for (const listing of listings) {
+    if (picks.length >= limit) break;
+    if (!picks.includes(listing) && listing.image) picks.push(listing);
+  }
+  return picks.slice(0, limit);
+}
+
 export type ListingFilters = {
   cityId?: string;
   housingType?: string;

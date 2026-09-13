@@ -839,6 +839,7 @@
   white-space: nowrap;
 }
 
+.x-chip--owner   { background: var(--ochre-100); color: var(--ochre-700); }
 .x-chip--voucher { background: var(--celeste-100); color: var(--celeste-700); }
 .x-chip--access  { background: var(--verdigris-100); color: var(--verdigris-700); }
 .x-chip--consent { background: var(--success-soft); color: var(--success); }

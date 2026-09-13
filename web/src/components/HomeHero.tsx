@@ -1,8 +1,11 @@
 import { CITIES, HOUSING_TYPES } from "@/lib/catalog";
+import type { BrowseListing } from "@/lib/listings";
+import { HomeHeroCarousel } from "./HomeHeroCarousel";
 
 export function HomeHero({
   listingCount,
   cityCount,
+  slides = [],
   cityId = "",
   housingType = "",
   q = "",
@@ -11,6 +14,7 @@ export function HomeHero({
 }: {
   listingCount: number;
   cityCount: number;
+  slides?: BrowseListing[];
   cityId?: string;
   housingType?: string;
   q?: string;
@@ -23,21 +27,24 @@ export function HomeHero({
   return (
     <section className="rl-hero" aria-labelledby="rl-hero-title">
       <div className="rl-hero__inner">
-        <p className="rl-kicker">U.S. + Europe · 30-day minimum</p>
-        <h1 id="rl-hero-title">Find a place to live — not a night to book</h1>
-        <p className="rl-hero__lede">
-          Rooms, co-living buildings, furnished apartments, 1-month+ stays, and lease-breaks.
-          Every price is All-in. Every short stay starts at 30 days.
-        </p>
-        <div className="rl-trust">
-          <span>
-            <strong>{listingCount.toLocaleString()}</strong> live homes
-          </span>
-          <span>
-            <strong>{cityCount}</strong> markets
-          </span>
-          <span>Lease-break posts are free</span>
+        <div className="rl-hero__copy">
+          <p className="rl-kicker">U.S. + Europe · 30-day minimum</p>
+          <h1 id="rl-hero-title">Find a place to live — not a night to book</h1>
+          <p className="rl-hero__lede">
+            Rooms, co-living buildings, furnished apartments, 1-month+ stays, and lease-breaks.
+            Every price is All-in. Every short stay starts at 30 days.
+          </p>
+          <div className="rl-trust">
+            <span>
+              <strong>{listingCount.toLocaleString()}</strong> live homes
+            </span>
+            <span>
+              <strong>{cityCount}</strong> markets
+            </span>
+            <span>Lease-break posts are free</span>
+          </div>
         </div>
+        <HomeHeroCarousel slides={slides} />
         <form className="rl-search" action="/stays" method="get" aria-label="Search flexible housing">
           <label className="rl-search__field">
             <span>City</span>

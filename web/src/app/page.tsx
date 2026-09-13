@@ -4,7 +4,7 @@ import { HomeHero } from "@/components/HomeHero";
 import { ListingCard } from "@/components/ListingCard";
 import { Shell } from "@/components/Shell";
 import { CITIES, HOUSING_TYPES } from "@/lib/catalog";
-import { publicListingCount, publicListings, toBrowseListing } from "@/lib/listings";
+import { heroSlidePicks, publicListingCount, publicListings, toBrowseListing } from "@/lib/listings";
 
 const TYPE_COPY: Record<(typeof HOUSING_TYPES)[number]["id"], string> = {
   room: "A private room in a shared home.",
@@ -49,12 +49,14 @@ export default async function HomePage({
     publicListings(),
     publicListingCount(),
   ]);
-  const featured = rows.slice(0, 8).map(toBrowseListing);
+  const listings = rows.map(toBrowseListing);
+  const featured = listings.slice(0, 8);
+  const slides = heroSlidePicks(listings, 6);
   const markets = CITIES.filter((city) => city.featured).slice(0, 8);
 
   return (
     <Shell wide>
-      <HomeHero listingCount={listingCount} cityCount={CITIES.length} />
+      <HomeHero listingCount={listingCount} cityCount={CITIES.length} slides={slides} />
 
       <div className="rl-home">
         <section className="rl-home__block" aria-labelledby="rl-types-title">
