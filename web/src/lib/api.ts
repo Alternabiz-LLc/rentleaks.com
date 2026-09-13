@@ -11,7 +11,7 @@ import type { NextRequest } from "next/server";
 import type { City, Listing, Operator } from "@prisma/client";
 
 const ALLOWED = (process.env.API_ALLOWED_ORIGINS ||
-  "https://rentleaks.com,https://www.rentleaks.com,https://altech237.github.io,http://localhost:8123,http://localhost:8080,http://localhost:8765")
+  "https://rentleaks.com,https://www.rentleaks.com,https://alternabiz-llc.github.io,https://altech237.github.io,http://localhost:8123,http://localhost:8080,http://localhost:8765")
   .split(",")
   .map((s) => s.trim())
   .filter(Boolean);
