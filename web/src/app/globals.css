@@ -1372,14 +1372,8 @@ body.rl-lb-lock {
   border-radius: 0.9rem;
 }
 
-.rl-foot {
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
-  padding: 1.25rem;
-  color: var(--rl-muted);
-  font-size: 0.88rem;
-}
+/* Footer styles live in evidence.css alongside the rest of the layout it
+   shares tokens with. */
 
 .rl-empty {
   color: var(--rl-muted);

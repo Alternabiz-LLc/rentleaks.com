@@ -2150,3 +2150,123 @@
     display: none;
   }
 }
+
+/* --------------------------------------------------------------------------
+   Site footer
+   --------------------------------------------------------------------------
+   A four-column directory plus a legal band. The band is set at full width
+   and normal reading size rather than shrunk to six-point grey: the fair
+   housing notice and the "we never take your money" line are the two
+   statements on this site most likely to stop someone being defrauded, and
+   burying them is a decision with consequences.
+   -------------------------------------------------------------------------- */
+
+.rl-foot {
+  margin-top: clamp(3rem, 7vw, 5.5rem);
+  border-top: 1px solid var(--rl-line);
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font-size: var(--text-sm);
+}
+
+.rl-foot__inner {
+  width: min(1180px, calc(100% - 2.5rem));
+  margin-inline: auto;
+  padding: clamp(2.25rem, 5vw, 3.5rem) 0 clamp(1.75rem, 4vw, 2.5rem);
+  display: grid;
+  grid-template-columns: minmax(16rem, 1.6fr) repeat(4, minmax(9rem, 1fr));
+  gap: clamp(1.5rem, 3vw, 2.75rem);
+  align-items: start;
+}
+
+.rl-foot__brand .rl-mark {
+  color: var(--ink);
+  margin-bottom: var(--s-4);
+}
+
+.rl-foot__blurb {
+  margin: 0 0 var(--s-4);
+  max-width: 38ch;
+  line-height: 1.6;
+  color: var(--ink-3);
+}
+
+.rl-foot__claim {
+  margin: 0;
+  padding: var(--s-3) var(--s-4);
+  border-left: 3px solid var(--success);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  background: var(--success-soft);
+  max-width: 44ch;
+  font-size: var(--text-xs);
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+.rl-foot__claim b { color: var(--success); }
+
+.rl-foot__col h2 {
+  margin: 0 0 var(--s-3);
+  font-family: var(--x-ledger-font);
+  font-size: var(--text-micro);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+}
+
+.rl-foot__col ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.rl-foot__col a {
+  color: var(--ink-2);
+  transition: color var(--t-fast);
+}
+
+.rl-foot__col a:hover {
+  color: var(--brand);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.rl-foot__col--contact h2 {
+  font-family: inherit;
+  font-size: var(--text-sm);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink);
+}
+
+.rl-foot__col--contact li { color: var(--ink-3); line-height: 1.5; }
+
+.rl-foot__legal {
+  border-top: 1px solid var(--rl-line);
+}
+
+.rl-foot__legal p {
+  width: min(1180px, calc(100% - 2.5rem));
+  margin: 0 auto;
+  padding: var(--s-3) 0;
+  font-size: var(--text-xs);
+  line-height: 1.65;
+  color: var(--ink-3);
+  max-width: min(1180px, calc(100% - 2.5rem));
+}
+
+.rl-foot__legal p + p { border-top: 1px dashed var(--rl-line); }
+.rl-foot__legal b { color: var(--ink-2); }
+.rl-foot__legal p:last-child { padding-bottom: clamp(1.5rem, 3vw, 2.25rem); }
+
+@media (max-width: 1080px) {
+  .rl-foot__inner { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .rl-foot__brand { grid-column: 1 / -1; }
+}
+
+@media (max-width: 560px) {
+  .rl-foot__inner { grid-template-columns: 1fr; }
+}

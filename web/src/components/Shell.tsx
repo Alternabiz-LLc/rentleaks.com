@@ -2,8 +2,8 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { logoutAction } from "@/app/actions/auth";
 import { AppNav } from "@/components/AppNav";
+import { SiteFooter } from "@/components/SiteFooter";
 import { getCurrentUser } from "@/lib/auth";
-import { catalogOrigin } from "@/lib/site";
 
 export async function Shell({
   children,
@@ -15,7 +15,6 @@ export async function Shell({
   fill?: boolean;
 }) {
   const user = await getCurrentUser();
-  const catalog = catalogOrigin();
 
   return (
     <div className={fill ? "rl-app rl-app--fill" : "rl-app"}>
@@ -41,12 +40,7 @@ export async function Shell({
         </div>
       </header>
       <main className={wide ? "rl-main rl-main--browse" : "rl-main"}>{children}</main>
-      <footer className="rl-foot">
-        <a href={`${catalog}/rent.html`}>Public catalog</a>
-        <Link href="/">Home</Link>
-        <Link href="/stays">Stays</Link>
-        <Link href="/list">List a place</Link>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
