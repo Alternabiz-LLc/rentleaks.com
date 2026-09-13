@@ -2037,9 +2037,116 @@
   text-underline-offset: 3px;
 }
 
-.rl-homereel {
-  width: min(1180px, calc(100% - 2.5rem));
-  margin: clamp(1.5rem, 3vw, 2.25rem) auto 0;
+/* --------------------------------------------------------------------------
+   Hero reel — the featured-homes carousel as the hero's backdrop.
+   --------------------------------------------------------------------------
+   Same component, same cross-fade and same slow scale it had as a boxed 16:9
+   card; it is stretched behind the copy instead of sitting under it. The
+   scrim below is heavier than the card's own shade because text now sits on
+   top of the photograph rather than beside it, and it has to hold over six
+   different images rather than one chosen for the purpose.
+   -------------------------------------------------------------------------- */
+
+.rl-shero--reel .rl-hero-carousel--fill {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  padding-inline: 0;
 }
 
-.rl-homereel .rl-hero-carousel { padding-inline: 0; }
+.rl-shero--reel .rl-hero-car--fill {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  aspect-ratio: auto;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* The slide's own bottom-weighted shade is replaced: it was tuned for a
+   caption sitting in the corner of a card, not for a headline across it. */
+.rl-shero--reel .rl-hero-car__shade {
+  background:
+    linear-gradient(to top, rgba(10, 26, 32, 0.94) 0%, rgba(10, 26, 32, 0.66) 46%, rgba(10, 26, 32, 0.5) 100%),
+    linear-gradient(105deg, rgba(10, 26, 32, 0.78) 0%, rgba(10, 26, 32, 0.26) 64%);
+}
+
+/* Copy and controls ride above the reel. */
+.rl-shero--reel .rl-shero__inner,
+.rl-shero--reel .rl-shero__types {
+  position: relative;
+  z-index: 2;
+}
+
+/* The caption moves out of the way of the headline and shrinks to a credit
+   line — it still names the home and links to it, which is the only part of
+   it that was ever load-bearing. */
+.rl-shero--reel .rl-hero-car__cap {
+  position: absolute;
+  right: clamp(1.25rem, 4vw, 3rem);
+  bottom: clamp(4.5rem, 8vw, 6rem);
+  left: auto;
+  z-index: 3;
+  display: grid;
+  gap: 0.2rem;
+  justify-items: end;
+  text-align: right;
+  max-width: 22rem;
+  padding: 0;
+  background: none;
+}
+
+.rl-shero--reel .rl-hero-car__title {
+  font-size: var(--text-base);
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.rl-shero--reel .rl-hero-car__price {
+  font-size: var(--text-sm);
+}
+
+.rl-shero--reel .rl-hero-car__nav {
+  z-index: 3;
+  top: auto;
+  bottom: clamp(1.1rem, 3vw, 1.8rem);
+  transform: none;
+}
+
+.rl-shero--reel .rl-hero-car__nav--prev { left: auto; right: clamp(5.2rem, 4vw + 3.5rem, 7.5rem); }
+.rl-shero--reel .rl-hero-car__nav--next { right: clamp(1.25rem, 4vw, 3rem); }
+
+/* The dots are full-width `flex: 1` bars, so in the corner they would have
+   been squashed to stubs. Across the top edge of the band they read as what
+   they are — which slide of six you are on — and collide with nothing. */
+.rl-shero--reel .rl-hero-car__dots {
+  z-index: 3;
+  top: 0;
+  bottom: auto;
+  left: 0;
+  right: 0;
+  gap: 3px;
+}
+
+.rl-shero--reel .rl-hero-car__dot { height: 14px; }
+.rl-shero--reel .rl-hero-car__dot i { height: 3px; border-radius: 0; }
+
+.rl-shero--reel .rl-hero-car__kind {
+  z-index: 3;
+  top: auto;
+  bottom: clamp(1.5rem, 3vw, 2.3rem);
+  left: clamp(1.25rem, 4vw, 3rem);
+}
+
+/* On a narrow screen the caption would land on the search card, and the
+   category rail already needs the full width. The reel keeps running; only
+   its furniture steps back. */
+@media (max-width: 860px) {
+  .rl-shero--reel .rl-hero-car__cap,
+  .rl-shero--reel .rl-hero-car__nav,
+  .rl-shero--reel .rl-hero-car__kind {
+    display: none;
+  }
+}

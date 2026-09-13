@@ -48,8 +48,15 @@ export function HomeHero({
 
   return (
     <>
-      <section className="rl-shero rl-shero--home" aria-labelledby="rl-hero-title">
-        <div className="rl-shero__media" role="presentation" style={{ backgroundImage: `url("${HERO}")` }} />
+      <section
+        className={slides.length ? "rl-shero rl-shero--home rl-shero--reel" : "rl-shero rl-shero--home"}
+        aria-labelledby="rl-hero-title"
+      >
+        {slides.length ? (
+          <HomeHeroCarousel slides={slides} fill />
+        ) : (
+          <div className="rl-shero__media" role="presentation" style={{ backgroundImage: `url("${HERO}")` }} />
+        )}
         <div className="rl-shero__inner">
           <p className="rl-shero__kicker">U.S. + Europe · 30-day minimum</p>
           <h1 className="rl-shero__title" id="rl-hero-title">
@@ -164,12 +171,6 @@ export function HomeHero({
           ))}
         </nav>
       </section>
-
-      {slides.length ? (
-        <section className="rl-homereel" aria-label="Recently listed">
-          <HomeHeroCarousel slides={slides} />
-        </section>
-      ) : null}
     </>
   );
 }

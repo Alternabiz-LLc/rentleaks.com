@@ -56,7 +56,15 @@ function SlideMedia({ item, active }: { item: GalleryItem; active: boolean }) {
   }
 }
 
-export function HomeHeroCarousel({ slides }: { slides: BrowseListing[] }) {
+/**
+ * `fill` turns the carousel into the backdrop of the hero band rather than a
+ * boxed 16:9 card below it: same slides, same cross-fade and same slow scale,
+ * but stretched behind the copy with the caption and controls pushed to the
+ * corner. The logic is identical either way — autoplay, pause on hover, focus,
+ * tab-hidden and off-screen, arrows, dots, keyboard and swipe — because the
+ * only thing that actually changes is where the thing sits.
+ */
+export function HomeHeroCarousel({ slides, fill = false }: { slides: BrowseListing[]; fill?: boolean }) {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const hostRef = useRef<HTMLDivElement>(null);
@@ -101,7 +109,7 @@ export function HomeHeroCarousel({ slides }: { slides: BrowseListing[] }) {
   return (
     <div
       ref={hostRef}
-      className="rl-hero-carousel"
+      className={fill ? "rl-hero-carousel rl-hero-carousel--fill" : "rl-hero-carousel"}
       aria-label="Featured homes"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
@@ -129,7 +137,12 @@ export function HomeHeroCarousel({ slides }: { slides: BrowseListing[] }) {
         touchX.current = null;
       }}
     >
-      <div className="rl-hero-car" role="group" aria-roledescription="carousel" aria-label="Featured homes">
+      <div
+        className={fill ? "rl-hero-car rl-hero-car--fill" : "rl-hero-car"}
+        role="group"
+        aria-roledescription="carousel"
+        aria-label="Featured homes"
+      >
         <div className="rl-hero-car__stage">
           {slides.map((listing, i) => {
             const media = slideMedia(listing, i);
