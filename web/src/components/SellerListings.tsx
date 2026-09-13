@@ -32,6 +32,8 @@ export type SellerListing = {
   availableFrom: string;
   availableUntil: string | null;
   photoCount: number;
+  moderation: string;
+  moderationNote: string | null;
   href: string;
 };
 
@@ -124,6 +126,11 @@ export default function SellerListings({ listings }: { listings: SellerListing[]
                   {l.typeLabel} · {l.cityName} · {money(l.allIn, l.currency)} all-in /mo
                 </p>
                 <div className="x-chiprow">
+                  {l.moderation === "approved" ? null : l.moderation === "declined" ? (
+                    <span className="x-chip" style={{ background: "var(--alert-soft)", color: "var(--alert)" }}>Declined</span>
+                  ) : (
+                    <span className="x-chip x-chip--pending">Waiting on review</span>
+                  )}
                   {l.verified
                     ? <span className="x-chip" style={{ background: "var(--success-soft)", color: "var(--success)" }}>Verified</span>
                     : <Link href="/verify" className="x-chip" style={{ background: "var(--value-soft)", color: "var(--value)" }}>Verify to rank</Link>}
@@ -132,6 +139,18 @@ export default function SellerListings({ listings }: { listings: SellerListing[]
                   {l.photoCount < 4 && <span className="x-chip" style={{ background: "var(--alert-soft)", color: "var(--alert)" }}>{l.photoCount} photos</span>}
                   {noWindow && <span className="x-chip" style={{ background: "var(--alert-soft)", color: "var(--alert)" }}>No end date</span>}
                 </div>
+                {l.moderation === "declined" && (
+                  <p className="s-row__warn">
+                    <b>Not published.</b> {l.moderationNote || "No reason was recorded — ask us."} Fix it in the
+                    composer and it goes back in the queue.
+                  </p>
+                )}
+                {l.moderation === "pending" && (
+                  <p className="s-row__warn" style={{ background: "var(--value-soft)", color: "var(--ochre-700)" }}>
+                    Not visible to renters yet. Everything is reviewed by a person before it publishes — usually the
+                    same day. Four good photographs and an end date are what get one waved through.
+                  </p>
+                )}
                 {noWindow && (
                   <p className="s-row__warn">
                     Without an end date this cannot answer a date-range search — someone looking for March to June will

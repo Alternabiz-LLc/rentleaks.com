@@ -2270,3 +2270,168 @@
 @media (max-width: 560px) {
   .rl-foot__inner { grid-template-columns: 1fr; }
 }
+
+/* --------------------------------------------------------------------------
+   Review queue (founder view)
+   -------------------------------------------------------------------------- */
+
+.m-queue { display: grid; gap: var(--s-3); margin-bottom: var(--s-8); }
+
+.m-queue__err {
+  margin: 0;
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--r-sm);
+  border-left: 3px solid var(--alert);
+  background: var(--alert-soft);
+  color: var(--alert);
+  font-size: var(--text-sm);
+}
+
+.m-card {
+  border: 1px solid var(--x-rule);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.m-card[data-open="1"] { border-color: var(--x-rule-strong); box-shadow: var(--shadow-sm); }
+.m-card[data-settled] { opacity: 0.55; }
+
+.m-card__head {
+  width: 100%;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-4);
+  flex-wrap: wrap;
+  padding: var(--s-4);
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+.m-card__who { font-size: var(--text-xs); color: var(--ink-3); line-height: 1.5; }
+.m-card__who b { display: block; font-size: var(--text-md); color: var(--ink); margin-bottom: 0.15rem; }
+.m-card__marks { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+
+.m-card__body {
+  padding: 0 var(--s-4) var(--s-4);
+  display: grid;
+  gap: var(--s-4);
+  border-top: 1px solid var(--x-rule);
+  padding-top: var(--s-4);
+}
+
+.m-shots {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: var(--s-2);
+}
+
+.m-shots img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: var(--r-sm);
+  background: var(--surface-3);
+  display: block;
+}
+
+.m-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: var(--s-3);
+  margin: 0;
+}
+
+.m-facts dt {
+  font-family: var(--x-ledger-font);
+  font-size: var(--text-micro);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+  margin-bottom: 0.15rem;
+}
+
+.m-facts dd { margin: 0; font-size: var(--text-sm); font-weight: 600; color: var(--ink); }
+
+.m-fees {
+  list-style: none;
+  margin: 0;
+  padding: var(--s-3);
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem var(--s-4);
+  font-family: var(--x-ledger-font);
+  font-size: var(--text-xs);
+  color: var(--ink-2);
+}
+
+.m-note { display: grid; gap: 0.3rem; }
+.m-note span { font-size: var(--text-xs); font-weight: 600; color: var(--ink-3); }
+
+.m-note textarea {
+  width: 100%;
+  padding: var(--s-3);
+  border: 1px solid var(--x-rule-strong);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--text-sm);
+  resize: vertical;
+}
+
+.m-canned { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.m-canned .x-chip { border: 0; cursor: pointer; background: var(--surface-3); color: var(--ink-2); text-align: left; }
+.m-canned .x-chip:hover { background: var(--brand-soft); color: var(--brand); }
+
+.m-actions { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+
+/* --------------------------------------------------------------------------
+   Photography tips in the composer
+   -------------------------------------------------------------------------- */
+
+.c-tips {
+  margin: 0 0 var(--s-5);
+  padding: var(--x-panel-pad);
+  border-radius: var(--r-md);
+  background: var(--brand-soft);
+  border: 1px solid var(--x-rule);
+}
+
+.c-tips__h {
+  margin: 0 0 var(--s-2);
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.c-tips__lede { margin: 0 0 var(--s-4); font-size: var(--text-sm); line-height: 1.6; color: var(--ink-2); max-width: 66ch; }
+
+.c-tips__list {
+  margin: 0;
+  padding-left: 1.15rem;
+  display: grid;
+  gap: var(--s-3);
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  color: var(--ink-2);
+  max-width: 72ch;
+}
+
+.c-tips__list b { color: var(--ink); }
+
+.c-tips__foot {
+  margin: var(--s-4) 0 0;
+  padding-top: var(--s-3);
+  border-top: 1px dashed var(--x-rule);
+  font-size: var(--text-xs);
+  color: var(--ink-3);
+}

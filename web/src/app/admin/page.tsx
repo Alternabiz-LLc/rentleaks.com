@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import ModerationQueue, { type QueueItem } from "@/components/ModerationQueue";
 import { Shell } from "@/components/Shell";
 import { getCurrentUser } from "@/lib/auth";
 import { isAdmin } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { checkListing, type Fee } from "@/lib/listing-rules";
+import { fmtMoney, typeLabel } from "@/lib/site";
 
 export const metadata = { title: "Founder view — RentLeaks" };
 
@@ -29,7 +31,10 @@ export default async function AdminPage() {
   if (!isAdmin(user)) notFound();
 
   const [listings, users, cities] = await Promise.all([
-    prisma.listing.findMany({ include: { city: true }, orderBy: { createdAt: "desc" } }),
+    prisma.listing.findMany({
+      include: { city: true, host: { select: { name: true, identity: true } } },
+      orderBy: { createdAt: "desc" },
+    }),
     prisma.user.findMany({ include: { identity: true }, orderBy: { createdAt: "desc" } }),
     prisma.city.findMany({ orderBy: { rank: "asc" } }),
   ]);
@@ -48,8 +53,9 @@ export default async function AdminPage() {
       return sum + (weekly ? (listing + promo) * 4.33 : listing + promo);
     }, 0);
 
-  /* The compliance queue. Same gate as the composer, re-run over stored rows. */
-  const failing = listings
+  /* Same gate as the composer, re-run over stored rows — once, and read by
+     both the review queue and the compliance table below it. */
+  const reviewed = listings
     .map((l) => {
       let fees: Fee[] = [];
       try {
@@ -59,7 +65,7 @@ export default async function AdminPage() {
         fees = [];
       }
       const detail = (l.detail ?? {}) as { photos?: unknown };
-      const blocked = checkListing({
+      const checks = checkListing({
         role: l.listedBy,
         housingType: l.housingType,
         cityId: l.cityId,
@@ -82,10 +88,55 @@ export default async function AdminPage() {
         consentStatus: l.consentStatus || undefined,
         registrationNumber: l.registrationNumber || undefined,
         photoCount: Array.isArray(detail.photos) ? detail.photos.length : l.image ? 1 : 0,
-      }).filter((c) => c.blocking && !c.ok);
-      return { listing: l, blocked };
-    })
-    .filter((x) => x.blocked.length);
+      });
+      return {
+        listing: l,
+        fees,
+        checks,
+        blocked: checks.filter((c) => c.blocking && !c.ok),
+        warned: checks.filter((c) => !c.blocking && !c.ok),
+      };
+    });
+
+  const failing = reviewed.filter((x) => x.blocked.length);
+
+  /* The queue. Oldest first: a seller waiting three days should not be behind
+     one who submitted this morning. */
+  const queue: QueueItem[] = reviewed
+    .filter((x) => x.listing.moderation === "pending")
+    .reverse()
+    .map(({ listing: l, fees, blocked, warned }) => {
+      const detail = (l.detail ?? {}) as { photos?: unknown; images?: unknown };
+      const shots = Array.isArray(detail.photos)
+        ? (detail.photos as unknown[]).filter((p): p is string => typeof p === "string")
+        : Array.isArray(detail.images)
+          ? (detail.images as unknown[]).filter((p): p is string => typeof p === "string")
+          : [];
+      return {
+        id: l.id,
+        title: l.title,
+        href: `/listings/${l.id}`,
+        cityName: l.city.name,
+        typeLabel: typeLabel(l.housingType),
+        hostName: l.host.name,
+        hostVerified: l.host.identity?.status === "verified",
+        listedBy: l.listedBy,
+        price: fmtMoney(l.price, l.currency),
+        allIn: fmtMoney(l.allIn, l.currency),
+        deposit: l.deposit ? fmtMoney(l.deposit, l.currency) : "None",
+        feeLines: fees.map(
+          (f) => `${f.type}: ${fmtMoney(f.amount, l.currency)}${f.cadence === "monthly" ? " /mo" : " once"}`,
+        ),
+        photos: shots.length ? shots : l.image ? [l.image] : [],
+        availableFrom: l.availableFrom,
+        availableUntil: l.availableUntil,
+        createdAt: l.createdAt.toISOString().slice(0, 10),
+        moderation: l.moderation,
+        moderationNote: l.moderationNote,
+        blockers: blocked.map((c) => c.title),
+        warnings: warned.map((c) => c.title),
+      };
+    });
 
   const unverifiedHosts = users.filter(
     (u) => u.role !== "renter" && (!u.identity || u.identity.status !== "verified"),
@@ -121,8 +172,16 @@ export default async function AdminPage() {
             <div><span className="s-summary__k">Listings</span><b>{listings.length}</b><small>{live.length} live</small></div>
             <div><span className="s-summary__k">Accounts</span><b>{users.length}</b><small>{users.filter((u) => u.role !== "renter").length} sellers</small></div>
             <div><span className="s-summary__k">Sponsored</span><b>{sponsored.length}</b><small>across {new Set(sponsored.map((l) => l.cityId)).size} markets</small></div>
+            <div><span className="s-summary__k">Awaiting review</span><b>{queue.length}</b><small>{listings.filter((l) => l.moderation === "declined").length} declined</small></div>
             <div><span className="s-summary__k">Recurring</span><b>${Math.round(monthly)}</b><small>per month at posted rates</small></div>
           </div>
+
+          <h2 className="a-h2">Waiting on review{queue.length ? ` · ${queue.length}` : ""}</h2>
+          <p className="v-note" style={{ marginTop: 0 }}>
+            Nothing reaches renters until it is approved here. Decline needs a reason and the seller is shown it
+            verbatim — a rejection with no reason comes back as the same listing next week.
+          </p>
+          <ModerationQueue items={queue} />
 
           <h2 className="a-h2">Needs attention</h2>
           <div className="a-cols">

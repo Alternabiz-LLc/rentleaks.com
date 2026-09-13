@@ -59,8 +59,17 @@ export function paidUntilFrom(planId: BillingPlanId, from = new Date()) {
   return new Date(from.getTime() + plan.days * 24 * 60 * 60 * 1000);
 }
 
+/**
+ * What the public is allowed to see.
+ *
+ * Two gates, and they belong to different people. `moderation` is ours — a
+ * listing reaches the catalogue when a human has approved it, and a seller
+ * cannot get past a decline by toggling their own switches. `status` is the
+ * seller's, and a paused listing was being served to renters until now, which
+ * meant the pause button on the dashboard was decoration.
+ */
 export function liveListingWhere() {
-  return {};
+  return { moderation: "approved", status: { not: "paused" } };
 }
 
 export function isListingLive(listing: {

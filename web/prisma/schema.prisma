@@ -149,6 +149,15 @@ model Listing {
   accessibilityJson String @default("[]")
   feesJson        String   @default("[]")
 
+  // --- Review. Nothing reaches the public catalogue until a human has looked
+  //     at it. `moderation` is separate from `status` on purpose: status is
+  //     the seller's switch (active, coming-soon, paused) and moderation is
+  //     ours, so a seller cannot unpause their way past a decline. ---
+  moderation      String   @default("pending")
+  moderationNote  String?
+  moderatedAt     DateTime?
+  moderatedById   String?
+
   // --- Paid placement. Scoped to the listing's own market: a sponsored slot
   //     is only ever promoted where the search resolves to that city. ---
   sponsored       Boolean  @default(false)
@@ -178,6 +187,7 @@ model Listing {
   @@index([status])
   @@index([sponsored, cityId])
   @@index([vouchersAccepted])
+  @@index([moderation])
 }
 
 /// A landlord, portfolio or co-living brand. Holds identity only — counts,

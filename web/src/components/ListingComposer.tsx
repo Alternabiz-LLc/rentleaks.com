@@ -419,6 +419,63 @@ export default function ListingComposer({
                   Of this unit, not the building&rsquo;s marketing shots. Both the thing renters most often leave over and the cheapest fraud control we have — someone who cannot get into a property cannot photograph it.
                 </p>
               </div>
+              <div className="c-tips">
+                <h3 className="c-tips__h">Nine minutes of photography is worth more than anything else on this page</h3>
+                <p className="c-tips__lede">
+                  Photographs are the first filter and usually the only one. A phone from the last five years is
+                  plenty — what separates a listing that gets enquiries from one that does not is almost never the
+                  camera.
+                </p>
+                <ol className="c-tips__list">
+                  <li>
+                    <b>Shoot in daylight, and turn every lamp on anyway.</b> Mid-morning or late afternoon, curtains
+                    open. Mixed light beats a dark room. Never use the flash — it flattens the space and makes every
+                    room look like an insurance claim.
+                  </li>
+                  <li>
+                    <b>Stand in a corner, back to the wall.</b> From the doorway you photograph a wall; from the corner
+                    you photograph the room. Hold the phone at chest height and keep it level — tilting up makes
+                    ceilings loom and floors vanish.
+                  </li>
+                  <li>
+                    <b>Landscape, always.</b> Rooms are wider than they are tall and every listing grid on the internet
+                    is a landscape rectangle. A portrait photo gets cropped to its middle third.
+                  </li>
+                  <li>
+                    <b>Tidy first, then shoot.</b> Clear the counters, make the bed, close the toilet lid, hide the
+                    bins and the drying rack, take the shoes off the floor. This is fifteen minutes and it does more
+                    for the price you can ask than any wording.
+                  </li>
+                  <li>
+                    <b>Take the whole home, not the best bits.</b> The bedroom, the bathroom, the kitchen, the common
+                    space, and the view from a window. Eight angles of the same sofa reads as though there is something
+                    you are not showing — and renters assume the worst about the room you left out.
+                  </li>
+                  <li>
+                    <b>Photograph the honest parts too.</b> The small bathroom, the shared kitchen, the stairs if there
+                    is no lift. Someone who arrives to a surprise walks away and you have lost the viewing; someone who
+                    knew and came anyway is there to sign.
+                  </li>
+                  <li>
+                    <b>Lead with the room being let.</b> On a room listing that is the bedroom, not the building
+                    lobby. The cover photo is the one decision that determines whether anyone sees the other eight.
+                  </li>
+                  <li>
+                    <b>No stock, no agency renders, no photos of a different unit.</b> A duplicate or stock-looking
+                    photograph is the most common reason a listing is declined here, and it is what every renter has
+                    been trained by scams to look for.
+                  </li>
+                  <li>
+                    <b>Then walk it on video.</b> Sixty seconds, front door to window, narrating nothing. It is the
+                    single fastest way to prove the home exists and that you are in it — and it is what to offer when
+                    someone asks to see the place before paying anything.
+                  </li>
+                </ol>
+                <p className="c-tips__foot">
+                  A person reviews every listing before it publishes. Photographs are what that review is mostly
+                  looking at.
+                </p>
+              </div>
               <Field label="Photo URLs, one per line" help="Four minimum. A bedroom, the bathroom, the kitchen and the common space beats eight angles of the same sofa.">
                 <textarea
                   rows={6}
