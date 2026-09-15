@@ -17,6 +17,10 @@
 /.next/
 /out/
 
+# listing photo and video uploads
+/public/uploads/**
+!/public/uploads/.gitkeep
+
 # production
 /build
 

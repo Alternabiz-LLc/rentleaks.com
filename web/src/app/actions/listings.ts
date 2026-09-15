@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/site";
 import { allInOf, blockersFor, monthlyFees, rulesFor, type Fee, type ListingDraft } from "@/lib/listing-rules";
+import { sanitiseMediaUrls } from "@/lib/media";
 
 const TYPES = ["room", "coliving", "furnished", "short-term", "aparthotel", "lease-break"] as const;
 
@@ -116,6 +117,7 @@ type ComposerPayload = {
   amenities?: string[];
   access?: string[];
   photos?: string[];
+  videos?: string[];
   videoUrl?: string;
   tourUrl?: string;
   description?: string;
@@ -144,12 +146,7 @@ function sanitiseFees(input: unknown): Fee[] {
 }
 
 function sanitiseUrls(input: unknown, limit: number) {
-  if (!Array.isArray(input)) return [];
-  return input
-    .filter((u): u is string => typeof u === "string")
-    .map((u) => u.trim())
-    .filter((u) => /^https:\/\//i.test(u))
-    .slice(0, limit);
+  return sanitiseMediaUrls(input, limit);
 }
 
 export async function createListingFromComposer(payload: string): Promise<{ error?: string } | void> {
@@ -170,6 +167,7 @@ export async function createListingFromComposer(payload: string): Promise<{ erro
   const housingType = pickType(String(raw.housingType || "room"));
   const fees = sanitiseFees(raw.fees);
   const photos = sanitiseUrls(raw.photos, 24);
+  const videos = sanitiseUrls(raw.videos?.length ? raw.videos : raw.videoUrl ? [raw.videoUrl] : [], 8);
 
   const draft: ListingDraft = {
     role: ROLES.includes(String(raw.role)) ? String(raw.role) : "owner",
@@ -264,7 +262,8 @@ export async function createListingFromComposer(payload: string): Promise<{ erro
 
       detail: {
         photos,
-        videoUrl: typeof raw.videoUrl === "string" && /^https:\/\//i.test(raw.videoUrl) ? raw.videoUrl : null,
+        videos,
+        videoUrl: videos[0] || null,
         tourUrl: typeof raw.tourUrl === "string" && /^https:\/\//i.test(raw.tourUrl) ? raw.tourUrl : null,
         specs: [
           `${Math.max(0, Number(raw.beds) || 0)} bed`,

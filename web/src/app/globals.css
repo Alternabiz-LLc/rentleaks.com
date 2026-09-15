@@ -1377,6 +1377,123 @@ body.rl-lb-lock {
 /* Footer styles live in evidence.css alongside the rest of the layout it
    shares tokens with. */
 
+.rl-info {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  background: rgba(16, 36, 42, 0.46);
+}
+
+.rl-info__panel {
+  position: relative;
+  width: min(36rem, 100%);
+  max-height: min(82vh, 44rem);
+  overflow-y: auto;
+  padding: 1.6rem 1.5rem 1.4rem;
+  border-radius: 1.15rem;
+  background: var(--rl-white);
+  color: var(--rl-ink);
+  box-shadow: 0 24px 60px rgba(16, 36, 42, 0.22);
+}
+
+.rl-info__panel h2 {
+  margin: 0 1.75rem 0.85rem 0;
+  font-size: 1.45rem;
+  letter-spacing: -0.03em;
+}
+
+.rl-info__panel p,
+.rl-info__faq dd {
+  margin: 0 0 0.85rem;
+  color: var(--rl-muted);
+  line-height: 1.55;
+}
+
+.rl-info__close {
+  position: absolute;
+  top: 0.85rem;
+  right: 0.85rem;
+  width: 2rem;
+  height: 2rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--rl-paper);
+  color: var(--rl-ink);
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.rl-info__faq {
+  display: grid;
+  gap: 0.9rem;
+  margin: 0 0 1.15rem;
+}
+
+.rl-info__faq dt {
+  font-weight: 800;
+  margin-bottom: 0.25rem;
+}
+
+.rl-info__faq dd {
+  margin-bottom: 0;
+}
+
+.rl-info__form {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.rl-info__form label {
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--rl-muted);
+}
+
+.rl-info__form input,
+.rl-info__form select,
+.rl-info__form textarea {
+  border: 1px solid var(--rl-line);
+  border-radius: 0.75rem;
+  padding: 0.55rem 0.7rem;
+  background: var(--rl-paper);
+  color: var(--rl-ink);
+  font: inherit;
+}
+
+.rl-info__label {
+  margin: 1rem 0 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--rl-ink);
+}
+
+.rl-info__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  list-style: none;
+}
+
+.rl-info__chips a {
+  display: inline-block;
+  padding: 0.3rem 0.65rem;
+  border: 1px solid var(--rl-line);
+  border-radius: 999px;
+  background: var(--rl-paper);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
 .rl-empty {
   color: var(--rl-muted);
 }

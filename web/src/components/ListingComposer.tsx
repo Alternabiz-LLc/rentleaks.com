@@ -18,6 +18,7 @@
  */
 
 import { useMemo, useState } from "react";
+import { MediaSorter, type MediaItem } from "@/components/MediaSorter";
 import {
   checkListing,
   rulesFor,
@@ -28,6 +29,7 @@ import {
   type Fee,
   type ListingDraft,
 } from "@/lib/listing-rules";
+import { persistMediaFiles } from "@/lib/media";
 
 type City = { id: string; slug: string; name: string; state: string; country: string; currency: string };
 type HousingType = { id: string; label: string };
@@ -113,8 +115,8 @@ type Draft = {
   pets: string;
   amenities: string[];
   access: string[];
-  photos: string[];
-  videoUrl: string;
+  photos: MediaItem[];
+  videos: MediaItem[];
   tourUrl: string;
   description: string;
   status: string;
@@ -169,7 +171,7 @@ export default function ListingComposer({
     amenities: [],
     access: [],
     photos: [],
-    videoUrl: "",
+    videos: [],
     tourUrl: "",
     description: "",
     status: "active",
@@ -270,9 +272,26 @@ export default function ListingComposer({
     if (blockers.length) return;
     setSaving(true);
     setServerError(null);
-    const res = await action(JSON.stringify({ ...draft, cityName: city?.name, state: city?.state, country: city?.country }));
-    setSaving(false);
-    if (res && "error" in res && res.error) setServerError(res.error);
+    try {
+      const photos = await persistMediaFiles(draft.photos);
+      const videos = await persistMediaFiles(draft.videos);
+      const res = await action(
+        JSON.stringify({
+          ...draft,
+          photos,
+          videos,
+          videoUrl: videos[0] || "",
+          cityName: city?.name,
+          state: city?.state,
+          country: city?.country,
+        }),
+      );
+      setSaving(false);
+      if (res && "error" in res && res.error) setServerError(res.error);
+    } catch (error) {
+      setSaving(false);
+      setServerError(error instanceof Error ? error.message : "Could not save photos or videos.");
+    }
   }
 
   /* --------------------------------------------------------------------- */
@@ -476,33 +495,27 @@ export default function ListingComposer({
                   looking at.
                 </p>
               </div>
-              <Field label="Photo URLs, one per line" help="Four minimum. A bedroom, the bathroom, the kitchen and the common space beats eight angles of the same sofa.">
-                <textarea
-                  rows={6}
-                  value={draft.photos.join("\n")}
-                  onChange={(e) => set("photos", e.target.value.split("\n").map((s) => s.trim()).filter(Boolean))}
-                  placeholder={"https://…\nhttps://…"}
+              <MediaSorter
+                kind="photo"
+                items={draft.photos}
+                onChange={(photos) => set("photos", photos)}
+                max={24}
+                title="Drop photographs here, or choose files"
+                blurb="Four minimum. A bedroom, the bathroom, the kitchen and the common space beats eight angles of the same sofa."
+              />
+              <div style={{ marginTop: "var(--s-5)" }}>
+                <MediaSorter
+                  kind="video"
+                  items={draft.videos}
+                  onChange={(videos) => set("videos", videos)}
+                  max={8}
+                  title="Drop walkthrough videos here, or choose files"
+                  blurb="A phone walk from the door to the window beats a produced film. Reorder the same way as photos."
                 />
-              </Field>
-              {draft.photos.length > 0 && (
-                <div className="c-shots">
-                  {draft.photos.map((src, i) => (
-                    <div className="c-shot" key={`${src}-${i}`}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={src} alt={`Listing photograph ${i + 1}`} />
-                      {i === 0 && <span className="c-shot__flag c-shot__flag--cover">Cover</span>}
-                    </div>
-                  ))}
-                </div>
-              )}
-              <div className="c-row" style={{ marginTop: "var(--s-5)" }}>
-                <Field label="Video walkthrough URL" help="A phone walkthrough beats a produced film, and it is what to offer when someone asks to see the place live before paying anything.">
-                  <input type="url" value={draft.videoUrl} onChange={(e) => set("videoUrl", e.target.value)} placeholder="https://…" />
-                </Field>
-                <Field label="3D or virtual tour URL" help="Optional. It converts, but photographs come first.">
-                  <input type="url" value={draft.tourUrl} onChange={(e) => set("tourUrl", e.target.value)} placeholder="https://…" />
-                </Field>
               </div>
+              <Field label="3D or virtual tour URL" help="Optional. It converts, but photographs come first.">
+                <input type="url" value={draft.tourUrl} onChange={(e) => set("tourUrl", e.target.value)} placeholder="https://…" />
+              </Field>
             </section>
           )}
 
@@ -676,7 +689,7 @@ export default function ListingComposer({
                 <div className="c-preview-card__img">
                   {draft.photos[0]
                     /* eslint-disable-next-line @next/next/no-img-element */
-                    ? <img src={draft.photos[0]} alt={draft.title} />
+                    ? <img src={draft.photos[0].src} alt={draft.title} />
                     : <div className="c-preview-card__empty">No cover photograph</div>}
                   <span className="c-preview-card__badge">{housingTypes.find((t) => t.id === draft.housingType)?.label || draft.housingType}</span>
                 </div>

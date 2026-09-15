@@ -7,6 +7,7 @@ import { Shell } from "@/components/Shell";
 import { ListingEvidence } from "@/components/evidence/ListingEvidence";
 import { listingGallery } from "@/lib/catalog";
 import { evidenceFor, type EvidenceListing } from "@/lib/listing-evidence";
+import { mediaFromDetail } from "@/lib/media";
 import { toBrowseListing, toMapPin } from "@/lib/listings";
 import { prisma } from "@/lib/prisma";
 import { catalogOrigin, fmtMoney, typeLabel } from "@/lib/site";
@@ -93,6 +94,7 @@ export default async function ListingPage({
             title: listing.title,
             neighborhood: listing.neighborhood,
             cityName: listing.city.name,
+            ...mediaFromDetail(listing.detail),
           })}
         />
         <div className="rl-listing__grid">

@@ -165,7 +165,29 @@ export function listingGallery(input: {
   title: string;
   neighborhood: string;
   cityName: string;
+  photos?: string[];
+  videos?: string[];
 }): GalleryItem[] {
+  const uploaded = (input.photos || []).filter(Boolean);
+  if (uploaded.length) {
+    const cover = uploaded[0] || input.image;
+    return [
+      ...uploaded.map((src, index) => ({
+        kind: "photo" as const,
+        src,
+        caption: index === 0 ? "Main photo" : `Photo ${index + 1}`,
+        alt: `${input.title} — photo ${index + 1} in ${input.neighborhood}, ${input.cityName}`,
+      })),
+      ...(input.videos || []).filter(Boolean).map((src, index) => ({
+        kind: "video" as const,
+        src,
+        poster: cover,
+        caption: index === 0 ? "Video tour" : `Video ${index + 1}`,
+        alt: `Video tour of ${input.title} in ${input.neighborhood}`,
+      })),
+    ];
+  }
+
   const seed = hash(input.id);
   const picks: Array<{ src: string; label: string }> = GALLERY_ROOMS.map((key, i) => {
     const pool = GALLERY_POOL[key];

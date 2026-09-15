@@ -1,5 +1,6 @@
 import { liveListingWhere } from "./billing";
 import { listingGallery, type GalleryItem } from "./catalog";
+import { mediaFromDetail } from "./media";
 import { prisma } from "./prisma";
 
 export type { GalleryItem };
@@ -76,7 +77,9 @@ export function toBrowseListing(listing: {
   cityId: string;
   city: { name: string; state: string };
   featured?: boolean;
+  detail?: unknown;
 }): BrowseListing {
+  const media = mediaFromDetail(listing.detail);
   return {
     id: listing.id,
     title: listing.title,
@@ -107,6 +110,8 @@ export function toBrowseListing(listing: {
       title: listing.title,
       neighborhood: listing.neighborhood,
       cityName: listing.city.name,
+      photos: media.photos,
+      videos: media.videos,
     }),
   };
 }
