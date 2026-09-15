@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { json, preflight, serializeListing, num, bool, MAX_PAGE_SIZE } from "@/lib/api";
 import type { Prisma } from "@prisma/client";
+import { liveListingWhere } from "@/lib/billing";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,10 @@ export async function GET(req: NextRequest) {
   const p = req.nextUrl.searchParams;
 
   const where: Prisma.ListingWhereInput = {};
-  const and: Prisma.ListingWhereInput[] = [];
+  /* Only what a renter could actually take: approved by review and not
+     paused. Without this the public catalogue served pending, declined and
+     paused rows to the static site. */
+  const and: Prisma.ListingWhereInput[] = [await liveListingWhere()];
 
   const city = p.get("city");
   if (city) where.cityId = city;

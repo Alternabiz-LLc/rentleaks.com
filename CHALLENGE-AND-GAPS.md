@@ -216,3 +216,42 @@ should be read with that in mind.
 4. Sponsored scoping in the Next browse (4.6) — small, and currently a
    correctness bug rather than a missing feature.
 5. Verified stay records (4.3), once 4.1 gives them something to attach to.
+
+---
+
+## 7. Addendum — mobile app (15 September 2026)
+
+The native app and its API are specified and built in `MOBILE-APP.md`. Against
+the list in §4:
+
+- **4.1 Enquiry and messaging** — built at the API level (`/api/v1/conversations`)
+  and in the app, with read receipts, push, report/block and a scam guard on
+  every message. The web listing page still sends renters to `apply.html`;
+  wiring the web to the same endpoints is the remaining step.
+- **4.5 Saved listings** — server-side (`SavedListing`, `SavedSearch` with
+  alerts). The web still uses `localStorage`.
+- **4.6 Sponsored scoping** — correct in `/api/v1/listings`; `BrowseWorkspace`
+  unchanged.
+- **4.8 Tests** — `web/tests/v1.test.ts` covers the rules engine, the
+  publication gate, the scam guard, search parsing and address privacy
+  (`npm test`).
+
+Two defects found and fixed on the way: `GET /api/listings` served unreviewed
+and paused rows, and the web composer wrote `allInUsd` in local currency.
+
+### 15 September, afternoon — first run on a simulator
+
+The app ran on an iPhone 17 Pro simulator against the live database, and the
+API was driven end to end by a smoke script. Three defects surfaced that the
+type-checker and unit tests could not have caught, all fixed with tests:
+
+- The unit number leaked through "street only" address privacy on every
+  seeded listing, on the app and on the web listing page.
+- A thread only ever returned its newest message (`int(null)` parsed as 1).
+- The "I'm abroad, I'll mail the keys" and "wire the deposit" scam scripts
+  slipped past the guard when phrased the way people phrase them.
+
+Built on top: editing a listing from the phone, renter → host in one tap,
+on-device geocoding so new listings sit on the right street, a search sheet
+with length-of-stay chips, a photo viewer, read receipts, archive, offline
+handling, and in-context notification permission. Details in `MOBILE-APP.md` §6.

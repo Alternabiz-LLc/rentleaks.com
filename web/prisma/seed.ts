@@ -6,47 +6,30 @@ import { hashPassword } from "../src/lib/password";
 const prisma = new PrismaClient();
 
 async function main() {
-  const passwordHash = hashPassword("rentleaks");
+  /* The catalogue is owned by the founder account. No shared demo logins:
+     credentials come from the environment and are never written to the repo.
+       FOUNDER_EMAIL=you@example.com FOUNDER_PASSWORD='…' npx prisma db seed
+     An existing founder keeps their password unless FOUNDER_PASSWORD is set. */
+  const email = (process.env.FOUNDER_EMAIL || "").trim().toLowerCase();
+  if (!email) {
+    throw new Error("Set FOUNDER_EMAIL (and FOUNDER_PASSWORD on first run), or run `npm run founder` first.");
+  }
+  const name = process.env.FOUNDER_NAME || "Yves Dikoume";
+  const password = process.env.FOUNDER_PASSWORD || "";
+  const existing = await prisma.user.findUnique({ where: { email } });
+  if (!existing && password.length < 12) {
+    throw new Error("FOUNDER_PASSWORD must be at least 12 characters to create the founder account.");
+  }
 
   const host = await prisma.user.upsert({
-    where: { email: "host@rentleaks.com" },
-    update: { passwordHash },
+    where: { email },
+    update: { role: "admin", ...(password ? { passwordHash: hashPassword(password) } : {}) },
     create: {
-      email: "host@rentleaks.com",
-      name: "Kai Kim",
-      passwordHash,
-      role: "host",
-      identity: {
-        create: {
-          status: "verified",
-          provider: "demo",
-          legalName: "Kai Kim",
-          livenessPassed: true,
-          addressConfirmed: true,
-          verifiedAt: new Date(),
-        },
-      },
-    },
-  });
-
-  await prisma.user.upsert({
-    where: { email: "renter@rentleaks.com" },
-    update: { passwordHash },
-    create: {
-      email: "renter@rentleaks.com",
-      name: "Ava Lee",
-      passwordHash,
-      role: "renter",
-      identity: {
-        create: {
-          status: "verified",
-          provider: "demo",
-          legalName: "Ava Lee",
-          livenessPassed: true,
-          addressConfirmed: true,
-          verifiedAt: new Date(),
-        },
-      },
+      email,
+      name,
+      passwordHash: hashPassword(password),
+      role: "admin",
+      identity: { create: { status: "unverified", provider: "demo" } },
     },
   });
 

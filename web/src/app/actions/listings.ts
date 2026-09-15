@@ -5,7 +5,7 @@ import { IMAGES } from "@/lib/catalog";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/site";
-import { allInOf, blockersFor, monthlyFees, rulesFor, type Fee, type ListingDraft } from "@/lib/listing-rules";
+import { allInOf, blockersFor, monthlyFees, rulesFor, toUsd, type Fee, type ListingDraft } from "@/lib/listing-rules";
 import { sanitiseMediaUrls } from "@/lib/media";
 
 const TYPES = ["room", "coliving", "furnished", "short-term", "aparthotel", "lease-break"] as const;
@@ -222,7 +222,7 @@ export async function createListingFromComposer(payload: string): Promise<{ erro
       neighborhood: draft.neighborhood,
       price: draft.price,
       allIn,
-      allInUsd: allIn,
+      allInUsd: Math.round(toUsd(allIn, city.currency)),
       currency: city.currency,
       deposit: draft.deposit,
       beds: Math.max(0, Number(raw.beds) || 0),
