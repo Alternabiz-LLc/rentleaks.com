@@ -24,3 +24,6 @@ web/.vercel/
 *.db
 *.db-journal
 web/prisma/dev.db
+
+# python
+__pycache__/
