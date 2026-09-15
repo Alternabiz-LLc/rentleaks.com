@@ -14,6 +14,8 @@ const COMPANY = {
   phone: null as string | null,
   entityNumber: null as string | null,
   licence: null as string | null,
+  facebook: "https://www.facebook.com/rentleakshq",
+  messenger: "https://m.me/rentleakshq",
 };
 
 const FIND = [
@@ -432,6 +434,16 @@ export function SiteFooter() {
                 <a href={`tel:${COMPANY.phone.replace(/[^+\d]/g, "")}`}>{COMPANY.phone}</a>
               </li>
             ) : null}
+            <li>
+              <a href={`${COMPANY.facebook}?utm_source=rentleaks_app&utm_medium=footer`} target="_blank" rel="noopener">
+                RentLeaks on Facebook
+              </a>
+            </li>
+            <li>
+              <a href={COMPANY.messenger} target="_blank" rel="noopener">
+                Message us on Messenger
+              </a>
+            </li>
             {COMPANY.entityNumber ? <li>Entity no. {COMPANY.entityNumber}</li> : null}
             {COMPANY.licence ? <li>{COMPANY.licence}</li> : null}
           </ul>

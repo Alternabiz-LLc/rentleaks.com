@@ -54,6 +54,14 @@ export const metadata: Metadata = {
   alternates: {
     canonical: SITE,
   },
+  /* Meta Business Suite → Brand safety → Domains. Set the code in .env; the
+     tag is omitted when it is empty. */
+  other: {
+    "article:publisher": "https://www.facebook.com/rentleakshq",
+    ...(process.env.FACEBOOK_DOMAIN_VERIFICATION
+      ? { "facebook-domain-verification": process.env.FACEBOOK_DOMAIN_VERIFICATION }
+      : {}),
+  },
 };
 
 export default function RootLayout({
