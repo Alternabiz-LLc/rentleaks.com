@@ -26,7 +26,6 @@ export default async function LoginPage({
     <Shell>
       <section className="rl-auth">
         <h1>{signup ? "Create a host account" : "Sign in"}</h1>
-        <p>Demo host: host@rentleaks.com / rentleaks. Demo renter: renter@rentleaks.com / rentleaks.</p>
         {error ? <p className="rl-error">{error}</p> : null}
         {signup ? (
           <form action={signUpAction} className="rl-form">
@@ -59,11 +58,11 @@ export default async function LoginPage({
             <input type="hidden" name="next" value={next} />
             <label>
               Email
-              <input name="email" type="email" defaultValue="host@rentleaks.com" required />
+              <input name="email" type="email" autoComplete="email" required />
             </label>
             <label>
               Password
-              <input name="password" type="password" defaultValue="rentleaks" required />
+              <input name="password" type="password" autoComplete="current-password" required />
             </label>
             <button className="rl-cta" type="submit">
               Sign in
@@ -74,7 +73,10 @@ export default async function LoginPage({
           {signup ? (
             <a href={`/login?next=${encodeURIComponent(next)}`}>Already have an account? Sign in</a>
           ) : (
-            <a href={`/login?mode=signup&next=${encodeURIComponent(next)}`}>Create an account</a>
+            <>
+              <a href={`/login?mode=signup&next=${encodeURIComponent(next)}`}>Create an account</a> ·{" "}
+              <a href="/reset">Forgot your password?</a>
+            </>
           )}
         </p>
       </section>

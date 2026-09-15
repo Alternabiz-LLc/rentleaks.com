@@ -9,6 +9,7 @@ import { listingGallery } from "@/lib/catalog";
 import { evidenceFor, type EvidenceListing } from "@/lib/listing-evidence";
 import { mediaFromDetail } from "@/lib/media";
 import { toBrowseListing, toMapPin } from "@/lib/listings";
+import { publicAddress } from "@/lib/v1/listing-view";
 import { prisma } from "@/lib/prisma";
 import { catalogOrigin, fmtMoney, typeLabel } from "@/lib/site";
 
@@ -104,7 +105,8 @@ export default async function ListingPage({
               {typeLabel(listing.housingType)} · {listing.neighborhood}
             </p>
             <h1>{listing.title}</h1>
-            <p>{listing.address}</p>
+            {/* Only as much of the address as the lister chose to publish. */}
+            <p>{publicAddress(listing)}</p>
             <p className="rl-lead">{listing.description}</p>
             <dl className="rl-dl">
               <div>

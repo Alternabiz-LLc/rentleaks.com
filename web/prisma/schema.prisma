@@ -26,6 +26,14 @@ model User {
   hostLeases          Lease[]        @relation("HostLeases")
   sessions            Session[]
 
+  // Mobile app (see MOBILE-APP.md)
+  savedListings  SavedListing[]
+  savedSearches  SavedSearch[]
+  pushDevices    PushDevice[]
+  reportsFiled   Report[]    @relation("ReportsFiled")
+  blocksMade     UserBlock[] @relation("BlocksMade")
+  blocksReceived UserBlock[] @relation("BlocksReceived")
+
   @@index([role])
 }
 
@@ -174,6 +182,8 @@ model Listing {
   conversations Conversation[]
   leases        Lease[]
   payments      Payment[]
+  savedBy       SavedListing[]
+  reports       Report[]
 
   @@index([cityId])
   @@index([housingType])
@@ -220,6 +230,11 @@ model Conversation {
   renter        User      @relation("RenterConversations", fields: [renterId], references: [id], onDelete: Cascade)
   host          User      @relation("HostConversations", fields: [hostId], references: [id], onDelete: Cascade)
   lastMessageAt DateTime  @default(now())
+  // Read receipts per side, so each inbox can count its own unread.
+  renterReadAt  DateTime?
+  hostReadAt    DateTime?
+  // open | archived. A blocked pair is enforced through UserBlock, not here.
+  status        String    @default("open")
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   messages      Message[]
@@ -236,6 +251,10 @@ model Message {
   senderId       String
   sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
   body           String
+  // JSON string[] of scam-guard signals raised on this message (wire
+  // transfer, pay-before-viewing, off-platform push...). Shown as a warning
+  // to the recipient; never used to silently drop a message.
+  flags          String       @default("[]")
   createdAt      DateTime     @default(now())
 
   @@index([conversationId])
@@ -282,4 +301,87 @@ model Lease {
 
   @@index([renterId])
   @@index([hostId])
+}
+
+/* ------------------------------------------------------------------------
+   Mobile app — models added for the native client (MOBILE-APP.md).
+   ------------------------------------------------------------------------ */
+
+/// Saved homes, per account rather than per browser (brief §4.5).
+model SavedListing {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, listingId])
+  @@index([listingId])
+}
+
+/// A stored browse query. When `alerts` is on, the alert job pushes newly
+/// approved listings that match it.
+model SavedSearch {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label         String
+  query         Json     @default("{}")
+  alerts        Boolean  @default(true)
+  lastCheckedAt DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId])
+  @@index([alerts])
+}
+
+/// Expo push token for a signed-in device.
+model PushDevice {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  platform  String   @default("unknown")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+/// A user report against a listing, an account or a message. Worked from the
+/// founder queue. Required for user-generated content on the app stores.
+model Report {
+  id            String    @id @default(cuid())
+  reporterId    String
+  reporter      User      @relation("ReportsFiled", fields: [reporterId], references: [id], onDelete: Cascade)
+  listingId     String?
+  listing       Listing?  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  subjectUserId String?
+  messageId     String?
+  /// scam | misleading | discriminatory | unavailable | abusive | other
+  reason        String
+  note          String    @default("")
+  /// open | actioned | dismissed
+  status        String    @default("open")
+  createdAt     DateTime  @default(now())
+  resolvedAt    DateTime?
+
+  @@index([status])
+  @@index([listingId])
+  @@index([reporterId])
+}
+
+/// One account refusing messages from another.
+model UserBlock {
+  id        String   @id @default(cuid())
+  blockerId String
+  blocker   User     @relation("BlocksMade", fields: [blockerId], references: [id], onDelete: Cascade)
+  blockedId String
+  blocked   User     @relation("BlocksReceived", fields: [blockedId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([blockerId, blockedId])
+  @@index([blockedId])
 }
