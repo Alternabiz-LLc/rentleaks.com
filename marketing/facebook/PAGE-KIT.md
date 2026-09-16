@@ -227,3 +227,49 @@ a public host first.
   - `article:publisher` meta, plus `facebook-domain-verification` from the environment;
   - the catalog feed at `/feeds/meta-home-listings.csv`.
 - **Mobile app** — "RentLeaks on Facebook" in the You tab.
+
+## 7. Leads and bookings from Facebook
+
+**The page:** https://rentleaks.com/facebook.html — the "Facebook version" of
+RentLeaks. It is where the Page button, posts and ads should send people.
+It offers three things:
+
+| Tab | What the visitor sends | Who hears about it |
+|---|---|---|
+| Find me a home | city, type, all-in budget, move-in, stay length | founder |
+| Book a viewing | one real listing + up to 3 date/time choices, in person or video | founder + host |
+| Request to book | one real listing + move-in and move-out | founder + host |
+
+- Nothing is paid. A "booking" is a request the host accepts or declines.
+- Only live, approved listings that are **not** in the sample catalogue can be
+  viewed or booked (`/api/leads/listings`). Until hosts publish real homes,
+  the viewing and booking tabs say so and send people to "Find me a home".
+- Every request is saved in the database (`Lead` table) and shown in the
+  **Leads** inbox at the top of `/admin` (status: new, contacted, booked,
+  closed, spam; private note; email/call/text buttons). The founder gets an
+  email for each one, the host gets requests for their own listing, and the
+  renter gets a copy with a safety note (email needs `RESEND_API_KEY`).
+- After sending, the visitor can continue on Messenger with the request
+  copied. If the app is unreachable, the page hands the request to Messenger
+  (and email) instead, so it lands in the Page inbox and nothing is lost.
+- The forms ask about the home, never about the people (fair housing), and
+  need a consent tick before anyone is contacted. Spam: hidden honeypot field
+  and 10 requests per 10 minutes per IP.
+
+**Links to use** (the `src` tag shows in the inbox as the lead's source):
+
+| Where | Link |
+|---|---|
+| Page action button ("Book now") | `https://rentleaks.com/facebook.html?src=fb_button` |
+| Page intro / pinned post | `https://rentleaks.com/facebook.html?src=fb_page` |
+| A post about one home | `https://rentleaks.com/facebook.html?src=fb_post&tab=viewing&listing=<listing id>` |
+| Ads | `https://rentleaks.com/facebook.html?utm_source=facebook&utm_medium=paid&utm_campaign=<name>` |
+| Messenger auto-reply | `https://rentleaks.com/facebook.html?src=messenger` |
+
+Deep links: `tab=match|viewing|stay`, `listing=<id>` (preselects the home),
+`city=<city id>` (preselects the city and filters the homes).
+
+**Goes live when:** the app is deployed at app.rentleaks.com (DEPLOY.md) and
+the `20260916120000_leads` migration has run (the "Database migrations"
+GitHub workflow does this on push once `DATABASE_DIRECT_URL` is set). Before
+that, the page still works — every request goes to Messenger.

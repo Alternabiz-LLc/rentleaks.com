@@ -145,5 +145,11 @@ export async function rateLimit(key: string, limit: number, windowMs: number) {
 }
 
 export function clientKey(req: Request) {
-  return (req.headers.get("x-forwarded-for") || "").split(",")[0].trim() || "local";
+  /* Cloudflare sets cf-connecting-ip itself; x-forwarded-for can be supplied
+     by the client, so it is only the fallback for other hosts. */
+  return (
+    req.headers.get("cf-connecting-ip") ||
+    (req.headers.get("x-forwarded-for") || "").split(",")[0].trim() ||
+    "local"
+  );
 }

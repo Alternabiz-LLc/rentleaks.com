@@ -1,0 +1,97 @@
+/* RentLeaks — Facebook landing page (facebook.html). Uses the tokens in styles.css. */
+
+.fbl-hero { display: grid; gap: var(--s-4); }
+.fbl-hero .rl-kicker { display: inline-flex; align-items: center; gap: var(--s-2); }
+.fbl-hero__links { display: flex; flex-wrap: wrap; gap: var(--s-3); margin-top: var(--s-2); }
+.fbl-trust { display: flex; flex-wrap: wrap; gap: var(--s-2) var(--s-5); margin: var(--s-2) 0 0; padding: 0; list-style: none; font-size: var(--text-sm); color: var(--ink-2); }
+.fbl-trust li { display: inline-flex; align-items: center; gap: 0.4rem; }
+.fbl-trust li::before { content: ""; width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--brand); flex: none; }
+
+.fbl-wrap { max-width: 860px; }
+#fb-landing [hidden] { display: none !important; }
+.fbl-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-2); margin-bottom: var(--s-5); }
+.fbl-tab {
+  display: grid; gap: 0.15rem; padding: var(--s-3) var(--s-4); text-align: left;
+  border: 1px solid var(--line-strong); border-radius: var(--r-md, 12px);
+  background: var(--surface); color: var(--ink); font: inherit; cursor: pointer;
+  transition: border-color var(--t-fast), box-shadow var(--t-fast), background var(--t-fast);
+}
+.fbl-tab b { font-size: var(--text-base); }
+.fbl-tab span { font-size: var(--text-xs); color: var(--ink-3); }
+.fbl-tab:hover { border-color: var(--ink); }
+.fbl-tab[aria-selected="true"] { background: var(--ink); border-color: var(--ink); color: var(--paper); box-shadow: var(--shadow-sm); }
+.fbl-tab[aria-selected="true"] span { color: inherit; opacity: 0.75; }
+.fbl-tab:focus-visible { outline: 3px solid var(--brand-ring, var(--brand)); outline-offset: 2px; }
+
+.fbl-opt { font-weight: 500; color: var(--ink-3); }
+.fbl-hint { margin: 0; font-size: var(--text-sm); color: var(--ink-2); line-height: 1.55; }
+.fbl-err { margin: 0; padding: var(--s-3) var(--s-4); border-radius: var(--r-sm); background: var(--alert-soft); color: var(--alert); font-size: var(--text-sm); font-weight: 600; }
+.fbl-err:focus { outline: none; }
+.form-input[aria-invalid="true"] { border-color: var(--alert); }
+.fbl-hp { position: absolute !important; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+
+.fbl-consent { display: flex; gap: var(--s-3); align-items: flex-start; font-size: var(--text-sm); color: var(--ink-2); line-height: 1.5; }
+.fbl-consent input { margin-top: 0.2rem; width: 1.1rem; height: 1.1rem; flex: none; accent-color: var(--brand); }
+
+.fbl-fieldset { margin: 0; padding: 0; border: 0; display: grid; gap: var(--s-3); }
+.fbl-fieldset legend { padding: 0; margin-bottom: var(--s-2); font-size: var(--text-sm); font-weight: 700; color: var(--ink); }
+.fbl-slot { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: var(--s-3); }
+.fbl-mode { display: flex; flex-wrap: wrap; gap: var(--s-2) var(--s-5); }
+.fbl-mode legend { width: 100%; }
+.fbl-mode label { display: inline-flex; align-items: center; gap: var(--s-2); font-size: var(--text-sm); }
+.fbl-mode input { accent-color: var(--brand); }
+
+/* .rl-page styles every ul as a bulleted list; the home grid is not one. */
+#fb-landing .fbl-grid { gap: var(--s-4); }
+#fb-landing .fbl-grid > li { display: flex; margin: 0; padding: 0; list-style: none; }
+#fb-landing .fbl-grid > li::before { display: none; content: none; }
+.fbl-grid { list-style: none; margin: var(--s-3) 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: var(--s-4); }
+.fbl-home {
+  position: relative; display: grid; grid-template-rows: auto 1fr; align-content: start; width: 100%; padding: 0; overflow: hidden; text-align: left;
+  border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface); color: var(--ink);
+  font: inherit; cursor: pointer; box-shadow: var(--shadow-sm);
+  transition: transform var(--t-fast), box-shadow var(--t-fast), border-color var(--t-fast);
+}
+.fbl-home:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: var(--line-strong); }
+.fbl-home:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+.fbl-home img, .fbl-home__ph { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; background: var(--surface-2, var(--celeste-50)); }
+.fbl-home .x-sponsor-tag { top: 0.6rem; bottom: auto; }
+.fbl-home__body { display: grid; gap: 0.25rem; padding: var(--s-3) var(--s-4) var(--s-4); font-size: var(--text-sm); color: var(--ink-2); }
+.fbl-home__body b { color: var(--ink); font-size: var(--text-base); line-height: 1.3; }
+.fbl-home__price { color: var(--value); font-weight: 700; font-size: var(--text-base); }
+.fbl-home__price small { font-weight: 500; color: var(--ink-3); font-size: var(--text-xs); }
+.fbl-home__meta { font-size: var(--text-xs); color: var(--ink-3); }
+
+.fbl-picked { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: var(--s-4); align-items: center; padding: var(--s-3); border: 1px solid var(--line); border-radius: var(--r-md, 12px); background: var(--paper); }
+.fbl-picked img, .fbl-picked__ph { display: block; width: 96px; height: 72px; object-fit: cover; border-radius: var(--r-sm); background: var(--surface-2, var(--celeste-50)); }
+.fbl-picked > div { display: grid; gap: 0.2rem; font-size: var(--text-sm); color: var(--ink-2); min-width: 0; }
+.fbl-picked b { color: var(--ink); font-size: var(--text-base); }
+.fbl-picked__links { font-size: var(--text-xs); }
+.fbl-link { padding: 0; border: 0; background: none; color: var(--brand); font: inherit; text-decoration: underline; cursor: pointer; }
+
+.fbl-empty, .fbl-done { padding: clamp(1.5rem, 3vw, 2.5rem); border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface); box-shadow: var(--shadow-sm); }
+.fbl-empty h2, .fbl-done h2 { margin: 0 0 var(--s-2); font-family: var(--font-display); font-size: var(--display-4, 1.6rem); font-weight: 600; letter-spacing: -0.015em; color: var(--ink); }
+.fbl-empty p, .fbl-done p { margin: 0 0 var(--s-3); color: var(--ink-2); line-height: 1.6; max-width: 62ch; }
+.fbl-done:focus { outline: none; }
+.fbl-actions { display: flex; flex-wrap: wrap; gap: var(--s-3); align-items: center; }
+.fbl-summary { margin: 0 0 var(--s-4); padding: var(--s-4); border-radius: var(--r-md, 12px); background: var(--paper); border: 1px solid var(--line); font-family: inherit; font-size: var(--text-sm); line-height: 1.6; white-space: pre-wrap; word-break: break-word; color: var(--ink); }
+.fbl-safety { margin-top: var(--s-4) !important; padding-top: var(--s-4); border-top: 1px solid var(--line); font-size: var(--text-sm); }
+
+.fbl-skel { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: var(--s-4); }
+.fbl-skel span { height: 260px; border-radius: var(--r-lg); background: linear-gradient(90deg, var(--line) 0%, transparent 50%, var(--line) 100%); background-size: 200% 100%; animation: fbl-shimmer 1.4s linear infinite; }
+@keyframes fbl-shimmer { to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .fbl-skel span { animation: none; } .fbl-home { transition: none; } }
+
+.fbl-steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--s-4); margin: 0; padding: 0; list-style: none; counter-reset: fbl; }
+.fbl-steps li { counter-increment: fbl; padding: var(--s-4); border: 1px solid var(--line); border-radius: var(--r-md, 12px); background: var(--surface); font-size: var(--text-sm); color: var(--ink-2); line-height: 1.55; }
+.fbl-steps li::before { content: counter(fbl); display: inline-grid; place-items: center; width: 1.75rem; height: 1.75rem; margin-bottom: var(--s-2); border-radius: 50%; background: var(--ink); color: var(--paper); font-weight: 700; }
+.fbl-steps b { display: block; color: var(--ink); margin-bottom: 0.2rem; }
+
+@media (max-width: 640px) {
+  .fbl-tabs { grid-template-columns: minmax(0, 1fr); }
+  .fbl-tab { grid-template-columns: auto 1fr; align-items: baseline; gap: var(--s-3); }
+  .fbl-slot { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .fbl-picked { grid-template-columns: 72px minmax(0, 1fr); }
+  .fbl-picked img, .fbl-picked__ph { width: 72px; height: 56px; }
+  .fbl-actions .btn { flex: 1 1 100%; }
+}

@@ -128,6 +128,14 @@ Every push to `main` then rebuilds the app; migrations run in GitHub Actions.
 4. Resend: verify `rentleaks.com` (DNS records now go in Cloudflare).
 5. Meta catalog feed: `https://app.rentleaks.com/feeds/meta-home-listings.csv?key=<META_FEED_KEY>`.
 
+## Leads from Facebook
+
+`rentleaks.com/facebook.html` posts to `https://app.rentleaks.com/api/leads`
+(CORS allows rentleaks.com; override with `API_ALLOWED_ORIGINS`). It needs the
+`Lead` table (migration `20260916120000_leads`) and, for the emails,
+`RESEND_API_KEY`. Leads show at `/admin#leads`. Details:
+marketing/facebook/PAGE-KIT.md §7.
+
 ## How the app runs on Workers
 
 - `wrangler.jsonc` — Worker config, Hyperdrive, R2 cache bucket, hourly cron, plain vars.

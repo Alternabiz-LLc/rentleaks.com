@@ -16,13 +16,13 @@ const ALLOWED = (process.env.API_ALLOWED_ORIGINS ||
   .map((s) => s.trim())
   .filter(Boolean);
 
-export function corsHeaders(req: NextRequest): Record<string, string> {
+export function corsHeaders(req: NextRequest, methods = "GET,OPTIONS"): Record<string, string> {
   const origin = req.headers.get("origin") || "";
   // Echo the origin when it is allow-listed; fall back to the canonical site.
   const allow = ALLOWED.includes(origin) ? origin : ALLOWED[0];
   return {
     "Access-Control-Allow-Origin": allow,
-    "Access-Control-Allow-Methods": "GET,OPTIONS",
+    "Access-Control-Allow-Methods": methods,
     "Access-Control-Allow-Headers": "Content-Type",
     "Access-Control-Max-Age": "86400",
     Vary: "Origin",
@@ -41,8 +41,8 @@ export function json(req: NextRequest, body: unknown, init: { status?: number; m
   });
 }
 
-export function preflight(req: NextRequest) {
-  return new Response(null, { status: 204, headers: corsHeaders(req) });
+export function preflight(req: NextRequest, methods?: string) {
+  return new Response(null, { status: 204, headers: corsHeaders(req, methods) });
 }
 
 /* ------------------------------------------------------------------ */

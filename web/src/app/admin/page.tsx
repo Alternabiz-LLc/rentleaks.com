@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import LeadsInbox, { type LeadRow } from "@/components/LeadsInbox";
 import ModerationQueue, { type QueueItem } from "@/components/ModerationQueue";
 import { Shell } from "@/components/Shell";
 import { getCurrentUser } from "@/lib/auth";
 import { isAdmin } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
+import { KIND_LABEL, leadSummary, type LeadKind, type ViewingSlot } from "@/lib/leads";
 import { checkListing, type Fee } from "@/lib/listing-rules";
 import { fmtMoney, typeLabel } from "@/lib/site";
 
@@ -38,6 +40,9 @@ export default async function AdminPage() {
     prisma.user.findMany({ include: { identity: true }, orderBy: { createdAt: "desc" } }),
     prisma.city.findMany({ orderBy: { rank: "asc" } }),
   ]);
+
+  const leads = await loadLeads();
+  const newLeads = leads?.filter((l) => l.status === "new").length ?? 0;
 
   const live = listings.filter((l) => l.status === "active");
   const sponsored = listings.filter((l) => l.sponsored);
@@ -176,6 +181,19 @@ export default async function AdminPage() {
             <div><span className="s-summary__k">Recurring</span><b>${Math.round(monthly)}</b><small>per month at posted rates</small></div>
           </div>
 
+          <h2 className="a-h2" id="leads">Leads{newLeads ? ` · ${newLeads} new` : ""}</h2>
+          <p className="v-note" style={{ marginTop: 0 }}>
+            Requests from the Facebook landing page and the other public forms. Reply within a day — a renter who
+            waits books elsewhere. Contact details were given for this request only.
+          </p>
+          {leads ? (
+            <LeadsInbox leads={leads} />
+          ) : (
+            <p className="v-note">
+              The leads table isn&rsquo;t in this database yet. Run <code>npx prisma migrate deploy</code> in web/.
+            </p>
+          )}
+
           <h2 className="a-h2">Waiting on review{queue.length ? ` · ${queue.length}` : ""}</h2>
           <p className="v-note" style={{ marginTop: 0 }}>
             Nothing reaches renters until it is approved here. Decline needs a reason and the seller is shown it
@@ -263,4 +281,62 @@ export default async function AdminPage() {
       </section>
     </Shell>
   );
+}
+
+/** The newest 300 leads, shaped for the inbox; null when the table is missing. */
+async function loadLeads(): Promise<LeadRow[] | null> {
+  try {
+    const rows = await prisma.lead.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 300,
+      include: { listing: { select: { id: true, title: true } } },
+    });
+    const now = Date.now();
+    return rows.map((l) => {
+      let slots: ViewingSlot[] = [];
+      try {
+        const parsed = JSON.parse(l.viewingSlots) as unknown;
+        if (Array.isArray(parsed)) slots = parsed as ViewingSlot[];
+      } catch {
+        slots = [];
+      }
+      const kind = (l.kind in KIND_LABEL ? l.kind : "match") as LeadKind;
+      return {
+        id: l.id,
+        kind,
+        kindLabel: KIND_LABEL[kind],
+        status: l.status,
+        name: l.name,
+        email: l.email,
+        phone: l.phone,
+        summary: leadSummary(
+          {
+            kind,
+            name: l.name,
+            cityId: l.cityId,
+            housingType: l.housingType,
+            budgetMax: l.budgetMax,
+            currency: l.currency,
+            moveIn: l.moveIn,
+            moveOut: l.moveOut,
+            stayMonths: l.stayMonths,
+            viewingSlots: slots,
+            viewingMode: l.viewingMode === "video" ? "video" : l.viewingMode ? "in-person" : null,
+            message: l.message,
+          },
+          l.listing ? { title: l.listing.title } : null,
+        ),
+        listingTitle: l.listing?.title ?? null,
+        listingHref: l.listing ? `/listings/${l.listing.id}` : null,
+        source: l.source,
+        campaign: l.campaign,
+        note: l.note,
+        createdAt: l.createdAt.toISOString().slice(0, 16).replace("T", " "),
+        waitingHours: l.status === "new" ? Math.floor((now - l.createdAt.getTime()) / 3_600_000) : null,
+      };
+    });
+  } catch (err) {
+    console.error("[admin] leads unavailable:", err instanceof Error ? err.message : err);
+    return null;
+  }
 }

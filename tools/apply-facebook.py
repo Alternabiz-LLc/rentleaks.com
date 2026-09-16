@@ -38,6 +38,8 @@ LINKED_FILES = [
     "web/src/components/SiteFooter.tsx",
     "mobile/app/(tabs)/me.tsx",
     "marketing/facebook/PAGE-KIT.md",
+    "rentleaks-leads.js",
+    "web/src/lib/leads.ts",
 ]
 FB_NAME = r"[A-Za-z0-9.]+"
 NAME_END = r"(?![A-Za-z0-9.])"
