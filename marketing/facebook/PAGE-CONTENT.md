@@ -224,15 +224,19 @@ Facebook Pages no longer have a custom menu tab, so the site's eight sections go
 
 ## 12. Content for each menu section
 
-For each section: a **short description** (Services entry, carousel card or About line), a full **post**, what to **show**, and a **Messenger saved reply**. Post one section a week after the four-week plan in §6, or use them as a carousel.
+Images for every post are in `marketing/facebook/posts/` (regenerate with `python3 tools/make-facebook-posts.py`).
+
+For each section: a **short description** (Services entry, carousel card or About line) quoted from the site's own pages, a full **post** built only from what those pages and their filters say, what to **show**, and a **Messenger saved reply**. Post one section a week after the four-week plan in §6, or use them as a carousel.
 
 ### 12.1 Rooms: https://rentleaks.com/rooms.html
 
-**Short description:** A private bedroom with its own door in a shared home: not a living-room carve-out. See who you'd live with before you tour, filter for a private bathroom, and compare all-in rent. From 30 days.
+**Short description (the site's own words, from rooms.html + home page):** A private bedroom in a shared home. Split rent, keep your own door. Housemate profiles, private-bath filter, and vibe tags before you tour.
 
 **Post:**
 
 > **Your own door, split rent.** 🛏️
+>
+> **The trend:** sharing is how big cities are being lived now. Room rents hit record highs in 13 of the 30 most popular U.S. metros for roommates in 2025, with New York averaging $1,484 a month for a room (SpareRoom). Renting a room isn't only a student move anymore: people aged 45 and over went from about a tenth of the roommate market ten years ago to nearly a quarter today.
 >
 > A room on RentLeaks is a real bedroom in a shared home, not a living-room carve-out. Before you tour, each listing shows:
 > • the housemates and the house vibe
@@ -245,17 +249,19 @@ For each section: a **short description** (Services entry, carousel card or Abou
 > Browse rooms: https://rentleaks.com/rooms.html?utm_source=facebook&utm_medium=organic&utm_campaign=menu_rooms_post
 > Or tell us your budget and dates and we'll match you: https://rentleaks.com/facebook.html?src=fb_post&tab=match
 
-**Show:** Photos of a real room (bed, desk, door, window light) and of the shared kitchen. Never photos of the people.
+**Image:** `marketing/facebook/posts/01-rooms.png` (1080 × 1350, ready to post). Real photos can follow later: photos of a real room (bed, desk, door, window light) and of the shared kitchen. Never photos of the people.
 
 **Messenger saved reply:** Rooms are private bedrooms in shared homes, from 30 days. Each listing shows the housemates, the bathroom (shared or private) and the all-in rent. Browse: https://rentleaks.com/rooms.html?utm_source=facebook&utm_medium=messenger&utm_campaign=menu_rooms
 
 ### 12.2 Co-living: https://rentleaks.com/coliving.html
 
-**Short description:** Designed co-living buildings, booked room by room. Cleaning, coworking and community events are listed on the page, and the rent is all-in. From 30 days.
+**Short description (the site's own words, from coliving.html + home page):** Designed buildings with community, cleaning, and flexible terms. Bed-level inventory, events, and all-in rent — not a mystery house share.
 
 **Post:**
 
 > **Co-living, without the mystery.** 🏢
+>
+> **The trend:** co-living has become its own kind of housing. In the UK alone, about 9,000 co-living homes are open, 5,500 are being built, and planning applications jumped 87% in a year (Savills, 2025). Across Europe, renters now spend close to a third of their income on housing, which helps explain the demand for a furnished room with bills, cleaning and a community included (INTRIC Research, 2026).
 >
 > Co-living on RentLeaks means a designed building, not a random house share:
 > • availability shown room by room
@@ -267,17 +273,19 @@ For each section: a **short description** (Services entry, carousel card or Abou
 >
 > Browse co-living: https://rentleaks.com/coliving.html?utm_source=facebook&utm_medium=organic&utm_campaign=menu_coliving_post
 
-**Show:** The building's common areas: kitchen, lounge, coworking space, then one room.
+**Image:** `marketing/facebook/posts/02-coliving.png` (1080 × 1350, ready to post). Real photos can follow later: the building's common areas: kitchen, lounge, coworking space, then one room.
 
 **Messenger saved reply:** Co-living means designed buildings rented room by room, with cleaning, coworking and events listed and all-in rent, from 30 days. Browse: https://rentleaks.com/coliving.html?utm_source=facebook&utm_medium=messenger&utm_campaign=menu_coliving
 
 ### 12.3 Furnished: https://rentleaks.com/furnished.html
 
-**Short description:** Furnished apartments you can move into with a suitcase. Every listing carries a furniture inventory (bed, desk, kitchen tools), so there are no surprises on day one. From 30 days.
+**Short description (the site's own words, from furnished.html + home page):** Move in with a suitcase. Furniture, kitchen, and workspace included. Furniture inventory on every listing. No “bring your own bed” surprises.
 
 **Post:**
 
 > **Move in with a suitcase.** 🛋️
+>
+> **The trend:** people move for a contract, a hospital rotation, a new job or a trial run in a new city, and they don't want to buy a sofa for six months. Monthly furnished rentals in large U.S. cities grew about 16% a year from 2023 to late 2025 (Furnished Finder and AirDNA).
 >
 > "Furnished" on RentLeaks means an inventoried home, not a mattress on the floor. Every listing says what's actually there:
 > • bed and bedding
@@ -289,17 +297,19 @@ For each section: a **short description** (Services entry, carousel card or Abou
 >
 > Browse furnished homes: https://rentleaks.com/furnished.html?utm_source=facebook&utm_medium=organic&utm_campaign=menu_furnished_post
 
-**Show:** A walk-through video: bedroom, desk, kitchen drawers open (to show what's included).
+**Image:** `marketing/facebook/posts/03-furnished.png` (1080 × 1350, ready to post). Real photos can follow later: a walk-through video: bedroom, desk, kitchen drawers open (to show what's included).
 
 **Messenger saved reply:** Furnished homes list their furniture inventory (bed, desk, kitchen tools), and the rent is all-in, from 30 days. Browse: https://rentleaks.com/furnished.html?utm_source=facebook&utm_medium=messenger&utm_campaign=menu_furnished
 
 ### 12.4 1-month+: https://rentleaks.com/short-term.html
 
-**Short description:** Mid-term apartments with a 30-day minimum: homes, not hotel nights. Made for work contracts, pilots and the gap between two leases. Utilities and wifi are inside the all-in rent.
+**Short description (the site's own words, from short-term.html + home page):** Mid-term apartments. 30-day minimum — homes, not hotel nights. Stay length is a first-class filter. Built for relos, contracts, and pilots.
 
 **Post:**
 
 > **Short-term means 30 days or more. Always.** 📅
+>
+> **The trend:** the month is the new unit of travel and work. Stays of 28 nights or more in the U.S. grew 136% from 2019 to 2025, from 20 million to 46 million nights, nearly three times faster than short stays, and now make up 19% of rental demand (Furnished Finder and AirDNA, January 2026).
 >
 > RentLeaks doesn't list weekend stays or hotel nights. 1-month+ homes are real apartments for:
 > • a work contract or a project in another city
@@ -310,13 +320,13 @@ For each section: a **short description** (Services entry, carousel card or Abou
 >
 > Browse 1-month+ stays: https://rentleaks.com/short-term.html?utm_source=facebook&utm_medium=organic&utm_campaign=menu_1month_post
 
-**Show:** A calendar graphic with a move-in and move-out date, then the results narrowing (screen recording).
+**Image:** `marketing/facebook/posts/04-one-month-plus.png` (1080 × 1350, ready to post). Real photos can follow later: a calendar graphic with a move-in and move-out date, then the results narrowing (screen recording).
 
 **Messenger saved reply:** 1-month+ homes are apartments with a 30-day minimum; we don't list nights. Search by your two dates: https://rentleaks.com/short-term.html?utm_source=facebook&utm_medium=messenger&utm_campaign=menu_1month
 
 ### 12.5 Aparthotel: https://rentleaks.com/aparthotel.html
 
-**Short description:** Serviced apartments from hotel operators, rented by the month. Housekeeping, linen and a front desk, with one monthly rate that includes everything. 30-day minimum, never nightly.
+**Short description (the site's own words, from aparthotel.html + home page):** Serviced apartments from hotel operators — housekeeping in, nightly rates out. Hotel groups can list here, but only stays of 30 days or more. Still no nightly bookings.
 
 **Post:**
 
@@ -334,13 +344,13 @@ For each section: a **short description** (Services entry, carousel card or Abou
 >
 > Hotel operator? Talk to us about listing monthly stays: https://rentleaks.com/professionals.html?utm_source=facebook&utm_medium=organic&utm_campaign=menu_aparthotel_hosts
 
-**Show:** A serviced studio: made bed, kitchenette, a front-desk shot.
+**Image:** `marketing/facebook/posts/05-aparthotel.png` (1080 × 1350, ready to post). Real photos can follow later: a serviced studio: made bed, kitchenette, a front-desk shot.
 
 **Messenger saved reply:** Aparthotels are serviced apartments from hotel operators, rented by the month (30 days minimum) with housekeeping and linen included in the rent. Browse: https://rentleaks.com/aparthotel.html?utm_source=facebook&utm_medium=messenger&utm_campaign=menu_aparthotel
 
 ### 12.6 Lease-break: https://rentleaks.com/lease-break.html
 
-**Short description:** Take over the rest of someone's lease, or post yours for free. Each takeover shows the months left, a Lease Clock, and whether it's an assignment or a sublet, so you know what you're signing.
+**Short description (the site's own words, from lease-break.html + home page):** Take over a remaining lease. See days left, assignment vs sublet. Lease Clock, takeover math, and free posting so good homes stay filled.
 
 **Post:**
 
@@ -358,20 +368,20 @@ For each section: a **short description** (Services entry, carousel card or Abou
 > Browse takeovers: https://rentleaks.com/lease-break.html?utm_source=facebook&utm_medium=organic&utm_campaign=menu_leasebreak_post
 > Post yours free: https://rentleaks.com/list.html?utm_source=facebook&utm_medium=organic&utm_campaign=menu_leasebreak_post_list
 
-**Show:** A countdown graphic ("7 months left"), then the listing screen with the Lease Clock.
+**Image:** `marketing/facebook/posts/06-lease-break.png` (1080 × 1350, ready to post). Real photos can follow later: a countdown graphic ("7 months left"), then the listing screen with the Lease Clock.
 
 **Messenger saved reply:** A lease-break is the rest of someone's lease. Listings show the months left and whether it's an assignment or a sublet. Posting one is free: https://rentleaks.com/list.html. Browse: https://rentleaks.com/lease-break.html?utm_source=facebook&utm_medium=messenger&utm_campaign=menu_leasebreak
 
 ### 12.7 Cities: https://rentleaks.com/cities.html
 
-**Short description:** 79 cities: New York and the largest U.S. markets, 10 Canadian cities, and London, Paris, Dublin, Edinburgh, Madrid, Amsterdam, Zurich, Berlin, Rome and more. Every city page is split by type of home.
+**Short description (the site's own words, from cities.html):** New York and the largest U.S. markets, plus London, Paris, Dublin, Edinburgh, Madrid, Amsterdam, Zurich, Berlin, Rome, and more. Every city page breaks inventory into rooms, co-living, furnished, 1-month+, and lease-breaks.
 
 **Post:**
 
 > **From Bushwick to Kreuzberg. Same rules everywhere.** 🌍
 >
 > RentLeaks covers 79 cities:
-> 🇺🇸 New York and the 30 largest U.S. cities
+> 🇺🇸 New York, the 30 largest U.S. cities, and Miami
 > 🇨🇦 Toronto, Montreal, Vancouver, Calgary, Ottawa and more
 > 🇬🇧 London, Manchester, Edinburgh, Glasgow and more
 > 🇮🇪 Dublin, Cork, Galway
@@ -382,13 +392,13 @@ For each section: a **short description** (Services entry, carousel card or Abou
 >
 > Find your city: https://rentleaks.com/cities.html?utm_source=facebook&utm_medium=organic&utm_campaign=menu_cities_post
 
-**Show:** A map graphic with the 79 cities, or a carousel with one card per country.
+**Image:** `marketing/facebook/posts/07-cities.png` (1080 × 1350, ready to post). Real photos can follow later: a map graphic with the 79 cities, or a carousel with one card per country.
 
 **Messenger saved reply:** We cover 79 cities across the U.S., Canada, the UK, Ireland, France, Spain, the Netherlands, Switzerland, Germany and Italy. Find yours: https://rentleaks.com/cities.html?utm_source=facebook&utm_medium=messenger&utm_campaign=menu_cities
 
 ### 12.8 Operators: https://rentleaks.com/operators.html
 
-**Short description:** Co-living brands, furnished portfolios and local landlords each get a storefront with their whole portfolio, response time and verification. Search by name, brand or city.
+**Short description (the site's own words, from operators.html):** Every operator has a boutique. Co-living brands, furnished portfolios and local landlords all list here — each with a storefront carrying their whole portfolio, response time and verification.
 
 **Post:**
 
@@ -405,9 +415,61 @@ For each section: a **short description** (Services entry, carousel card or Abou
 >
 > Run a portfolio or a co-living brand? Get your storefront: https://rentleaks.com/professionals.html?utm_source=facebook&utm_medium=organic&utm_campaign=menu_operators_hosts
 
-**Show:** A screen recording of a storefront: logo, portfolio grid, response time. Once real operators join, use theirs (with permission). Never show a sample operator as a real business.
+**Image:** `marketing/facebook/posts/08-operators.png` (1080 × 1350, ready to post). Real photos can follow later: a screen recording of a storefront: logo, portfolio grid, response time. Once real operators join, use theirs (with permission). Never show a sample operator as a real business.
 
 **Messenger saved reply:** Operators are the landlords and brands behind listings. Each has a storefront with their portfolio, response time and verification: https://rentleaks.com/operators.html?utm_source=facebook&utm_medium=messenger&utm_campaign=menu_operators
+
+
+## 13. The trend: a new way to live in big cities
+
+Use this as a pinned post, a carousel (one card per figure) or a Reel script. Every figure has its source; keep the source line when you post it.
+
+**Post: "The new way to live in big cities"** · image: `marketing/facebook/posts/00-trend.png`
+
+> **Big-city living is changing. Fast.** 🏙️
+>
+> Rent keeps climbing, jobs move, and a 12-month lease with an empty apartment isn't how many people live anymore. The numbers:
+>
+> 🛏️ **Rooms:** room rents hit record highs in 13 of the 30 biggest U.S. roommate markets in 2025. A room in New York averaged $1,484 a month. And it isn't just students: renters 45+ went from about 10% of the roommate market a decade ago to nearly 25% today.¹
+>
+> 🏢 **Co-living:** the UK has about 9,000 co-living homes open and 5,500 under construction, and planning applications jumped 87% in one year.²
+>
+> 📅 **1-month+ stays:** U.S. stays of 28+ nights grew 136% since 2019 (20 → 46 million nights), almost three times faster than short stays. They're now 19% of rental demand.³
+>
+> 🛋️ **Furnished monthly rentals** in large U.S. cities grew about 16% a year from 2023 to 2025.³
+>
+> That's the housing RentLeaks is built for: rooms, co-living, furnished and 1-month+ homes, and lease takeovers, all from 30 days, all with the all-in price up front.
+>
+> 👉 Tell us what you need: https://rentleaks.com/facebook.html?src=fb_post&utm_campaign=trend
+>
+> ¹ SpareRoom, 2025 rental market summary and 2026 search data · ² Savills, UK Co-Living Spotlight, Feb 2025 · ³ Furnished Finder × AirDNA, Jan 2026
+
+**Carousel cards (one figure per card):**
+
+1. "Room rents hit record highs in 13 of 30 top U.S. roommate markets." (SpareRoom, 2025)
+2. "$1,484/month: the average room in New York." (SpareRoom, Q4 2025)
+3. "Roommates aged 45+: from ~10% to nearly 25% of the market in a decade." (SpareRoom)
+4. "+136%: U.S. stays of 28+ nights, 2019–2025." (Furnished Finder × AirDNA)
+5. "19% of U.S. rental demand is now mid-term." (Furnished Finder × AirDNA)
+6. "UK co-living: 9,000 homes open, 5,500 being built." (Savills, 2025)
+7. "Rooms. Co-living. Furnished. 1-month+. All-in prices, from 30 days: RentLeaks."
+
+**Talking points for Reels, Lives and comments**
+
+- *Why now?* Room rents are at record highs in many big cities (SpareRoom), and more people move for work on short notice. A room or a furnished month lets them live in the city without a year-long bet.
+- *Is it only for young people?* No. The fastest growth in shared living is among people over 45 (SpareRoom).
+- *Why all-in prices?* When a room costs $1,400+, a hidden $150 of fees decides whether it's affordable. That's why every RentLeaks price includes the monthly extras.
+- *Why a 30-day minimum?* Cities like New York tightly restrict nightly rentals. Monthly stays keep homes as homes.
+
+**Sources (for you, don't need to be posted)**
+
+- SpareRoom, *2025 annual rental market summary*: https://www.spareroom.com/content/info-statistics/annual-rental-market-summary-2025
+- The Spokesman-Review, *The rent is so high, even suburbanites are taking roommates* (1 June 2026, SpareRoom data): https://www.spokesman.com/stories/2026/jun/01/the-rent-is-so-high-even-suburbanites-are-taking-r/
+- ShortTermRentalz, *US mid-term stays outpace short-term rentals* (Furnished Finder × AirDNA report, 14 Jan 2026): https://shorttermrentalz.com/news/mid-term-rentals-outpace-short-term/
+- Hospitality Investor, *UK co-living sector attracts investor interest as pipeline balloons* (Savills UK Co-Living Spotlight, Feb 2025): https://www.hospitalityinvestor.com/co-living/uk-co-living-sector-attracts-investor-interest-pipeline-balloons
+- INTRIC Research, *Co-Living in 2026* (European rent burden, 31.9% of income): https://intricglobal.com/en/insights/articles/co-living-flexible-living-2026
+
+Refresh the figures when newer reports come out; don't round them up.
 
 ---
 
