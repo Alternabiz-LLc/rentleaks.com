@@ -134,6 +134,10 @@ read -rp "Create or update your founder login now? [Y/n] " yn
 if [ "${yn:-Y}" != "n" ] && [ "${yn:-Y}" != "N" ]; then
   DATABASE_URL="$DB_URL" DIRECT_URL="$DB_URL" npm run founder
 fi
+say "Cities, operators and the example catalogue (safe to repeat)"
+if ! DATABASE_URL="$DB_URL" DIRECT_URL="$DB_URL" npx prisma db seed; then
+  echo "Skipped: the catalogue needs a founder account. Run this script again and answer Y."
+fi
 unset DB_URL
 
 say "Checking https://app.rentleaks.com"
