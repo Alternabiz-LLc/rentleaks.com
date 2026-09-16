@@ -7,6 +7,7 @@ Rules for every field and post:
 - **Describe the home, never the person.** Don't write "ideal for students", "professionals only", "no kids", or anything about religion, origin, age or disability. Fair Housing rules apply to posts and ads as well as listings.
 - **Don't advertise the sample catalogue.** The homes on the site today are examples. Don't post them as available, and don't quote a count of "live homes" until real hosts have published.
 - **Only promise what you will deliver.** "Reply within one business day" appears below. Keep it only if someone answers Messenger and the Leads inbox every weekday.
+- **Booking promises wait for real homes.** Until hosts publish real listings, the viewing and booking tabs are empty, so lead with "Tell us what you need".
 - **Links:** every link below carries a source tag, so leads show where they came from in `/admin#leads` and in analytics.
 
 ---
@@ -96,7 +97,7 @@ Post in this order. Each has its link. Add a photo or short video: the cover ima
 **Week 2: how to use it**
 
 4. **Mon · Search by dates.** Most rental sites ask when you can move in. We also ask when you're leaving. Put in both dates and see only homes that fit your window. → `https://rentleaks.com/rent.html?utm_source=facebook&utm_medium=organic&utm_campaign=wk2_dates`
-5. **Wed · Book a viewing.** Found a home? Pick up to three times, in person or on video, and the host confirms. Free, from right here. → `https://rentleaks.com/facebook.html?src=fb_post&tab=viewing`
+5. **Wed · Book a viewing** *(post only once real homes are listed; skip it until then)*. Found a home? Pick up to three times, in person or on video, and the host confirms. Free, from right here. → `https://rentleaks.com/facebook.html?src=fb_post&tab=viewing`
 6. **Fri · Stay DNA.** Not sure if you want a room, co-living or a furnished place? Stay DNA asks about city, budget, stay length and the energy you want at home, then ranks every option. It's scored in your browser and isn't a credit check. → `https://rentleaks.com/match.html?utm_source=facebook&utm_medium=organic&utm_campaign=wk2_staydna`
 
 **Week 3: types of home**
@@ -171,9 +172,59 @@ Post in this order. Each has its link. Add a photo or short video: the cover ima
 
 #RentLeaks #FurnishedRentals #RoomForRent #Coliving #MidTermRental #LeaseTakeover #NYCRentals #FAREAct
 
+
+## 11. The site menu on the Page
+
+Facebook Pages no longer have a custom menu tab, so the site's eight sections go in three places.
+
+**A. Add to the end of About → Additional information (§3):**
+
+> **Browse RentLeaks**
+> • Rooms: A real bedroom with a door in a shared home. Housemates named before you tour. https://rentleaks.com/rooms.html?utm_source=facebook&utm_medium=page&utm_campaign=menu_rooms
+> • Co-living: Designed buildings with per-room inventory; cleaning, coworking and events listed. https://rentleaks.com/coliving.html?utm_source=facebook&utm_medium=page&utm_campaign=menu_coliving
+> • Furnished: Move-in-ready homes with a furniture inventory: bed, desk, kitchen tools. https://rentleaks.com/furnished.html?utm_source=facebook&utm_medium=page&utm_campaign=menu_furnished
+> • 1-month+: Mid-term apartments, 30 days minimum. Utilities and wifi inside the all-in rent. https://rentleaks.com/short-term.html?utm_source=facebook&utm_medium=page&utm_campaign=menu_1month
+> • Aparthotel: Serviced apartments from hotel operators, by the month: housekeeping, linen and utilities included. https://rentleaks.com/aparthotel.html?utm_source=facebook&utm_medium=page&utm_campaign=menu_aparthotel
+> • Lease-break: Take over the rest of someone's lease: months left, Lease Clock, assignment or sublet. https://rentleaks.com/lease-break.html?utm_source=facebook&utm_medium=page&utm_campaign=menu_leasebreak
+> • Cities: 79 cities across the U.S., Canada and Europe, each split by type of home. https://rentleaks.com/cities.html?utm_source=facebook&utm_medium=page&utm_campaign=menu_cities
+> • Operators: Co-living brands, furnished portfolios and landlords, each with a storefront, response time and verification. https://rentleaks.com/operators.html?utm_source=facebook&utm_medium=page&utm_campaign=menu_operators
+
+**B. Post: "Eight ways to live on RentLeaks"** (use as the 2nd pinned post or a carousel with one card per section, using the cover image or site screenshots)
+
+> Eight ways to live on RentLeaks, all from 30 days, all with all-in prices:
+>
+> 🛏️ **Rooms**: https://rentleaks.com/rooms.html?utm_source=facebook&utm_medium=organic&utm_campaign=menu_rooms_post
+> 🏢 **Co-living**: https://rentleaks.com/coliving.html?utm_source=facebook&utm_medium=organic&utm_campaign=menu_coliving_post
+> 🛋️ **Furnished**: https://rentleaks.com/furnished.html?utm_source=facebook&utm_medium=organic&utm_campaign=menu_furnished_post
+> 📅 **1-month+**: https://rentleaks.com/short-term.html?utm_source=facebook&utm_medium=organic&utm_campaign=menu_1month_post
+> 🛎️ **Aparthotel**: https://rentleaks.com/aparthotel.html?utm_source=facebook&utm_medium=organic&utm_campaign=menu_aparthotel_post
+> 🔑 **Lease-break**: https://rentleaks.com/lease-break.html?utm_source=facebook&utm_medium=organic&utm_campaign=menu_leasebreak_post
+> 🌍 **Cities**: https://rentleaks.com/cities.html?utm_source=facebook&utm_medium=organic&utm_campaign=menu_cities_post
+> 🏷️ **Operators**: https://rentleaks.com/operators.html?utm_source=facebook&utm_medium=organic&utm_campaign=menu_operators_post
+>
+> Not sure which one fits? Tell us, and we'll match you: https://rentleaks.com/facebook.html?src=fb_post
+
+**C. Messenger saved reply: "What kinds of homes do you have?"**
+
+> Rooms, co-living, furnished apartments, 1-month+ stays, aparthotels by the month, and lease takeovers, all from 30 days, in 79 cities. Browse by type at https://rentleaks.com/?utm_source=facebook&utm_medium=messenger or tell us what you need: https://rentleaks.com/facebook.html?src=messenger
+
+**Section reference** (one line per section, also for carousel cards and Story link stickers):
+
+| Section | One line | Link |
+|---|---|---|
+| Rooms | A real bedroom with a door in a shared home. Housemates named before you tour. | `https://rentleaks.com/rooms.html?utm_source=facebook&utm_medium=organic&utm_campaign=menu_rooms` |
+| Co-living | Designed buildings with per-room inventory; cleaning, coworking and events listed. | `https://rentleaks.com/coliving.html?utm_source=facebook&utm_medium=organic&utm_campaign=menu_coliving` |
+| Furnished | Move-in-ready homes with a furniture inventory: bed, desk, kitchen tools. | `https://rentleaks.com/furnished.html?utm_source=facebook&utm_medium=organic&utm_campaign=menu_furnished` |
+| 1-month+ | Mid-term apartments, 30 days minimum. Utilities and wifi inside the all-in rent. | `https://rentleaks.com/short-term.html?utm_source=facebook&utm_medium=organic&utm_campaign=menu_1month` |
+| Aparthotel | Serviced apartments from hotel operators, by the month: housekeeping, linen and utilities included. | `https://rentleaks.com/aparthotel.html?utm_source=facebook&utm_medium=organic&utm_campaign=menu_aparthotel` |
+| Lease-break | Take over the rest of someone's lease: months left, Lease Clock, assignment or sublet. | `https://rentleaks.com/lease-break.html?utm_source=facebook&utm_medium=organic&utm_campaign=menu_leasebreak` |
+| Cities | 79 cities across the U.S., Canada and Europe, each split by type of home. | `https://rentleaks.com/cities.html?utm_source=facebook&utm_medium=organic&utm_campaign=menu_cities` |
+| Operators | Co-living brands, furnished portfolios and landlords, each with a storefront, response time and verification. | `https://rentleaks.com/operators.html?utm_source=facebook&utm_medium=organic&utm_campaign=menu_operators` |
+
 ---
 
-### Two things to settle on the website before quoting them on Facebook
+### Three things to settle on the website before sending Facebook traffic
 
 1. **Host prices don't match.** The *For Professionals* page lists $19, $49 and $149 per month. The app's checkout charges $14/week or $60/month per listing, and sponsored placement costs +$10/week or +$35/month. The founder dashboard's revenue estimate uses a third set ($45/$120). Pick one price list before posting prices.
 2. **The home page says "69 markets"; the site has 79 cities.** It also shows "0 live homes". This draft says 79 and avoids a homes count.
+3. **The type pages call the sample homes "live".** Rooms, Co-living, Furnished, 1-month+, Aparthotel and Lease-break each show "111 live …" or "110 live …", and list sample homes with addresses. Once Facebook sends real renters, those pages should label the homes as examples, or hide them until real hosts publish.
