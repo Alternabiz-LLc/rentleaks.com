@@ -177,7 +177,7 @@ Post in this order. Each has its link. Add a photo or short video: the cover ima
 
 Facebook Pages no longer have a custom menu tab, so the site's eight sections go in three places.
 
-**A. Add to the end of About → Additional information (§3):**
+**A. Add to the end of About → Additional information (§3).** If Facebook says the text is too long, keep the one-liners and drop the links:
 
 > **Browse RentLeaks**
 > • Rooms: A real bedroom with a door in a shared home. Housemates named before you tour. https://rentleaks.com/rooms.html?utm_source=facebook&utm_medium=page&utm_campaign=menu_rooms
@@ -220,6 +220,194 @@ Facebook Pages no longer have a custom menu tab, so the site's eight sections go
 | Lease-break | Take over the rest of someone's lease: months left, Lease Clock, assignment or sublet. | `https://rentleaks.com/lease-break.html?utm_source=facebook&utm_medium=organic&utm_campaign=menu_leasebreak` |
 | Cities | 79 cities across the U.S., Canada and Europe, each split by type of home. | `https://rentleaks.com/cities.html?utm_source=facebook&utm_medium=organic&utm_campaign=menu_cities` |
 | Operators | Co-living brands, furnished portfolios and landlords, each with a storefront, response time and verification. | `https://rentleaks.com/operators.html?utm_source=facebook&utm_medium=organic&utm_campaign=menu_operators` |
+
+
+## 12. Content for each menu section
+
+For each section: a **short description** (Services entry, carousel card or About line), a full **post**, what to **show**, and a **Messenger saved reply**. Post one section a week after the four-week plan in §6, or use them as a carousel.
+
+### 12.1 Rooms: https://rentleaks.com/rooms.html
+
+**Short description:** A private bedroom with its own door in a shared home: not a living-room carve-out. See who you'd live with before you tour, filter for a private bathroom, and compare all-in rent. From 30 days.
+
+**Post:**
+
+> **Your own door, split rent.** 🛏️
+>
+> A room on RentLeaks is a real bedroom in a shared home, not a living-room carve-out. Before you tour, each listing shows:
+> • the housemates and the house vibe
+> • shared or private bathroom
+> • the all-in monthly price: rent plus the utilities, wifi and cleaning we can see
+> • the move-in date and the shortest and longest stay
+>
+> Filter for a private bath, homes let by the owner (no broker fee to argue about), step-free access, or places that accept housing vouchers.
+>
+> Browse rooms: https://rentleaks.com/rooms.html?utm_source=facebook&utm_medium=organic&utm_campaign=menu_rooms_post
+> Or tell us your budget and dates and we'll match you: https://rentleaks.com/facebook.html?src=fb_post&tab=match
+
+**Show:** Photos of a real room (bed, desk, door, window light) and of the shared kitchen. Never photos of the people.
+
+**Messenger saved reply:** Rooms are private bedrooms in shared homes, from 30 days. Each listing shows the housemates, the bathroom (shared or private) and the all-in rent. Browse: https://rentleaks.com/rooms.html?utm_source=facebook&utm_medium=messenger&utm_campaign=menu_rooms
+
+### 12.2 Co-living: https://rentleaks.com/coliving.html
+
+**Short description:** Designed co-living buildings, booked room by room. Cleaning, coworking and community events are listed on the page, and the rent is all-in. From 30 days.
+
+**Post:**
+
+> **Co-living, without the mystery.** 🏢
+>
+> Co-living on RentLeaks means a designed building, not a random house share:
+> • availability shown room by room
+> • cleaning, coworking and events listed up front
+> • private or shared bathroom stated on each room
+> • one all-in monthly price
+>
+> A room is a bedroom in a regular shared apartment; co-living is a building made for it. Both can start at one month.
+>
+> Browse co-living: https://rentleaks.com/coliving.html?utm_source=facebook&utm_medium=organic&utm_campaign=menu_coliving_post
+
+**Show:** The building's common areas: kitchen, lounge, coworking space, then one room.
+
+**Messenger saved reply:** Co-living means designed buildings rented room by room, with cleaning, coworking and events listed and all-in rent, from 30 days. Browse: https://rentleaks.com/coliving.html?utm_source=facebook&utm_medium=messenger&utm_campaign=menu_coliving
+
+### 12.3 Furnished: https://rentleaks.com/furnished.html
+
+**Short description:** Furnished apartments you can move into with a suitcase. Every listing carries a furniture inventory (bed, desk, kitchen tools), so there are no surprises on day one. From 30 days.
+
+**Post:**
+
+> **Move in with a suitcase.** 🛋️
+>
+> "Furnished" on RentLeaks means an inventoried home, not a mattress on the floor. Every listing says what's actually there:
+> • bed and bedding
+> • a desk and a workspace
+> • kitchen tools
+> • utilities and wifi inside the all-in rent
+>
+> Moving for work, between leases, or trying a new city first? Stays start at 30 days.
+>
+> Browse furnished homes: https://rentleaks.com/furnished.html?utm_source=facebook&utm_medium=organic&utm_campaign=menu_furnished_post
+
+**Show:** A walk-through video: bedroom, desk, kitchen drawers open (to show what's included).
+
+**Messenger saved reply:** Furnished homes list their furniture inventory (bed, desk, kitchen tools), and the rent is all-in, from 30 days. Browse: https://rentleaks.com/furnished.html?utm_source=facebook&utm_medium=messenger&utm_campaign=menu_furnished
+
+### 12.4 1-month+: https://rentleaks.com/short-term.html
+
+**Short description:** Mid-term apartments with a 30-day minimum: homes, not hotel nights. Made for work contracts, pilots and the gap between two leases. Utilities and wifi are inside the all-in rent.
+
+**Post:**
+
+> **Short-term means 30 days or more. Always.** 📅
+>
+> RentLeaks doesn't list weekend stays or hotel nights. 1-month+ homes are real apartments for:
+> • a work contract or a project in another city
+> • the gap between two leases
+> • trying a neighborhood before you commit
+>
+> Put in your move-in AND move-out dates and see only the homes that fit.
+>
+> Browse 1-month+ stays: https://rentleaks.com/short-term.html?utm_source=facebook&utm_medium=organic&utm_campaign=menu_1month_post
+
+**Show:** A calendar graphic with a move-in and move-out date, then the results narrowing (screen recording).
+
+**Messenger saved reply:** 1-month+ homes are apartments with a 30-day minimum; we don't list nights. Search by your two dates: https://rentleaks.com/short-term.html?utm_source=facebook&utm_medium=messenger&utm_campaign=menu_1month
+
+### 12.5 Aparthotel: https://rentleaks.com/aparthotel.html
+
+**Short description:** Serviced apartments from hotel operators, rented by the month. Housekeeping, linen and a front desk, with one monthly rate that includes everything. 30-day minimum, never nightly.
+
+**Post:**
+
+> **Hotel service, monthly rent.** 🛎️
+>
+> Hotel groups can list on RentLeaks on one condition: a 30-day minimum.
+> What you get:
+> • housekeeping and fresh linen
+> • a front desk
+> • one monthly rate with utilities inside
+>
+> What you won't find: nightly bookings. That's not what we're for.
+>
+> Browse aparthotels by the month: https://rentleaks.com/aparthotel.html?utm_source=facebook&utm_medium=organic&utm_campaign=menu_aparthotel_post
+>
+> Hotel operator? Talk to us about listing monthly stays: https://rentleaks.com/professionals.html?utm_source=facebook&utm_medium=organic&utm_campaign=menu_aparthotel_hosts
+
+**Show:** A serviced studio: made bed, kitchenette, a front-desk shot.
+
+**Messenger saved reply:** Aparthotels are serviced apartments from hotel operators, rented by the month (30 days minimum) with housekeeping and linen included in the rent. Browse: https://rentleaks.com/aparthotel.html?utm_source=facebook&utm_medium=messenger&utm_campaign=menu_aparthotel
+
+### 12.6 Lease-break: https://rentleaks.com/lease-break.html
+
+**Short description:** Take over the rest of someone's lease, or post yours for free. Each takeover shows the months left, a Lease Clock, and whether it's an assignment or a sublet, so you know what you're signing.
+
+**Post:**
+
+> **Leaving early? Someone wants your lease.** 🔑
+>
+> For renters: a lease-break is the rest of someone else's term, often in a building that's hard to get into. Each listing shows:
+> • the months left, with a Lease Clock
+> • assignment (you take over the lease) or sublet (the original tenant stays on it)
+> • whether the landlord's consent is on file
+>
+> Confirm the paperwork with the landlord before any money moves.
+>
+> For tenants who need to leave: posting a lease-break is free. Empty months help no one.
+>
+> Browse takeovers: https://rentleaks.com/lease-break.html?utm_source=facebook&utm_medium=organic&utm_campaign=menu_leasebreak_post
+> Post yours free: https://rentleaks.com/list.html?utm_source=facebook&utm_medium=organic&utm_campaign=menu_leasebreak_post_list
+
+**Show:** A countdown graphic ("7 months left"), then the listing screen with the Lease Clock.
+
+**Messenger saved reply:** A lease-break is the rest of someone's lease. Listings show the months left and whether it's an assignment or a sublet. Posting one is free: https://rentleaks.com/list.html. Browse: https://rentleaks.com/lease-break.html?utm_source=facebook&utm_medium=messenger&utm_campaign=menu_leasebreak
+
+### 12.7 Cities: https://rentleaks.com/cities.html
+
+**Short description:** 79 cities: New York and the largest U.S. markets, 10 Canadian cities, and London, Paris, Dublin, Edinburgh, Madrid, Amsterdam, Zurich, Berlin, Rome and more. Every city page is split by type of home.
+
+**Post:**
+
+> **From Bushwick to Kreuzberg. Same rules everywhere.** 🌍
+>
+> RentLeaks covers 79 cities:
+> 🇺🇸 New York and the 30 largest U.S. cities
+> 🇨🇦 Toronto, Montreal, Vancouver, Calgary, Ottawa and more
+> 🇬🇧 London, Manchester, Edinburgh, Glasgow and more
+> 🇮🇪 Dublin, Cork, Galway
+> 🇫🇷 Paris, Lyon · 🇪🇸 Madrid, Barcelona · 🇳🇱 Amsterdam, Rotterdam
+> 🇨🇭 Zurich, Geneva · 🇩🇪 Berlin, Munich · 🇮🇹 Rome, Milan
+>
+> Every city page shows neighborhoods and splits homes into rooms, co-living, furnished, 1-month+ and lease-breaks. Prices appear in the local currency, all-in.
+>
+> Find your city: https://rentleaks.com/cities.html?utm_source=facebook&utm_medium=organic&utm_campaign=menu_cities_post
+
+**Show:** A map graphic with the 79 cities, or a carousel with one card per country.
+
+**Messenger saved reply:** We cover 79 cities across the U.S., Canada, the UK, Ireland, France, Spain, the Netherlands, Switzerland, Germany and Italy. Find yours: https://rentleaks.com/cities.html?utm_source=facebook&utm_medium=messenger&utm_campaign=menu_cities
+
+### 12.8 Operators: https://rentleaks.com/operators.html
+
+**Short description:** Co-living brands, furnished portfolios and local landlords each get a storefront with their whole portfolio, response time and verification. Search by name, brand or city.
+
+**Post:**
+
+> **Know who you're renting from.** 🏷️
+>
+> Every operator on RentLeaks (co-living brands, furnished portfolios, serviced-apartment groups and local landlords) has a storefront showing:
+> • their whole portfolio in one place
+> • how fast they reply
+> • their verification status
+>
+> Search by name, brand or city, and filter by type of operator.
+>
+> Browse operators: https://rentleaks.com/operators.html?utm_source=facebook&utm_medium=organic&utm_campaign=menu_operators_post
+>
+> Run a portfolio or a co-living brand? Get your storefront: https://rentleaks.com/professionals.html?utm_source=facebook&utm_medium=organic&utm_campaign=menu_operators_hosts
+
+**Show:** A screen recording of a storefront: logo, portfolio grid, response time. Once real operators join, use theirs (with permission). Never show a sample operator as a real business.
+
+**Messenger saved reply:** Operators are the landlords and brands behind listings. Each has a storefront with their portfolio, response time and verification: https://rentleaks.com/operators.html?utm_source=facebook&utm_medium=messenger&utm_campaign=menu_operators
 
 ---
 
