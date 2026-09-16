@@ -1,14 +1,9 @@
 /**
- * Upload storage for the app. Same rules and the same public path shape as
- * /api/media (so lib/media.ts's `isPublicMediaSrc` accepts the result); kept
- * separate because that route authenticates by cookie and this one by token.
- *
- * Local disk is a development store. Before launch, swap `saveUpload` for an
- * object store (S3 / R2 / Supabase Storage) — see MOBILE-APP.md.
+ * Upload rules for the app. Same checks as /api/media; kept separate because
+ * that route authenticates by cookie and this one by token. Where the bytes go
+ * (object store or local disk) is decided in lib/storage.
  */
-import { randomBytes } from "crypto";
-import { mkdir, writeFile } from "fs/promises";
-import path from "path";
+import { StorageNotConfigured, storeUpload } from "@/lib/storage";
 import { HttpError } from "./http";
 
 const TYPES: Record<string, string> = {
@@ -30,10 +25,10 @@ export async function saveUpload(userId: string, file: File) {
   if (file.size > (video ? VIDEO_MAX : IMAGE_MAX)) {
     throw new HttpError(400, "too_large", video ? "Videos need to be under 64 MB." : "Photos need to be under 8 MB.");
   }
-  const safeUser = userId.replace(/[^a-z0-9_-]/gi, "");
-  const dir = path.join(process.cwd(), "public", "uploads", safeUser);
-  await mkdir(dir, { recursive: true });
-  const name = `${Date.now().toString(36)}-${randomBytes(6).toString("hex")}.${ext}`;
-  await writeFile(path.join(dir, name), Buffer.from(await file.arrayBuffer()));
-  return `/uploads/${safeUser}/${name}`;
+  try {
+    return await storeUpload(userId, Buffer.from(await file.arrayBuffer()), file.type, ext);
+  } catch (err) {
+    if (err instanceof StorageNotConfigured) throw new HttpError(503, "uploads_unavailable", err.message);
+    throw err;
+  }
 }

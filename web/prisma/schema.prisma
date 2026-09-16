@@ -3,8 +3,11 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  // Neon/Supabase: DATABASE_URL is the pooled address (for the app),
+  // DIRECT_URL the direct one (for migrations). Locally both are the same.
+  directUrl = env("DIRECT_URL")
 }
 
 model User {

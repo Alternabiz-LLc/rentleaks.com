@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
  * remove it.
  */
 export const POST = handle(async (req: Request) => {
-  rateLimit(`reset:${clientKey(req)}`, 10, 15 * 60_000);
+  await rateLimit(`reset:${clientKey(req)}`, 10, 15 * 60_000);
   const body = await readJson(req);
   const password = typeof body.password === "string" ? body.password : "";
   if (password.length < 8) return fail(400, "weak_password", "Use at least 8 characters for your password.");

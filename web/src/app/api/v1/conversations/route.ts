@@ -57,8 +57,8 @@ export const GET = handle(async (req: Request) => {
  */
 export const POST = handle(async (req: Request) => {
   const user = await requireUser(req);
-  rateLimit(`enquiry:${user.id}`, 20, 60 * 60_000);
-  rateLimit(`enquiry-ip:${clientKey(req)}`, 40, 60 * 60_000);
+  await rateLimit(`enquiry:${user.id}`, 20, 60 * 60_000);
+  await rateLimit(`enquiry-ip:${clientKey(req)}`, 40, 60 * 60_000);
   const body = await readJson(req);
   const listingId = str(body.listingId, 200);
   const text = str(body.body, 4000);

@@ -11,10 +11,10 @@ export const dynamic = "force-dynamic";
  * address has an account, so the endpoint cannot be used to discover members.
  */
 export const POST = handle(async (req: Request) => {
-  rateLimit(`forgot:${clientKey(req)}`, 5, 15 * 60_000);
+  await rateLimit(`forgot:${clientKey(req)}`, 5, 15 * 60_000);
   const body = await readJson(req);
   const email = str(body.email, 200).toLowerCase();
-  rateLimit(`forgot-email:${email}`, 3, 60 * 60_000);
+  await rateLimit(`forgot-email:${email}`, 3, 60 * 60_000);
 
   const user = email ? await prisma.user.findUnique({ where: { email } }) : null;
   if (user) {

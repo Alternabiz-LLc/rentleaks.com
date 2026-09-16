@@ -43,7 +43,7 @@ export const PUT = handle(async (req: Request, ctx: { params: Promise<{ id: stri
   const { id } = await ctx.params;
   const own = await owned(req, id);
   if (!own) return fail(404, "not_found", "That listing is not on this account.");
-  rateLimit(`compose:${own.user.id}`, 10, 60 * 60_000);
+  await rateLimit(`compose:${own.user.id}`, 10, 60 * 60_000);
   const body = await readJson(req);
   const result = await updateFromComposer(id, own.user.id, body);
   if (!result.ok) {

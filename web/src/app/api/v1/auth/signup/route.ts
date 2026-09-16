@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
  * same person can be an owner on one listing and a tenant on another.
  */
 export const POST = handle(async (req: Request) => {
-  rateLimit(`signup:${clientKey(req)}`, 5, 60_000);
+  await rateLimit(`signup:${clientKey(req)}`, 5, 60_000);
   const body = await readJson(req);
   const name = str(body.name, 80);
   const email = str(body.email, 200).toLowerCase();

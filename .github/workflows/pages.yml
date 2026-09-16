@@ -28,8 +28,27 @@ jobs:
       - uses: actions/configure-pages@v5
         with:
           enablement: true
+      # Publish only the public website. The app code (web/, mobile/), tooling,
+      # outreach lists and working notes stay in the repository but are not served.
+      - name: Stage website files
+        run: |
+          mkdir -p _site
+          rsync -a ./ _site/ \
+            --exclude='.git/' --exclude='.github/' --exclude='_site/' \
+            --exclude='.DS_Store' --exclude='.backup/' --exclude='.snapshots/' \
+            --exclude='/web/' --exclude='/mobile/' --exclude='/tools/' \
+            --exclude='/marketing/' --exclude='/outreach/' --exclude='/Claude outputs/' \
+            --exclude='*.md' --exclude='*.zip' --exclude='*.command' \
+            --exclude='*.pre-dynamic' --exclude='docker-compose.yml' \
+            --exclude='.gitignore'
+          # Fail the deploy if anything private slipped through.
+          for p in web mobile tools marketing outreach "Claude outputs"; do
+            if [ -e "_site/$p" ]; then echo "::error::$p must not be published"; exit 1; fi
+          done
+          test -f _site/index.html
+          echo "Publishing $(find _site -type f | wc -l) files"
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: _site
       - id: deployment
         uses: actions/deploy-pages@v4

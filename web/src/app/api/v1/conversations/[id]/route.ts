@@ -70,7 +70,7 @@ export const GET = handle(async (req: Request, ctx: { params: Promise<{ id: stri
 
 export const POST = handle(async (req: Request, ctx: { params: Promise<{ id: string }> }) => {
   const user = await requireUser(req);
-  rateLimit(`msg:${user.id}`, 60, 10 * 60_000);
+  await rateLimit(`msg:${user.id}`, 60, 10 * 60_000);
   const { id } = await ctx.params;
   const convo = await ownConversation(id, user.id);
   const body = await readJson(req);

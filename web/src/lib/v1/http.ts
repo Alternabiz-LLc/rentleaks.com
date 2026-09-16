@@ -86,21 +86,60 @@ export function int(v: unknown, fallback: number, min = -Infinity, max = Infinit
 export const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 /* --- rate limiting -------------------------------------------------------
-   In-memory, per process. Enough to blunt password spraying and message
-   floods from one client on a single instance; a multi-instance deployment
-   should move this to Redis or the edge. */
+   Fixed-window counters. With UPSTASH_REDIS_REST_URL/TOKEN set (production),
+   every server instance shares the same counters in Redis; otherwise they
+   live in this process's memory, which is fine for one machine. If Redis is
+   unreachable the request is allowed and the error logged, so an outage at
+   the rate limiter never takes sign-in down with it. */
 
 const buckets = new Map<string, { n: number; reset: number }>();
 
-export function rateLimit(key: string, limit: number, windowMs: number) {
+function memoryHit(key: string, windowMs: number) {
   const now = Date.now();
   const b = buckets.get(key);
   if (!b || b.reset < now) {
     buckets.set(key, { n: 1, reset: now + windowMs });
-    return;
+    if (buckets.size > 50_000) {
+      for (const [k, v] of buckets) if (v.reset < now) buckets.delete(k);
+    }
+    return 1;
   }
   b.n += 1;
-  if (b.n > limit) {
+  return b.n;
+}
+
+async function redisHit(url: string, token: string, key: string, windowMs: number) {
+  const res = await fetch(`${url.replace(/\/+$/, "")}/pipeline`, {
+    method: "POST",
+    headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+    body: JSON.stringify([
+      ["INCR", `rl:${key}`],
+      ["PEXPIRE", `rl:${key}`, String(windowMs), "NX"],
+    ]),
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`Upstash ${res.status}`);
+  const data = (await res.json()) as Array<{ result?: unknown; error?: string }>;
+  const n = Number(data?.[0]?.result);
+  if (!Number.isFinite(n)) throw new Error(data?.[0]?.error || "Upstash returned no count");
+  return n;
+}
+
+export async function rateLimit(key: string, limit: number, windowMs: number) {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  let n: number;
+  if (url && token) {
+    try {
+      n = await redisHit(url, token, key, windowMs);
+    } catch (err) {
+      console.error("rate limiter unavailable, allowing request", err);
+      return;
+    }
+  } else {
+    n = memoryHit(key, windowMs);
+  }
+  if (n > limit) {
     throw new HttpError(429, "rate_limited", "Too many attempts. Wait a minute and try again.");
   }
 }

@@ -9,7 +9,7 @@ const REASONS = ["scam", "misleading", "discriminatory", "unavailable", "abusive
 
 export const POST = handle(async (req: Request) => {
   const user = await requireUser(req);
-  rateLimit(`report:${user.id}`, 20, 60 * 60_000);
+  await rateLimit(`report:${user.id}`, 20, 60 * 60_000);
   const body = await readJson(req);
   const reason = REASONS.includes(String(body.reason)) ? String(body.reason) : null;
   if (!reason) return fail(400, "reason", "Choose what is wrong.");

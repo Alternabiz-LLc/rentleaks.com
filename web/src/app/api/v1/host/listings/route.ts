@@ -41,7 +41,7 @@ export const POST = handle(async (req: Request) => {
   if (!isHost(user)) {
     return fail(403, "not_host", "Switch your account to hosting to list a home.");
   }
-  rateLimit(`compose:${user.id}`, 10, 60 * 60_000);
+  await rateLimit(`compose:${user.id}`, 10, 60 * 60_000);
   const body = await readJson(req);
   const result = await createFromComposer(user.id, body);
   if (!result.ok) return new Response(JSON.stringify({ error: { code: "gate", message: result.error }, checks: result.checks ?? [] }), {

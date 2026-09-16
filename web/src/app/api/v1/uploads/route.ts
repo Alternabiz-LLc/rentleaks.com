@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export const POST = handle(async (req: Request) => {
   const user = await requireUser(req);
   if (!isHost(user)) return fail(403, "not_host", "Only hosting accounts upload listing media.");
-  rateLimit(`upload:${user.id}`, 80, 60 * 60_000);
+  await rateLimit(`upload:${user.id}`, 80, 60 * 60_000);
   const form = await req.formData();
   const file = form.get("file");
   if (!(file instanceof File)) return fail(400, "no_file", "Choose a file.");

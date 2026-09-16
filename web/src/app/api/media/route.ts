@@ -1,8 +1,6 @@
-import { randomBytes } from "crypto";
-import { mkdir, writeFile } from "fs/promises";
-import path from "path";
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+import { StorageNotConfigured, storeUpload } from "@/lib/storage";
 
 const TYPES: Record<string, string> = {
   "image/jpeg": "jpg",
@@ -38,9 +36,14 @@ export async function POST(request: Request) {
     );
   }
 
-  const dir = path.join(process.cwd(), "public", "uploads", user.id);
-  await mkdir(dir, { recursive: true });
-  const name = `${Date.now().toString(36)}-${randomBytes(6).toString("hex")}.${ext}`;
-  await writeFile(path.join(dir, name), Buffer.from(await file.arrayBuffer()));
-  return NextResponse.json({ url: `/uploads/${user.id}/${name}` });
+  try {
+    const url = await storeUpload(user.id, Buffer.from(await file.arrayBuffer()), file.type, ext);
+    return NextResponse.json({ url });
+  } catch (err) {
+    if (err instanceof StorageNotConfigured) {
+      return NextResponse.json({ error: err.message }, { status: 503 });
+    }
+    console.error("media upload failed", err);
+    return NextResponse.json({ error: "Could not save that file. Try again." }, { status: 502 });
+  }
 }

@@ -6,7 +6,7 @@ import { issueToken } from "@/lib/v1/session";
 export const dynamic = "force-dynamic";
 
 export const POST = handle(async (req: Request) => {
-  rateLimit(`login:${clientKey(req)}`, 10, 60_000);
+  await rateLimit(`login:${clientKey(req)}`, 10, 60_000);
   const body = await readJson(req);
   const email = str(body.email, 200).toLowerCase();
   const password = typeof body.password === "string" ? body.password : "";
