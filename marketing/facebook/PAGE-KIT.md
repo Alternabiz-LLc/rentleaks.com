@@ -86,6 +86,10 @@ Sections 2–6 below apply to the new Page unchanged; section 1 describes the ol
   (recovery in progress). Username changed to **rentleaks.official**; links switched with
   `python3 tools/apply-facebook.py --page-username rentleaks.official`. Bio A saved; action button is
   "Contact us" → rentleaks.com/facebook.html?src=fb_button (Facebook offers no website link for "Book now").
+- 16 Sep 2026: trend post published (image: site photo + overlay). Scheduled at 12:00 New York time:
+  Rooms 17 Sep · Co-living 18 · Furnished 19 · 1-month+ 20 · Aparthotel 21 · Lease-break 22 · Cities 23 · Operators 24.
+  Images are composed in the browser from `images/facebook/overlay/*.png` and the photo in
+  `images/facebook/photos.json` (see tools/make-facebook-posts.py --photo).
 - Profile: bio and "Founder at RentLeaks" added.
 
 ## 2. What to put on the Page
