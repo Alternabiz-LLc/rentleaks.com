@@ -22,7 +22,7 @@ import { sendMail } from "@/lib/v1/mail";
 /* --- templates ---------------------------------------------------------- */
 
 export async function saveTemplate(fd: FormData) {
-  const path = "/admin/outreach";
+  const path = "/admin/outreach?tab=templates";
   const guard = await requireAdminAction();
   if (!guard.ok) back(path, "err", guard.error);
   const id = field(fd, "id", 60);
@@ -39,7 +39,7 @@ export async function saveTemplate(fd: FormData) {
 }
 
 export async function deleteTemplate(fd: FormData) {
-  const path = "/admin/outreach";
+  const path = "/admin/outreach?tab=templates";
   const guard = await requireAdminAction();
   if (!guard.ok) back(path, "err", guard.error);
   const id = field(fd, "id", 60);
@@ -49,7 +49,7 @@ export async function deleteTemplate(fd: FormData) {
 }
 
 export async function loadStarterTemplates() {
-  const path = "/admin/outreach";
+  const path = "/admin/outreach?tab=templates";
   const guard = await requireAdminAction();
   if (!guard.ok) back(path, "err", guard.error);
   const existing = new Set((await prisma.emailTemplate.findMany({ select: { name: true } })).map((t) => t.name));

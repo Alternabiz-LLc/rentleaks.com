@@ -3,11 +3,11 @@
 import { randomBytes } from "crypto";
 import { revalidatePath } from "next/cache";
 import { audit, requireAdminAction } from "@/lib/admin/guard";
-import { back, field, fields } from "@/lib/admin/flash";
+import { back, field, fields, returnTo } from "@/lib/admin/flash";
 import { prisma } from "@/lib/prisma";
 import { CHANNEL_LIMIT, parsePostBlock, publishToFacebook, SOCIAL_CHANNELS, splitBulkPosts, spreadSchedule } from "@/lib/social";
 
-const path = "/admin/social";
+const BASE = "/admin/social";
 const httpsOrNull = (v: string) => (/^https:\/\/\S+$/.test(v) ? v : null);
 
 function channelsOf(fd: FormData) {
@@ -15,6 +15,7 @@ function channelsOf(fd: FormData) {
 }
 
 export async function createPost(fd: FormData) {
+  const path = returnTo(fd, BASE);
   const guard = await requireAdminAction();
   if (!guard.ok) back(path, "err", guard.error);
   const channels = channelsOf(fd);
@@ -39,11 +40,12 @@ export async function createPost(fd: FormData) {
     })),
   });
   await audit(guard.user.id, "social.create", "social", batch, { channels, scheduled: Boolean(scheduledAt) });
-  revalidatePath(path);
+  revalidatePath(BASE);
   back(path, "ok", `${channels.length} post${channels.length === 1 ? "" : "s"} ${scheduledAt ? "scheduled" : "saved as drafts"}.`);
 }
 
 export async function bulkPosts(fd: FormData) {
+  const path = returnTo(fd, BASE);
   const guard = await requireAdminAction();
   if (!guard.ok) back(path, "err", guard.error);
   const channels = channelsOf(fd);
@@ -60,11 +62,12 @@ export async function bulkPosts(fd: FormData) {
   );
   await prisma.socialPost.createMany({ data: rows });
   await audit(guard.user.id, "social.bulk", "social", batch, { posts: blocks.length, channels });
-  revalidatePath(path);
+  revalidatePath(BASE);
   back(path, "ok", `Scheduled ${blocks.length} posts × ${channels.length} channel${channels.length === 1 ? "" : "s"}, every ${every}h from ${start.toISOString().slice(0, 16).replace("T", " ")} UTC.`);
 }
 
 export async function postAction(fd: FormData) {
+  const path = returnTo(fd, BASE);
   const guard = await requireAdminAction();
   if (!guard.ok) back(path, "err", guard.error);
   const id = field(fd, "id", 60);
@@ -93,6 +96,6 @@ export async function postAction(fd: FormData) {
     await prisma.socialPost.update({ where: { id }, data: { status: "scheduled", scheduledAt: at, error: null } });
   } else back(path, "err", "Unknown action.");
   await audit(guard.user.id, `social.${op}`, "social", id);
-  revalidatePath(path);
+  revalidatePath(BASE);
   back(path, "ok", "Done.");
 }

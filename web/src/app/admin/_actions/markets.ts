@@ -31,7 +31,7 @@ export async function saveCity(fd: FormData) {
 }
 
 export async function saveOperator(fd: FormData) {
-  const path = "/admin/markets#operators";
+  const path = "/admin/markets?tab=operators";
   const guard = await requireAdminAction();
   if (!guard.ok) back(path, "err", guard.error);
   const existingId = field(fd, "id", 80);

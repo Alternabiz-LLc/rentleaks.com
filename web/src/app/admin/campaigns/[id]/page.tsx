@@ -2,7 +2,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { duplicateCampaign, scheduleCampaign, testCampaign, updateCampaign } from "@/app/admin/_actions/campaigns";
 import { AudienceFields } from "@/components/admin/AudienceFields";
-import { CAMPAIGN_TONE, flashOf, PageHead, Pill, readParams, Section, Stats, when, type SP } from "@/components/admin/ui";
+import { Kpi } from "@/components/admin/desk/charts";
+import { DeskHeader } from "@/components/admin/desk/DeskHeader";
+import { Icon } from "@/components/admin/desk/Icon";
+import { Chip, Panel, Steps } from "@/components/admin/desk/parts";
+import { CAMPAIGN_TONE, flashOf, readParams, when, type SP } from "@/components/admin/ui";
 import { requireAdminPage } from "@/lib/admin/guard";
 import { nowMs } from "@/lib/admin/metrics";
 import { audienceWhere, coerceAudience, describeAudience, mergeFields, renderEmail } from "@/lib/marketing";
@@ -10,10 +14,10 @@ import { CAMPAIGN_REASON, mailingAddress } from "@/lib/outbox";
 import { prisma } from "@/lib/prisma";
 import { appUrl } from "@/lib/site";
 
-export const metadata = { title: "Campaign — RentLeaks admin" };
+export const metadata = { title: "Campaign — RentLeaks desk" };
 
 export default async function CampaignPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: SP }) {
-  const me = await requireAdminPage();
+  const me = await requireAdminPage("/admin/campaigns");
   const { id } = await params;
   const p = await readParams(searchParams);
   const c = await prisma.campaign.findUnique({ where: { id } });
@@ -34,88 +38,150 @@ export default async function CampaignPage({ params, searchParams }: { params: P
   );
   const soon = new Date(nowMs() + 3_600_000).toISOString().slice(0, 16);
 
-  return (
-    <>
-      <PageHead title={c.name} sub={<>{c.kind} · <Pill tone={CAMPAIGN_TONE[c.status]}>{c.status}</Pill> · created {when(c.createdAt)}</>} flash={flashOf(p)}>
-        <Link className="btn btn--ghost" href="/admin/campaigns">← Campaigns</Link>
-        <form action={duplicateCampaign}>
-          <input type="hidden" name="id" value={c.id} />
-          <button className="btn btn--outline">Duplicate</button>
-        </form>
-        {c.total ? <Link className="btn btn--outline" href={`/api/admin/export/campaign?id=${c.id}`}>Recipients CSV</Link> : null}
-      </PageHead>
+  const stepState = (i: number): "done" | "on" | "todo" => {
+    const at = c.status === "draft" ? 1 : c.status === "scheduled" || c.status === "sending" ? 2 : 3;
+    return i < at ? "done" : i === at ? "on" : "todo";
+  };
 
-      <Stats
-        items={[
-          { k: editable ? "Will reach" : "Recipients", v: editable ? reach : c.total, s: describeAudience(audience) },
-          { k: "Sent", v: count("sent") },
-          { k: "Queued", v: count("queued") },
-          { k: "Failed / skipped", v: `${count("failed")} / ${count("skipped")}` },
-          { k: "Schedule", v: c.scheduledAt ? when(c.scheduledAt) : "—", s: c.finishedAt ? `finished ${when(c.finishedAt)}` : c.startedAt ? `started ${when(c.startedAt)}` : "UTC" },
+  return (
+    <div className="dk-stack">
+      <DeskHeader
+        href="/admin/campaigns"
+        compact
+        crumbs={[{ label: c.name }]}
+        title={c.name}
+        flash={flashOf(p)}
+        signals={[
+          { label: "Status", value: c.status, tone: c.status === "sending" ? "live" : c.status === "cancelled" ? "warn" : "ok" },
+          { label: editable ? "Will reach" : "Recipients", value: `${(editable ? reach : c.total).toLocaleString("en-US")}`, tone: "live" },
+          { label: "Sent", value: `${count("sent")} · ${count("queued")} queued`, tone: "ok" },
+          { label: "Schedule (UTC)", value: c.scheduledAt ? when(c.scheduledAt) : "—", tone: "ok" },
+        ]}
+        actions={
+          <>
+            <form action={duplicateCampaign}>
+              <input type="hidden" name="id" value={c.id} />
+              <button className="dk-btn dk-btn--onink">
+                <Icon name="copy" size={15} /> Duplicate
+              </button>
+            </form>
+            {c.total ? (
+              <Link prefetch={false} className="dk-btn dk-btn--onink" href={`/api/admin/export/campaign?id=${c.id}`}>
+                <Icon name="export" size={15} /> Recipients CSV
+              </Link>
+            ) : null}
+          </>
+        }
+      />
+
+      <Steps
+        steps={[
+          { label: "Audience & content", state: stepState(0) },
+          { label: "Draft review", state: stepState(1) },
+          { label: "Sending", state: stepState(2) },
+          { label: "Done", state: stepState(3) },
         ]}
       />
+
+      <div className="dk-kpis">
+        <Kpi label={editable ? "Will reach" : "Recipients"} value={editable ? reach : c.total} sub={describeAudience(audience)} />
+        <Kpi label="Sent" value={count("sent")} tone="good" />
+        <Kpi label="Queued" value={count("queued")} tone="value" />
+        <Kpi label="Failed" value={count("failed")} tone={count("failed") ? "alert" : undefined} />
+        <Kpi label="Skipped" value={count("skipped")} sub="unsubscribed since" />
+      </div>
       {failures.length ? (
-        <p className="adm-flash adm-flash--err">
+        <p className="dk-flash dk-flash--err">
           Failures: {failures.map((f) => `${f.email} (${f.error})`).join(" · ")}
         </p>
       ) : null}
 
-      <div className="a-cols">
-        <Section title={editable ? "Edit" : "Content"}>
-          <form action={updateCampaign} className="adm-form">
+      <div className="dk-grid dk-grid--2">
+        <Panel kicker={c.kind} title={editable ? "Edit" : "Content"} actions={<Chip tone={(CAMPAIGN_TONE[c.status] || "ink") as "brand"}>{c.status}</Chip>}>
+          <form action={updateCampaign} className="dk-form">
             <input type="hidden" name="id" value={c.id} />
-            <div className="adm-row">
-              <label>Name<input name="name" defaultValue={c.name} disabled={!editable} /></label>
-              <label>
-                Kind
-                <select name="kind" defaultValue={c.kind} disabled={!editable}>
-                  <option value="newsletter">Newsletter</option>
-                  <option value="bulk">Announcement / bulk</option>
-                  <option value="outreach">Outreach wave</option>
-                </select>
-              </label>
+            <label className="dk-field">
+              <span>Name</span>
+              <input name="name" defaultValue={c.name} disabled={!editable} />
+            </label>
+            <label className="dk-field">
+              <span>Kind</span>
+              <select name="kind" defaultValue={c.kind} disabled={!editable}>
+                <option value="newsletter">Newsletter</option>
+                <option value="bulk">Announcement / bulk</option>
+                <option value="outreach">Outreach wave</option>
+              </select>
+            </label>
+            <label className="dk-field dk-field--wide">
+              <span>Subject</span>
+              <input name="subject" defaultValue={c.subject} disabled={!editable} />
+            </label>
+            <label className="dk-field dk-field--wide">
+              <span>Message</span>
+              <textarea name="body" rows={14} defaultValue={c.body} disabled={!editable} />
+            </label>
+            <div className="dk-field--wide">
+              <AudienceFields audience={audience} cities={cities} kind={c.kind} />
             </div>
-            <label>Subject<input name="subject" defaultValue={c.subject} disabled={!editable} /></label>
-            <label>Message<textarea name="body" rows={14} defaultValue={c.body} disabled={!editable} /></label>
-            <AudienceFields audience={audience} cities={cities} kind={c.kind} />
-            {editable ? <button className="btn btn--primary">Save draft</button> : null}
+            {editable ? <button className="dk-btn dk-btn--primary">Save draft</button> : null}
           </form>
-        </Section>
+        </Panel>
 
-        <Section title="Preview" sub={<>Subject: <b>{mergeFields(c.subject, { name: me.name, city: "New York" })}</b></>}>
-          <iframe className="adm-preview" title="Email preview" sandbox="" srcDoc={preview.html} />
-          <form action={testCampaign} className="adm-inline">
-            <input type="hidden" name="id" value={c.id} />
-            <input name="to" type="email" defaultValue={me.email} aria-label="Send test to" />
-            <button className="btn btn--outline">Send me a test</button>
-          </form>
+        <div className="dk-stack">
+          <Panel title="Preview" sub={<>Subject: <b>{mergeFields(c.subject, { name: me.name, city: "New York" })}</b></>}>
+            <div className="dk-mail">
+              <iframe title="Email preview" sandbox="" srcDoc={preview.html} />
+            </div>
+            <form action={testCampaign} className="dk-inline">
+              <input type="hidden" name="id" value={c.id} />
+              <input name="to" type="email" defaultValue={me.email} aria-label="Send test to" />
+              <button className="dk-btn">
+                <Icon name="mail" size={14} /> Send me a test
+              </button>
+            </form>
+          </Panel>
 
           {editable ? (
-            <div className="adm-card adm-send">
-              <h3 className="adm-h3">Send</h3>
-              {!address ? <p className="adm-flash adm-flash--err">Add your mailing address in Admin → System before sending.</p> : null}
-              <form action={scheduleCampaign} className="adm-form">
+            <Panel kicker="Step 3" title="Send">
+              {!address ? <p className="dk-flash dk-flash--err">Add your mailing address in System before sending.</p> : null}
+              <form action={scheduleCampaign} className="dk-form">
                 <input type="hidden" name="id" value={c.id} />
-                <label>Type SEND to confirm<input name="confirm" autoComplete="off" /></label>
-                <div className="adm-row">
-                  <button className="btn btn--primary" name="op" value="now">Send now to {reach}</button>
-                </div>
-                <div className="adm-row">
-                  <label>…or at (UTC)<input name="at" type="datetime-local" defaultValue={soon} /></label>
-                  <button className="btn btn--outline" name="op" value="schedule">Schedule</button>
+                <label className="dk-field dk-field--wide">
+                  <span>Type SEND to confirm</span>
+                  <input name="confirm" autoComplete="off" placeholder="SEND" />
+                </label>
+                <button className="dk-btn dk-btn--primary" name="op" value="now">
+                  Send now to {reach.toLocaleString("en-US")}
+                </button>
+                <label className="dk-field">
+                  <span>…or at (UTC)</span>
+                  <input name="at" type="datetime-local" defaultValue={soon} />
+                </label>
+                <div className="dk-field" style={{ alignSelf: "end" }}>
+                  <button className="dk-btn" name="op" value="schedule">
+                    <Icon name="clock" size={14} /> Schedule
+                  </button>
                 </div>
               </form>
-            </div>
+            </Panel>
           ) : null}
           {c.status === "scheduled" || c.status === "sending" ? (
-            <form action={scheduleCampaign} className="adm-inline">
-              <input type="hidden" name="id" value={c.id} />
-              {c.status === "sending" ? <button className="btn btn--outline" name="op" value="batch">Send next batch now</button> : null}
-              <button className="btn btn--danger" name="op" value="cancel">{c.status === "scheduled" ? "Unschedule" : "Stop sending"}</button>
-            </form>
+            <Panel title="Controls">
+              <form action={scheduleCampaign} className="dk-inline">
+                <input type="hidden" name="id" value={c.id} />
+                {c.status === "sending" ? (
+                  <button className="dk-btn" name="op" value="batch">
+                    Send next batch now
+                  </button>
+                ) : null}
+                <button className="dk-btn dk-btn--danger" name="op" value="cancel">
+                  {c.status === "scheduled" ? "Unschedule" : "Stop sending"}
+                </button>
+              </form>
+            </Panel>
           ) : null}
-        </Section>
+        </div>
       </div>
-    </>
+    </div>
   );
 }

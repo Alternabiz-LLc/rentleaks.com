@@ -1,5 +1,9 @@
 import { runOutboxNow, saveSettings, sendTestEmail, suppressEmail, testUpload } from "@/app/admin/_actions/system";
-import { flashOf, PageHead, Pill, readParams, Section, when, type SP } from "@/components/admin/ui";
+import { Kpi } from "@/components/admin/desk/charts";
+import { DeskHeader } from "@/components/admin/desk/DeskHeader";
+import { Icon } from "@/components/admin/desk/Icon";
+import { ago, Chip, Panel } from "@/components/admin/desk/parts";
+import { flashOf, readParams, when, type SP } from "@/components/admin/ui";
 import { requireAdminPage } from "@/lib/admin/guard";
 import { nowMs } from "@/lib/admin/metrics";
 import { prisma } from "@/lib/prisma";
@@ -8,7 +12,7 @@ import { facebookConfig } from "@/lib/social";
 import { storageMode } from "@/lib/storage";
 import { mailStatus } from "@/lib/v1/mail";
 
-export const metadata = { title: "System & settings — RentLeaks admin" };
+export const metadata = { title: "System & settings — RentLeaks desk" };
 
 function age(iso?: string) {
   if (!iso) return null;
@@ -17,7 +21,7 @@ function age(iso?: string) {
 }
 
 export default async function SystemAdmin({ searchParams }: { searchParams: SP }) {
-  const me = await requireAdminPage();
+  const me = await requireAdminPage("/admin/system");
   const p = await readParams(searchParams);
   const t0 = nowMs();
   let dbOk = true;
@@ -33,7 +37,7 @@ export default async function SystemAdmin({ searchParams }: { searchParams: SP }
   const dbMs = nowMs() - t0;
   const [settings, actions, suppressed, queued] = await Promise.all([
     getSettings([SETTING_KEYS.mailingAddress, SETTING_KEYS.senderName, SETTING_KEYS.outboxHeartbeat, SETTING_KEYS.alertsHeartbeat]),
-    prisma.adminAction.findMany({ orderBy: { createdAt: "desc" }, take: 60 }).catch(() => []),
+    prisma.adminAction.findMany({ where: p.action ? { action: { startsWith: p.action } } : {}, orderBy: { createdAt: "desc" }, take: 80 }).catch(() => []),
     prisma.emailSuppression.count().catch(() => 0),
     prisma.campaignSend.count({ where: { status: "queued" } }).catch(() => 0),
   ]);
@@ -69,84 +73,152 @@ export default async function SystemAdmin({ searchParams }: { searchParams: SP }
     { name: "Meta catalog feed", ok: Boolean(env.META_FEED_KEY), detail: env.META_FEED_KEY ? "/feeds/meta-home-listings.csv?key=…" : "META_FEED_KEY not set" },
   ];
 
-  return (
-    <>
-      <PageHead title="System & settings" sub="Health of every integration, business settings and the admin audit log." flash={flashOf(p)} />
+  const okCount = checks.filter((c) => c.ok).length;
+  const t = nowMs();
+  const groups = [...new Set(actions.map((a) => a.action.split(".")[0]))];
 
-      <Section title="Health">
-        <ul className="adm-health">
+  return (
+    <div className="dk-stack">
+      <DeskHeader
+        href="/admin/system"
+        flash={flashOf(p)}
+        signals={[
+          { label: "Health", value: `${okCount} of ${checks.length} OK`, tone: okCount === checks.length ? "live" : "warn" },
+          { label: "Database", value: dbOk ? `${dbMs} ms` : "unreachable", tone: dbOk ? "live" : "critical" },
+          { label: "Email", value: mail.resend ? "Resend" : mail.smtp ? "SMTP" : "not set up", tone: mail.resend || mail.smtp ? "ok" : "critical", href: "#test-email" },
+          { label: "Outbox", value: outboxAge === null ? "never ran" : `${outboxAge} min ago · ${queued} queued`, tone: outboxAge !== null && outboxAge < 15 ? "ok" : "warn" },
+        ]}
+        actions={
+          <>
+            <form action={runOutboxNow}>
+              <button className="dk-btn dk-btn--onink">
+                <Icon name="clock" size={15} /> Run outbox now
+              </button>
+            </form>
+            <form action={testUpload}>
+              <button className="dk-btn dk-btn--onink">
+                <Icon name="check" size={15} /> Test photo upload
+              </button>
+            </form>
+          </>
+        }
+      />
+
+      <div className="dk-kpis">
+        <Kpi label="Checks passing" value={okCount} sub={`of ${checks.length}`} tone={okCount === checks.length ? "good" : "alert"} />
+        <Kpi label="DB latency" value={dbMs} fmt="raw" sub="milliseconds" />
+        <Kpi label="Emails queued" value={queued} href="/admin/campaigns?status=sending" />
+        <Kpi label="Suppressed" value={suppressed} sub="never emailed again" href="#suppress" />
+        <Kpi label="Audit entries" value={actions.length} sub="latest shown below" href="#audit" />
+      </div>
+
+      <Panel kicker="Integrations" title="Health" sub="Every moving part the desk depends on, with the fix beside anything that needs setting up.">
+        <ul className="dk-health">
           {checks.map((c) => (
-            <li key={c.name}>
-              <Pill tone={c.ok ? "good" : "warn"}>{c.ok ? "OK" : "Needs setup"}</Pill>
-              <b>{c.name}</b>
-              <span className="a-dim">{c.detail}</span>
+            <li key={c.name} className={c.ok ? undefined : "is-bad"}>
+              <b>
+                {c.name}
+                <Chip tone={c.ok ? "good" : "warn"}>{c.ok ? "OK" : "Needs setup"}</Chip>
+              </b>
+              <span>{c.detail}</span>
               {!c.ok && c.fix ? <small>{c.fix}</small> : null}
             </li>
           ))}
         </ul>
-        <div className="adm-inline">
-          <form action={runOutboxNow}><button className="btn btn--outline">Run outbox now</button></form>
-          <form action={testUpload}><button className="btn btn--outline">Test photo upload</button></form>
-        </div>
-      </Section>
+      </Panel>
 
-      <div className="a-cols">
-        <Section title="Business settings" sub="Shown in the footer of every marketing email.">
-          <form action={saveSettings} className="adm-form">
-            <label>
-              Postal mailing address (required by anti-spam law)
+      <div className="dk-grid dk-grid--2">
+        <Panel kicker="Business" title="Settings" sub="Shown in the footer of every marketing email.">
+          <form action={saveSettings} className="dk-form">
+            <label className="dk-field dk-field--wide">
+              <span>Postal mailing address (required by anti-spam law)</span>
               <textarea name="address" rows={3} defaultValue={settings[SETTING_KEYS.mailingAddress]} placeholder="Alternabiz LLC · 123 Example St, Suite 4 · Brooklyn, NY 11201 · USA" />
             </label>
-            <label>
-              Sender name
+            <label className="dk-field dk-field--wide">
+              <span>Sender name</span>
               <input name="sender" defaultValue={settings[SETTING_KEYS.senderName] || "RentLeaks"} />
             </label>
-            <button className="btn btn--primary">Save settings</button>
+            <button className="dk-btn dk-btn--primary">Save settings</button>
           </form>
-        </Section>
+        </Panel>
 
-        <Section title="Test email">
-          <form action={sendTestEmail} className="adm-form">
-            <label>
-              Send to
+        <Panel id="test-email" kicker="Email" title="Send a test" sub={`From ${mail.from}${mail.replyTo ? ` · replies to ${mail.replyTo}` : ""}`}>
+          <form action={sendTestEmail} className="dk-form">
+            <label className="dk-field">
+              <span>Send to</span>
               <input name="to" type="email" defaultValue={me.email} />
             </label>
-            <label>
-              As
+            <label className="dk-field">
+              <span>As</span>
               <select name="purpose" defaultValue="transactional">
                 <option value="transactional">Transactional (Resend first)</option>
                 <option value="personal">Personal (your SMTP mailbox first)</option>
                 <option value="bulk">Bulk (Resend first)</option>
               </select>
             </label>
-            <button className="btn btn--primary">Send test</button>
+            <button className="dk-btn dk-btn--primary">
+              <Icon name="mail" size={14} /> Send test
+            </button>
           </form>
-          <form action={suppressEmail} className="adm-form">
-            <label>
-              Never email this address again ({suppressed} suppressed)
+          <form id="suppress" action={suppressEmail} className="dk-form dk-danger">
+            <label className="dk-field dk-field--wide">
+              <span>Never email this address again ({suppressed} suppressed)</span>
               <input name="email" type="email" placeholder="someone@example.com" />
             </label>
-            <button className="btn btn--outline">Suppress</button>
+            <button className="dk-btn">Suppress</button>
           </form>
-        </Section>
+        </Panel>
       </div>
 
-      <Section title="Audit log" sub="Every change made from the founder view, newest first.">
-        <div className="a-scroll">
-          <table className="a-table">
+      <Panel
+        flush
+        id="audit"
+        kicker="Compliance"
+        title="Audit log"
+        sub="Every change made from the founder desk, newest first."
+        actions={
+          <div className="dk-chiprow">
+            <a className={`dk-chip${!p.action ? " is-on" : ""}`} href="/admin/system#audit">
+              all
+            </a>
+            {groups.map((g) => (
+              <a key={g} className={`dk-chip${p.action === g ? " is-on" : ""}`} href={`/admin/system?action=${g}#audit`}>
+                {g}
+              </a>
+            ))}
+          </div>
+        }
+      >
+        <div className="dk-tablewrap">
+          <table className="dk-table">
+            <thead>
+              <tr>
+                <th>When</th>
+                <th>Who</th>
+                <th>Action</th>
+                <th>Target</th>
+              </tr>
+            </thead>
             <tbody>
               {actions.map((a) => (
                 <tr key={a.id}>
-                  <td>{when(a.createdAt)}</td>
+                  <td className="dk-dim" title={when(a.createdAt)}>
+                    {ago(t - a.createdAt.getTime())}
+                  </td>
                   <td>{actors.get(a.actorId) || a.actorId}</td>
-                  <td>{a.action}</td>
-                  <td className="adm-wrap a-dim">{a.targetType}{a.targetId ? ` · ${a.targetId}` : ""}</td>
+                  <td>
+                    <Chip tone="brand">{a.action}</Chip>
+                  </td>
+                  <td className="dk-wrap dk-dim">
+                    {a.targetType}
+                    {a.targetId ? <span className="dk-mono"> · {a.targetId}</span> : null}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-      </Section>
-    </>
+      </Panel>
+    </div>
   );
 }
