@@ -4,6 +4,7 @@ import { handle, int, ok } from "@/lib/v1/http";
 import { toCard } from "@/lib/v1/listing-view";
 import { parseSearch, searchOrder, searchWhere } from "@/lib/v1/search";
 import { optionalUser } from "@/lib/v1/session";
+import { pageSlots, rotateSponsors } from "@/lib/sponsored-placement";
 
 export const dynamic = "force-dynamic";
 
@@ -20,22 +21,43 @@ export const GET = handle(async (req: Request) => {
   const page = map ? 1 : int(p.get("page"), 1, 1, 500);
 
   const where = searchWhere(s, await liveListingWhere());
-  const [total, rows, user] = await Promise.all([
-    prisma.listing.count({ where }),
-    prisma.listing.findMany({
-      where,
-      orderBy: searchOrder(s),
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-      include: { city: true, operator: true },
-    }),
-    optionalUser(req),
+  const include = { city: true, operator: true } as const;
+
+  /* Sponsored placement only applies inside one market (brief §4.6) and
+     never to the map. The sponsors come from the same filtered set, open the
+     first page, then appear once every few results across pages. */
+  const placing = Boolean(s.city) && !map;
+  const paid = { OR: [{ sponsored: true }, { featured: true }] };
+  const organicWhere = placing ? { AND: [where, { NOT: paid }] } : where;
+
+  const [organicTotal, sponsorsRaw] = await Promise.all([
+    prisma.listing.count({ where: organicWhere }),
+    placing
+      ? prisma.listing.findMany({ where: { AND: [where, paid] }, include, orderBy: { id: "asc" }, take: 60 })
+      : Promise.resolve([]),
   ]);
+  const sponsors = rotateSponsors(sponsorsRaw, `${new Date().toISOString().slice(0, 10)}:${s.city}`);
+  const layout = pageSlots(page, pageSize, organicTotal, sponsors.length);
+
+  const organicRows = layout.organicTake
+    ? await prisma.listing.findMany({
+        where: organicWhere,
+        orderBy: searchOrder(s),
+        skip: layout.organicSkip,
+        take: layout.organicTake,
+        include,
+      })
+    : [];
+  const rows = layout.slots
+    .map((slot) => (slot.kind === "sponsored" ? sponsors[slot.index] : organicRows[slot.index - layout.organicSkip]))
+    .filter((row): row is (typeof organicRows)[number] => Boolean(row));
+  const total = layout.total;
+  const signedIn = await optionalUser(req);
 
   let saved = new Set<string>();
-  if (user && rows.length) {
+  if (signedIn && rows.length) {
     const marks = await prisma.savedListing.findMany({
-      where: { userId: user.id, listingId: { in: rows.map((r) => r.id) } },
+      where: { userId: signedIn.id, listingId: { in: rows.map((r) => r.id) } },
       select: { listingId: true },
     });
     saved = new Set(marks.map((m) => m.listingId));
@@ -46,6 +68,6 @@ export const GET = handle(async (req: Request) => {
     total,
     page,
     pageSize,
-    hasMore: page * pageSize < total,
+    hasMore: layout.hasMore,
   });
 });

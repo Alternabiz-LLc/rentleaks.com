@@ -123,20 +123,20 @@ export function searchWhere(s: SearchQuery, live: Prisma.ListingWhereInput): Pri
 }
 
 /**
- * Ordering. Sponsored placement is scoped to the market being searched
- * (brief §4.6): it only lifts a listing when the search resolves to a city,
- * so a paid New York slot never surfaces at the top of a Berlin search.
+ * Order of regular results. Sponsored listings are not sorted in here: the
+ * list endpoint places them itself (lib/sponsored-placement), and only when
+ * the search resolves to one market (brief §4.6), so a paid New York slot
+ * never surfaces in a Berlin search.
  */
 export function searchOrder(s: SearchQuery): Prisma.ListingOrderByWithRelationInput[] {
-  const pin: Prisma.ListingOrderByWithRelationInput[] = s.city ? [{ sponsored: "desc" }] : [];
   switch (s.sort) {
     case "price-asc":
-      return [...pin, { allInUsd: "asc" }, { id: "asc" }];
+      return [{ allInUsd: "asc" }, { id: "asc" }];
     case "price-desc":
-      return [...pin, { allInUsd: "desc" }, { id: "asc" }];
+      return [{ allInUsd: "desc" }, { id: "asc" }];
     case "move-in":
-      return [...pin, { availableFrom: "asc" }, { id: "asc" }];
+      return [{ availableFrom: "asc" }, { id: "asc" }];
     default:
-      return [...pin, { verified: "desc" }, { postedAt: "desc" }, { id: "asc" }];
+      return [{ verified: "desc" }, { postedAt: "desc" }, { id: "asc" }];
   }
 }

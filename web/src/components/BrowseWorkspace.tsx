@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { CITIES, HOUSING_TYPES } from "@/lib/catalog";
 import type { BrowseListing } from "@/lib/listing-shapes";
 import { toMapPin } from "@/lib/listing-shapes";
+import { SPONSORED_TOP, placeSponsored, rotateSponsors } from "@/lib/sponsored-placement";
 import { ListingCard } from "./ListingCard";
 import { ListingMap } from "./ListingMap";
 
@@ -27,6 +28,7 @@ export function BrowseWorkspace({
   from = "",
   to = "",
   view: initialView = "split",
+  sponsorSeed = "",
 }: {
   listings: BrowseListing[];
   cityId?: string;
@@ -37,24 +39,30 @@ export function BrowseWorkspace({
   from?: string;
   to?: string;
   view?: string;
+  /** Rotates the sponsored order; the server passes the date and market. */
+  sponsorSeed?: string;
 }) {
   const router = useRouter();
   const view = asView(initialView);
   const [sort, setSort] = useState<Sort>("newest");
   const [activeId, setActiveId] = useState<string | null>(null);
 
-  const rows = useMemo(() => {
-    const copy = listings.slice();
-    copy.sort((a, b) => {
-      if (a.featured !== b.featured) return a.featured ? -1 : 1;
-      if (sort === "price-asc") return a.allIn - b.allIn;
-      if (sort === "price-desc") return b.allIn - a.allIn;
-      return 0;
-    });
-    return copy;
-  }, [listings, sort]);
-  const pinned = rows.filter((listing) => listing.featured).slice(0, 4);
-  const rest = rows.filter((listing) => !listing.featured);
+  /* Regular results in the chosen order; sponsored ones are placed by the
+     shared rule: the first few open the list, then one every few results. */
+  const placed = useMemo(() => {
+    const organic = listings.filter((listing) => !listing.featured);
+    if (sort === "price-asc") organic.sort((a, b) => a.allIn - b.allIn);
+    if (sort === "price-desc") organic.sort((a, b) => b.allIn - a.allIn);
+    const sponsored = rotateSponsors(
+      listings.filter((listing) => listing.featured),
+      sponsorSeed,
+    );
+    return placeSponsored(organic, sponsored);
+  }, [listings, sort, sponsorSeed]);
+  const rows = placed.map((entry) => entry.item);
+  const leadCount = placed.findIndex((entry) => !entry.sponsored);
+  const pinned = rows.slice(0, Math.min(SPONSORED_TOP, leadCount < 0 ? rows.length : leadCount));
+  const rest = rows.slice(pinned.length);
 
   const pins = rows.map(toMapPin);
   const usCities = CITIES.filter((city) => city.rank <= 31);

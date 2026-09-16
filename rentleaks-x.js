@@ -1784,6 +1784,42 @@
     });
   }
 
+  /* Placement, the same rule as the app (web/src/lib/sponsored-placement.ts):
+     up to SPONSORED_TOP paid cards open the results, then one follows every
+     SPONSORED_EVERY regular cards; each appears once, and the order rotates
+     daily per market so every sponsor takes its turn at the top. */
+  var SPONSORED_TOP = 3;
+  var SPONSORED_EVERY = 6;
+
+  function fnv(text) {
+    var h = 0x811c9dc5;
+    for (var i = 0; i < text.length; i++) {
+      h ^= text.charCodeAt(i);
+      h = Math.imul(h, 0x01000193);
+    }
+    return h >>> 0;
+  }
+
+  function rotateIds(ids, seed) {
+    return ids
+      .map(function (id) { return { id: id, key: fnv(seed + ':' + id) }; })
+      .sort(function (a, b) { return a.key - b.key || (a.id < b.id ? -1 : 1); })
+      .map(function (x) { return x.id; });
+  }
+
+  function placeCards(organic, paid) {
+    var out = [];
+    var s = 0;
+    var o = 0;
+    for (; s < Math.min(SPONSORED_TOP, paid.length); s++) out.push(paid[s]);
+    while (o < organic.length) {
+      out.push(organic[o++]);
+      if (o % SPONSORED_EVERY === 0 && s < paid.length && o < organic.length) out.push(paid[s++]);
+    }
+    for (; s < paid.length; s++) out.push(paid[s]);
+    return out;
+  }
+
   function applySponsored() {
     /* Pre-rendered city and type pages carry a .listings__grid with no id —
        the client renderer never touches them — so look for both. */
@@ -1801,13 +1837,14 @@
     });
 
     if (!city) return;
-    var ids = sponsoredIn(city).map(function (l) { return l.id; });
+    var seed = new Date().toISOString().slice(0, 10) + ':' + city;
+    var ids = rotateIds(sponsoredIn(city).map(function (l) { return l.id; }), seed);
     if (!ids.length) return;
 
-    /* Walk backwards so multiple promoted cards keep their relative order. */
-    ids.slice().reverse().forEach(function (id) {
+    var paid = [];
+    ids.forEach(function (id) {
       var card = grid.querySelector('.listing-card[data-id="' + (window.CSS && CSS.escape ? CSS.escape(id) : id) + '"]');
-      if (!card) return;
+      if (!card) return;   /* not in the current results: filters exclude it */
       card.classList.add('x-sponsored');
       if (!card.querySelector('.x-sponsor-tag')) {
         var tag = document.createElement('span');
@@ -1817,8 +1854,20 @@
         var wrap = card.querySelector('.listing-card__img-wrap') || card;
         wrap.appendChild(tag);
       }
-      if (grid.firstChild !== card) grid.insertBefore(card, grid.firstChild);
+      paid.push(card);
     });
+    if (!paid.length) return;
+
+    var organic = $$('.listing-card', grid).filter(function (card) {
+      return paid.indexOf(card) === -1;
+    });
+    var ordered = placeCards(organic, paid);
+    /* Re-insert in order at the position of the first card, so anything else
+       in the grid (headings, notes) keeps its place. */
+    var anchor = document.createComment('rl-sponsored');
+    grid.insertBefore(anchor, grid.querySelector('.listing-card'));
+    ordered.forEach(function (card) { grid.insertBefore(card, anchor); });
+    anchor.remove();
   }
 
   /* --- browse rail facets ------------------------------------------------ */

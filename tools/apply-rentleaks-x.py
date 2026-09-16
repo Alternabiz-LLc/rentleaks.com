@@ -201,6 +201,8 @@ function xAvailabilityEnds(l) {
 CSS_MARK = "rentleaks-x.css"
 JS_MARK = "rentleaks-x.js"
 VER = "20260913"
+# The script changes more often than the stylesheet; bump this when it does.
+JS_VER = "20260916"
 
 
 def base_for(rel_path):
@@ -237,7 +239,7 @@ def patch_pages():
                     out = out.replace("</head>", "  " + link + "\n</head>", 1)
 
             if JS_MARK not in out:
-                tag = '<script src="%s%s?v=%s" defer></script>' % (base, JS_MARK, VER)
+                tag = '<script src="%s%s?v=%s" defer></script>' % (base, JS_MARK, JS_VER)
                 m = None
                 for pat in (r'<script src="[^"]*script\.js[^"]*"[^>]*></script>',):
                     m = re.search(pat, out)
@@ -270,12 +272,12 @@ def patch_generator_chrome():
     if 'rentleaks-x.js' not in src:
         old = '  <script src="${base}script.js"></script>'
         new = ('  <script src="${base}script.js"></script>\n'
-               '  <script src="${base}rentleaks-x.js?v=' + VER + '" defer></script>')
+               '  <script src="${base}rentleaks-x.js?v=' + JS_VER + '" defer></script>')
         if old in src:
             src = src.replace(old, new)
             log("generator — chrome() now emits the rentleaks-x.js tag")
         old2 = '  <script src="../script.js?v=20260907-operators"></script>'
-        new2 = (old2 + '\n  <script src="../rentleaks-x.js?v=' + VER + '" defer></script>')
+        new2 = (old2 + '\n  <script src="../rentleaks-x.js?v=' + JS_VER + '" defer></script>')
         if old2 in src:
             src = src.replace(old2, new2)
             log("generator — operator pages now emit the rentleaks-x.js tag")

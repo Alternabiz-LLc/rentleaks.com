@@ -62,6 +62,7 @@ export default async function StaysPage({
         from={from}
         to={to}
         view={params.view}
+        sponsorSeed={`${new Date().toISOString().slice(0, 10)}:${cityId || "all"}`}
       />
     </Shell>
   );

@@ -108,9 +108,10 @@ test("coerceSearch round-trips a stored query", () => {
   assert.equal(s.verified, false);
 });
 
-test("sponsored placement only lifts results inside a city search", () => {
+test("the sort leaves sponsored placement to the list endpoint", () => {
   assert.deepEqual(searchOrder({})[0], { verified: "desc" });
-  assert.deepEqual(searchOrder({ city: "nyc" })[0], { sponsored: "desc" });
+  /* Sponsored rows are placed by the endpoint, not by the sort. */
+  assert.deepEqual(searchOrder({ city: "nyc" })[0], { verified: "desc" });
 });
 
 /* --- address privacy ----------------------------------------------------- */

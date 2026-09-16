@@ -39,6 +39,8 @@ export function toBrowseListing(listing: {
   cityId: string;
   city: { name: string; state: string };
   featured?: boolean;
+  /** Paid placement; the web marks both flags as "Sponsored", like the app. */
+  sponsored?: boolean;
   detail?: unknown;
 }): BrowseListing {
   const media = mediaFromDetail(listing.detail);
@@ -65,7 +67,7 @@ export function toBrowseListing(listing: {
     cityId: listing.cityId,
     cityName: listing.city.name,
     cityState: listing.city.state,
-    featured: Boolean(listing.featured),
+    featured: Boolean(listing.featured || listing.sponsored),
     gallery: listingGallery({
       id: listing.id,
       image: listing.image,
