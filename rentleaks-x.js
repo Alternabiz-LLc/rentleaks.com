@@ -1779,9 +1779,29 @@
 
   /* With a city chosen, only that city's sponsors; with none, every city's —
      the same scope as the regular results, as in the app. */
+  /* Preview mode: ?sponsored=preview marks about one listing in eight as
+     sponsored for this browser tab only, labelled "Sponsored · preview", so the
+     placement can be checked before any real sponsor exists. Nothing is saved
+     server-side and other visitors see nothing. ?sponsored=off ends it. */
+  var SPONSOR_PREVIEW = (function () {
+    var flag = null;
+    try {
+      flag = new URLSearchParams(location.search).get('sponsored');
+      if (flag === 'preview') sessionStorage.setItem('rl_sponsor_preview', '1');
+      else if (flag === 'off') sessionStorage.removeItem('rl_sponsor_preview');
+      return sessionStorage.getItem('rl_sponsor_preview') === '1';
+    } catch (e) { return flag === 'preview'; }
+  })();
+
+  function isSponsored(l) {
+    if (!l || l.status === 'paused') return false;
+    if (l.sponsored) return true;
+    return SPONSOR_PREVIEW && fnv('preview:' + l.id) % 8 === 0;
+  }
+
   function sponsoredIn(cityId) {
     return (DATA.listings || []).filter(function (l) {
-      return l.sponsored && (!cityId || l.cityId === cityId) && l.status !== 'paused';
+      return isSponsored(l) && (!cityId || l.cityId === cityId);
     });
   }
 
@@ -1830,7 +1850,7 @@
       var byId = {};
       var paidIds = [];
       list.forEach(function (l) {
-        if (l.sponsored && l.status !== 'paused' && (!cityId || l.cityId === cityId)) {
+        if (isSponsored(l) && (!cityId || l.cityId === cityId)) {
           byId[l.id] = l;
           paidIds.push(l.id);
         }
@@ -1841,6 +1861,10 @@
       return placeCards(organic, paid);
     }
   };
+
+  function isRealSponsor(id) {
+    return (DATA.listings || []).some(function (l) { return l.id === id && l.sponsored; });
+  }
 
   function applySponsored() {
     /* Pre-rendered city and type pages carry a .listings__grid with no id —
@@ -1870,8 +1894,10 @@
       if (!card.querySelector('.x-sponsor-tag')) {
         var tag = document.createElement('span');
         tag.className = 'x-sponsor-tag';
-        tag.textContent = 'Sponsored';
-        tag.title = 'A paid placement. It changes where this listing sits in the results and nothing else — the same verification and compliance checks apply.';
+        var real = isRealSponsor(id);
+        tag.textContent = real ? 'Sponsored' : 'Sponsored · preview';
+        tag.title = real ? 'A paid placement. It changes where this listing sits in the results and nothing else — the same verification and compliance checks apply.'
+          : 'Preview only: shows where a sponsored listing would sit. Not a paid placement.';
         var wrap = card.querySelector('.listing-card__img-wrap') || card;
         wrap.appendChild(tag);
       }
