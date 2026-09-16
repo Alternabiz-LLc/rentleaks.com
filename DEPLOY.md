@@ -34,7 +34,7 @@ Cloudflare. Namecheap stays the registrar (renewals stay there).
 
 ## Short path: one script
 
-After §0 (domain active on Cloudflare), Workers Paid, and a Neon project exist:
+After §0 (domain active on Cloudflare) and Workers Paid. At the database prompt, press Enter and the script signs in to Neon, creates the `rentleaks` project and reads its address itself:
 
 ```sh
 cd ~/Apps/rentleaks.com && bash tools/deploy-cloudflare.sh

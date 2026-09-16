@@ -30,24 +30,45 @@ W whoami | grep -i -E "email|account" | head -5 || true
 
 say "3/8 Database address"
 DB_URL="${NEON_DIRECT_URL:-}"
+NEON() { npx --yes neonctl@4 "$@"; }
+neon_auto() {
+  # Signs in to Neon in the browser (first time only), finds or creates the
+  # "rentleaks" project in AWS US East, and reads its direct connection string.
+  echo "Neon: a browser window may open — sign in (or sign up) and approve." >&2
+  NEON me -o json >/dev/null 2>&1 || NEON auth >&2
+  local pid
+  pid="$(NEON projects list -o json 2>/dev/null | node -e '
+    let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{
+      const j=JSON.parse(s);const a=Array.isArray(j)?j:(j.projects||[]);
+      const p=a.find(x=>x.name==="rentleaks");if(p)process.stdout.write(p.id)}catch{}})')"
+  if [ -z "$pid" ]; then
+    echo "Neon: creating project rentleaks (AWS US East)…" >&2
+    NEON projects create --name rentleaks --region-id aws-us-east-1 --no-secrets -o json >/dev/null
+    pid="$(NEON projects list -o json | node -e '
+      let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+        const j=JSON.parse(s);const a=Array.isArray(j)?j:(j.projects||[]);
+        const p=a.find(x=>x.name==="rentleaks");if(p)process.stdout.write(p.id)})')"
+  else
+    echo "Neon: using existing project rentleaks ($pid)" >&2
+  fi
+  [ -n "$pid" ] || return 1
+  NEON connection-string --project-id "$pid" --ssl require 2>/dev/null | tail -1
+}
 if [ -z "$DB_URL" ]; then
   cat <<'TXT'
-Where to find it: console.neon.tech → your project → Connect →
-turn OFF "Connection pooling" → copy the string that starts with postgresql://
-(no Neon project yet? create one first, region AWS US East).
+Press Enter to set up Neon automatically (recommended),
+or paste a Neon DIRECT connection string (hidden) and press Enter.
 TXT
+  read -rs DB_URL; echo
+  if [ -z "$DB_URL" ]; then
+    DB_URL="$(neon_auto || true)"
+  fi
 fi
-for try in 1 2 3; do
-  [ -n "$DB_URL" ] || { printf 'Paste it here (hidden), then Enter: '; read -rs DB_URL; echo; }
-  DB_URL="$(printf '%s' "$DB_URL" | tr -d '[:space:]' | sed -E "s/^psql//; s/^['\"]//; s/['\"]$//")"
-  case "$DB_URL" in
-    postgres://*|postgresql://*) break ;;
-    "") echo "Nothing was pasted." ;;
-    *) echo "That doesn't start with postgresql:// — copy the connection string itself." ;;
-  esac
-  DB_URL=""
-done
-[ -n "$DB_URL" ] || fail "no database address. Create the Neon project, then run this again."
+DB_URL="$(printf '%s' "$DB_URL" | tr -d '[:space:]' | sed -E "s/^psql//; s/^['\"]//; s/['\"]$//")"
+case "$DB_URL" in
+  postgres://*|postgresql://*) ;;
+  *) fail "no database address. Run again and press Enter for automatic Neon setup, or paste the string from console.neon.tech → Connect (pooling off)." ;;
+esac
 case "$DB_URL" in *-pooler*) fail "use the DIRECT string (turn off 'Connection pooling' in Neon's Connect dialog)." ;; esac
 case "$DB_URL" in *sslmode=*) ;; *\?*) DB_URL="$DB_URL&sslmode=require" ;; *) DB_URL="$DB_URL?sslmode=require" ;; esac
 export DATABASE_URL="$DB_URL" DIRECT_URL="$DB_URL"
