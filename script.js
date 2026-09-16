@@ -1297,7 +1297,11 @@
       grid.hidden = merged.length === 0;
     } else {
       shown = Math.min(list.length, PAGE_SIZE * state.page);
-      grid.innerHTML = list.slice(0, shown).map(renderListing).join('');
+      // Sponsored listings open the results and recur between them (the rule
+      // lives in rentleaks-x.js, shared with the app). Placing the whole list
+      // before slicing keeps "Show more" consistent with the first page.
+      const ordered = window.RLSponsored ? window.RLSponsored.order(list, state.city) : list;
+      grid.innerHTML = ordered.slice(0, shown).map(renderListing).join('');
       grid.hidden = list.length === 0;
     }
     renderPager(shown, total);

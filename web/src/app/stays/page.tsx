@@ -2,6 +2,7 @@ import { BrowseWorkspace } from "@/components/BrowseWorkspace";
 import { Shell } from "@/components/Shell";
 import { StaysHero } from "@/components/StaysHero";
 import { publicListings, toBrowseListing } from "@/lib/listings";
+import { sponsorSeed } from "@/lib/sponsored-placement";
 
 function asPositiveInt(value?: string) {
   const n = Number(value);
@@ -62,7 +63,7 @@ export default async function StaysPage({
         from={from}
         to={to}
         view={params.view}
-        sponsorSeed={`${new Date().toISOString().slice(0, 10)}:${cityId || "all"}`}
+        sponsorSeed={sponsorSeed(cityId)}
       />
     </Shell>
   );

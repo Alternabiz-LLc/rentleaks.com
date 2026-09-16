@@ -172,6 +172,11 @@ The static layer scopes promotion to the listing's own market. `BrowseWorkspace`
 pins by `featured` regardless of the city being searched, so a sponsored New
 York listing can surface in a Berlin search. Half a day.
 
+*Resolved.* The web app, the mobile API and the static site now share one rule
+(`web/src/lib/sponsored-placement.ts`): sponsors come from the same filtered set
+as the results, so a city search only promotes that city; with no city, sponsors
+from every city rotate in.
+
 ### 4.7 Image quality analysis is not ported
 
 The static verification tool measures blur (Laplacian variance), glare, darkness

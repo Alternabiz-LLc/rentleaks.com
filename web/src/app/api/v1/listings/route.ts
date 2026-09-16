@@ -4,7 +4,7 @@ import { handle, int, ok } from "@/lib/v1/http";
 import { toCard } from "@/lib/v1/listing-view";
 import { parseSearch, searchOrder, searchWhere } from "@/lib/v1/search";
 import { optionalUser } from "@/lib/v1/session";
-import { pageSlots, rotateSponsors } from "@/lib/sponsored-placement";
+import { pageSlots, rotateSponsors, sponsorSeed } from "@/lib/sponsored-placement";
 
 export const dynamic = "force-dynamic";
 
@@ -23,10 +23,11 @@ export const GET = handle(async (req: Request) => {
   const where = searchWhere(s, await liveListingWhere());
   const include = { city: true, operator: true } as const;
 
-  /* Sponsored placement only applies inside one market (brief §4.6) and
-     never to the map. The sponsors come from the same filtered set, open the
-     first page, then appear once every few results across pages. */
-  const placing = Boolean(s.city) && !map;
+  /* Sponsored placement applies to every list search, with or without a city,
+     and never to the map. The sponsors come from the same filtered set — so a
+     city search only ever promotes that city's listings (brief §4.6) — open
+     the first page, then appear once every few results across pages. */
+  const placing = !map;
   const paid = { OR: [{ sponsored: true }, { featured: true }] };
   const organicWhere = placing ? { AND: [where, { NOT: paid }] } : where;
 
@@ -36,7 +37,7 @@ export const GET = handle(async (req: Request) => {
       ? prisma.listing.findMany({ where: { AND: [where, paid] }, include, orderBy: { id: "asc" }, take: 60 })
       : Promise.resolve([]),
   ]);
-  const sponsors = rotateSponsors(sponsorsRaw, `${new Date().toISOString().slice(0, 10)}:${s.city}`);
+  const sponsors = rotateSponsors(sponsorsRaw, sponsorSeed(s.city));
   const layout = pageSlots(page, pageSize, organicTotal, sponsors.length);
 
   const organicRows = layout.organicTake

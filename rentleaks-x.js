@@ -1777,17 +1777,19 @@
     return null;
   }
 
+  /* With a city chosen, only that city's sponsors; with none, every city's —
+     the same scope as the regular results, as in the app. */
   function sponsoredIn(cityId) {
-    if (!cityId) return [];
     return (DATA.listings || []).filter(function (l) {
-      return l.sponsored && l.cityId === cityId && l.status !== 'paused';
+      return l.sponsored && (!cityId || l.cityId === cityId) && l.status !== 'paused';
     });
   }
 
   /* Placement, the same rule as the app (web/src/lib/sponsored-placement.ts):
      up to SPONSORED_TOP paid cards open the results, then one follows every
      SPONSORED_EVERY regular cards; each appears once, and the order rotates
-     daily per market so every sponsor takes its turn at the top. */
+     daily per city (or across all cities when none is chosen) so every
+     sponsor takes its turn at the top. */
   var SPONSORED_TOP = 3;
   var SPONSORED_EVERY = 6;
 
@@ -1820,6 +1822,26 @@
     return out;
   }
 
+  /* The base renderer (script.js) places the whole filtered list before it
+     paginates, so sponsors outside the first page still get their slots. */
+  window.RLSponsored = {
+    order: function (list, cityId) {
+      var seed = new Date().toISOString().slice(0, 10) + ':' + (cityId || 'all');
+      var byId = {};
+      var paidIds = [];
+      list.forEach(function (l) {
+        if (l.sponsored && l.status !== 'paused' && (!cityId || l.cityId === cityId)) {
+          byId[l.id] = l;
+          paidIds.push(l.id);
+        }
+      });
+      if (!paidIds.length) return list;
+      var paid = rotateIds(paidIds, seed).map(function (id) { return byId[id]; });
+      var organic = list.filter(function (l) { return !byId[l.id]; });
+      return placeCards(organic, paid);
+    }
+  };
+
   function applySponsored() {
     /* Pre-rendered city and type pages carry a .listings__grid with no id —
        the client renderer never touches them — so look for both. */
@@ -1836,8 +1858,7 @@
       if (tag) tag.remove();
     });
 
-    if (!city) return;
-    var seed = new Date().toISOString().slice(0, 10) + ':' + city;
+    var seed = new Date().toISOString().slice(0, 10) + ':' + (city || 'all');
     var ids = rotateIds(sponsoredIn(city).map(function (l) { return l.id; }), seed);
     if (!ids.length) return;
 
@@ -1850,7 +1871,7 @@
         var tag = document.createElement('span');
         tag.className = 'x-sponsor-tag';
         tag.textContent = 'Sponsored';
-        tag.title = 'A paid placement in this market. It changes where this listing sits in the results and nothing else — the same verification and compliance checks apply.';
+        tag.title = 'A paid placement. It changes where this listing sits in the results and nothing else — the same verification and compliance checks apply.';
         var wrap = card.querySelector('.listing-card__img-wrap') || card;
         wrap.appendChild(tag);
       }

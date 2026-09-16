@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { pageSlots, placeSponsored, rotateSponsors, slots } from "../src/lib/sponsored-placement";
+import { pageSlots, placeSponsored, rotateSponsors, slots, sponsorSeed } from "../src/lib/sponsored-placement";
 
 const kinds = (o: number, s: number) =>
   [...slots(o, s)].map((x) => (x.kind === "sponsored" ? `S${x.index}` : `o${x.index}`)).join(" ");
@@ -53,4 +53,12 @@ test("rotation is stable for a seed and changes with it", () => {
   assert.deepEqual([...a].sort(), ["l1", "l2", "l3", "l4", "l5", "l6"]);
   const days = new Set(["01", "02", "03", "04", "05", "06", "07"].map((d) => rotateSponsors(items, `2026-09-${d}:nyc`)[0].id));
   assert.ok(days.size > 1, "the first slot should change across days");
+});
+
+test("the rotation seed is per day and per city, with 'all' when no city is chosen", () => {
+  const day = new Date("2026-09-16T23:59:00Z");
+  assert.equal(sponsorSeed("nyc", day), "2026-09-16:nyc");
+  assert.equal(sponsorSeed("", day), "2026-09-16:all");
+  assert.equal(sponsorSeed(undefined, day), "2026-09-16:all");
+  assert.equal(sponsorSeed(null, new Date("2026-09-17T00:00:00Z")), "2026-09-17:all");
 });

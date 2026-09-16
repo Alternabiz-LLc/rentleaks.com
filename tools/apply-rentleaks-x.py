@@ -202,7 +202,7 @@ CSS_MARK = "rentleaks-x.css"
 JS_MARK = "rentleaks-x.js"
 VER = "20260913"
 # The script changes more often than the stylesheet; bump this when it does.
-JS_VER = "20260916"
+JS_VER = "20260917"
 
 
 def base_for(rel_path):

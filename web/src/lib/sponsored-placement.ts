@@ -6,11 +6,14 @@
  * - after that, one sponsored listing follows every SPONSORED_EVERY regular ones;
  * - each sponsored listing appears once; if the regular results run out, the
  *   remaining sponsored listings follow them;
- * - the sponsors' order rotates with `seed` (the app uses the date and the
- *   market), so every paying listing takes its turn at the top.
+ * - the sponsors' order rotates with `sponsorSeed()` (the date and the city, or
+ *   "all"), so every paying listing takes its turn at the top.
  *
  * Sponsored listings must already match the search: callers pass them from the
- * same filtered set. The card itself carries the "Sponsored" label.
+ * same filtered set. With a city chosen, only that city's sponsors appear (a
+ * Berlin sponsor never shows in a New York search); with no city, sponsors from
+ * every city compete, exactly as the regular results do. The card itself
+ * carries the "Sponsored" label.
  *
  * No server imports: safe for client components.
  */
@@ -27,6 +30,11 @@ function hash(text: string) {
     h = Math.imul(h, 0x01000193);
   }
   return h >>> 0;
+}
+
+/** Rotation seed: changes daily (UTC) and differs per city. */
+export function sponsorSeed(city?: string | null, now: Date = new Date()) {
+  return `${now.toISOString().slice(0, 10)}:${city || "all"}`;
 }
 
 export function rotateSponsors<T extends { id: string }>(items: T[], seed: string): T[] {
