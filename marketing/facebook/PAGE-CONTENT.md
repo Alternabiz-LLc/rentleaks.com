@@ -1,6 +1,6 @@
 # RentLeaks Facebook Page: content to paste
 
-Everything the Facebook Page (facebook.com/rentleakshq) needs, taken from what the website actually says and does. Paste each block into the Facebook field named in its heading.
+Everything the Facebook Page (facebook.com/rentleaks.official) needs, taken from what the website actually says and does. Paste each block into the Facebook field named in its heading.
 
 Rules for every field and post:
 
@@ -17,7 +17,7 @@ Rules for every field and post:
 | Field | Paste |
 |---|---|
 | Page name | RentLeaks |
-| Username | rentleakshq (done) |
+| Username | rentleaks.official (done) |
 | Categories (up to 3) | Real Estate Service · Apartment & Condo Building · Property Management Company |
 | Website | https://rentleaks.com/?utm_source=facebook&utm_medium=page&utm_campaign=about |
 | Email | hello@rentleaks.com (set up forwarding at Namecheap first) |

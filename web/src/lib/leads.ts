@@ -238,4 +238,4 @@ export function messengerLink(summary: string, ref?: string, base = MESSENGER_UR
 }
 
 /* Kept in step with the Page username by tools/apply-facebook.py. */
-export const MESSENGER_URL = "https://m.me/rentleakshq";
+export const MESSENGER_URL = "https://m.me/rentleaks.official";

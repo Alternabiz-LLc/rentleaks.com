@@ -20,8 +20,8 @@
 (function () {
   'use strict';
 
-  var MESSENGER_URL = 'https://m.me/rentleakshq';
-  var PAGE_URL = 'https://www.facebook.com/rentleakshq';
+  var MESSENGER_URL = 'https://m.me/rentleaks.official';
+  var PAGE_URL = 'https://www.facebook.com/rentleaks.official';
   var TIMEOUT = 8000;
   var DATA = window.RENTLEAKS_DATA || {};
 

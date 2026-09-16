@@ -15,8 +15,8 @@
 (function () {
   "use strict";
 
-  var PAGE_URL = "https://www.facebook.com/rentleakshq";
-  var MESSENGER_URL = "https://m.me/rentleakshq";
+  var PAGE_URL = "https://www.facebook.com/rentleaks.official";
+  var MESSENGER_URL = "https://m.me/rentleaks.official";
   var CONSENT_KEY = "rl_meta_consent";
 
   function ready(fn) {

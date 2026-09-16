@@ -1,6 +1,6 @@
 # RentLeaks on Facebook — Page kit
 
-_Page: <https://www.facebook.com/rentleakshq> · September 2026_
+_Page: <https://www.facebook.com/rentleaks.official> · September 2026_
 
 This is what goes on the Page, field by field, and what was built on the
 website so the two work together.
@@ -80,8 +80,12 @@ Sections 2–6 below apply to the new Page unchanged; section 1 describes the ol
 - New Page created from Yves Dikoume's profile: https://www.facebook.com/profile.php?id=61594270177079
   (category Real Estate Service; bio, website, hello@rentleaks.com, "Send message" button,
   RL profile picture, cover; the four posts in section 3 published, "What RentLeaks is" pinned).
-- Username set: https://www.facebook.com/rentleakshq (Messenger: https://m.me/rentleakshq).
+- Username set: https://www.facebook.com/rentleaks.official (Messenger: https://m.me/rentleaks.official).
   All site/app links were switched with `python3 tools/apply-facebook.py --page-username rentleakshq`.
+- 16 Sep 2026: `rentleakshq` had never been saved on Facebook, and `rentleaks` is still held by the old Page
+  (recovery in progress). Username changed to **rentleaks.official**; links switched with
+  `python3 tools/apply-facebook.py --page-username rentleaks.official`. Bio A saved; action button is
+  "Contact us" → rentleaks.com/facebook.html?src=fb_button (Facebook offers no website link for "Book now").
 - Profile: bio and "Founder at RentLeaks" added.
 
 ## 2. What to put on the Page

@@ -113,7 +113,7 @@ export default function MeTab() {
           <Row icon="settings-outline" label="Settings" onPress={() => router.push("/settings")} />
           <Row icon="help-circle-outline" label="Help & FAQ" onPress={() => WebBrowser.openBrowserAsync(`${WEB_URL}/faq.html`)} />
           <Row icon="mail-outline" label="Contact us" onPress={() => WebBrowser.openBrowserAsync(`${WEB_URL}/contact.html`)} />
-          <Row icon="logo-facebook" label="RentLeaks on Facebook" onPress={() => void Linking.openURL("https://www.facebook.com/rentleakshq")} />
+          <Row icon="logo-facebook" label="RentLeaks on Facebook" onPress={() => void Linking.openURL("https://www.facebook.com/rentleaks.official")} />
           <Row icon="document-outline" label="Terms" onPress={() => WebBrowser.openBrowserAsync(`${WEB_URL}/terms.html`)} />
           <Row icon="lock-closed-outline" label="Privacy" onPress={() => WebBrowser.openBrowserAsync(`${WEB_URL}/privacy.html`)} last />
         </Card>

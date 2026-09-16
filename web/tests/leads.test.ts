@@ -84,7 +84,7 @@ test("the summary and the Messenger link carry the request", () => {
   assert.match(text, /2026-09-18 Evening/);
   assert.doesNotMatch(text, /ada@example\.com/, "contact details stay out of the summary");
   const link = new URL(messengerLink(text, "lead_abc"));
-  assert.equal(link.origin + link.pathname, "https://m.me/rentleakshq");
+  assert.equal(link.origin + link.pathname, "https://m.me/rentleaks.official");
   assert.equal(link.searchParams.get("ref"), "lead_abc");
   assert.equal(link.searchParams.get("text"), text);
 });

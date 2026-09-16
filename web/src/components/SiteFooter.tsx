@@ -14,8 +14,8 @@ const COMPANY = {
   phone: null as string | null,
   entityNumber: null as string | null,
   licence: null as string | null,
-  facebook: "https://www.facebook.com/rentleakshq",
-  messenger: "https://m.me/rentleakshq",
+  facebook: "https://www.facebook.com/rentleaks.official",
+  messenger: "https://m.me/rentleaks.official",
 };
 
 const FIND = [

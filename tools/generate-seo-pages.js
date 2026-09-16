@@ -209,7 +209,7 @@ function chrome(depth, bodyAttrs, main) {
   <script src="${base}script.js"></script>
   <script src="${base}rentleaks-rules.js?v=20260913b"></script>
   <script src="${base}rentleaks-x.js?v=20260918" defer></script>
-  <script src="${base}rentleaks-social.js?v=20260915-rentleakshq" defer></script>
+  <script src="${base}rentleaks-social.js?v=20260915-rentleaks.official" defer></script>
 </body>
 </html>`;
 }
@@ -916,7 +916,7 @@ function writeOperatorPages() {
   <script src="../script.js?v=20260907-operators"></script>
   <script src="../rentleaks-rules.js?v=20260913b"></script>
   <script src="../rentleaks-x.js?v=20260918" defer></script>
-  <script src="../rentleaks-social.js?v=20260915-rentleakshq" defer></script>
+  <script src="../rentleaks-social.js?v=20260915-rentleaks.official" defer></script>
 </body>
 </html>`;
 
