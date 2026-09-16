@@ -84,3 +84,12 @@ export function isListingLive(listing: {
   if (listing.housingType === "lease-break") return true;
   return Boolean(listing.paidUntil && listing.paidUntil > new Date());
 }
+
+/**
+ * True while an account's free trial (granted by an invite or by the founder)
+ * is running. Any checkout that charges listing fees must skip the charge
+ * while this is true.
+ */
+export function listingFeeWaived(user: { trialEndsAt?: Date | null } | null | undefined, now = new Date()) {
+  return Boolean(user?.trialEndsAt && user.trialEndsAt > now);
+}

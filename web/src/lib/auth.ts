@@ -45,6 +45,7 @@ export async function getCurrentUser() {
     include: { user: { include: { identity: true } } },
   });
   if (!session || session.expiresAt < new Date()) return null;
+  if (session.user.suspendedAt) return null;
   return session.user;
 }
 

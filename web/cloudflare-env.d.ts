@@ -7,4 +7,6 @@ interface CloudflareEnv {
   HYPERDRIVE?: { connectionString: string };
   APP_URL?: string;
   CRON_SECRET?: string;
+  MEDIA_BUCKET?: R2Bucket;
+  MEDIA_PUBLIC_URL?: string;
 }

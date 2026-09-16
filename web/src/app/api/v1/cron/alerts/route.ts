@@ -3,6 +3,7 @@ import { liveListingWhere } from "@/lib/billing";
 import { fail, handle, ok } from "@/lib/v1/http";
 import { pushToUsers } from "@/lib/v1/push";
 import { coerceSearch, searchWhere } from "@/lib/v1/search";
+import { setSetting, SETTING_KEYS } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
 
@@ -41,5 +42,6 @@ export const GET = handle(async (req: Request) => {
     });
   }
 
+  await setSetting(SETTING_KEYS.alertsHeartbeat, new Date().toISOString()).catch(() => undefined);
   return ok({ checked: searches.length, notified: sent });
 });

@@ -4,6 +4,7 @@ import { corsHeaders, preflight } from "@/lib/api";
 import { liveListingWhere } from "@/lib/billing";
 import { KIND_LABEL, leadSummary, messengerLink, parseLead } from "@/lib/leads";
 import { prisma } from "@/lib/prisma";
+import { contactFromLead } from "@/lib/crm";
 import { sampleCatalogIds } from "@/lib/sample-catalog";
 import { appUrl } from "@/lib/site";
 import { sendMail } from "@/lib/v1/mail";
@@ -93,6 +94,17 @@ export async function POST(req: NextRequest) {
       `\n\nContact: ${lead.email}${lead.phone ? ` · ${lead.phone}` : ""}` +
       `\nSource: ${lead.source}${lead.campaign ? ` (${lead.campaign})` : ""}`;
     const subject = `${KIND_LABEL[lead.kind]}${listing ? ` — ${listing.title}` : ""}`;
+    await contactFromLead({
+      id: created.id,
+      kind: lead.kind,
+      name: lead.name,
+      email: lead.email,
+      phone: lead.phone,
+      cityId: lead.cityId ?? listing?.cityId ?? null,
+      source: lead.source,
+      campaign: lead.campaign,
+      summary,
+    });
 
     const admins = await prisma.user.findMany({ where: { role: "admin" }, select: { email: true } });
     const founders = new Set(admins.map((a) => a.email));

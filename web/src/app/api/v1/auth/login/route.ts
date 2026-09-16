@@ -17,6 +17,9 @@ export const POST = handle(async (req: Request) => {
   if (!user || !verifyPassword(password, user.passwordHash)) {
     return fail(401, "invalid_credentials", "That email and password do not match an account.");
   }
+  if (user.suspendedAt) {
+    return fail(403, "suspended", "This account is suspended. Contact hello@rentleaks.com if you think this is a mistake.");
+  }
   const session = await issueToken(user.id);
   return ok({ ...session, user: publicUser(user) });
 });

@@ -1,6 +1,9 @@
 /**
  * Where uploaded photos and videos go.
  *
+ * - On Cloudflare Workers with the MEDIA_BUCKET R2 binding (wrangler.jsonc),
+ *   files are written straight to the bucket — no access keys — and served
+ *   from MEDIA_PUBLIC_URL (https://media.rentleaks.com).
  * - With S3_BUCKET etc. set (Cloudflare R2 recommended), files are PUT to the
  *   bucket and the public URL is https://…, which isPublicMediaSrc accepts.
  * - Without it, files go to public/uploads on local disk. That only works on
@@ -18,6 +21,7 @@
 import { randomBytes } from "crypto";
 import { mkdir, writeFile } from "fs/promises";
 import path from "path";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { onWorkers } from "../runtime";
 import { amzDateNow, sha256Hex, signV4 } from "./sigv4";
 
@@ -50,8 +54,29 @@ function ephemeralDisk(env: NodeJS.ProcessEnv = process.env) {
   return onWorkers() || Boolean(env.VERCEL || env.NETLIFY || env.AWS_LAMBDA_FUNCTION_NAME || env.RENTLEAKS_EPHEMERAL_DISK);
 }
 
+type R2Put = { put(key: string, value: ArrayBuffer | Uint8Array, options?: { httpMetadata?: { contentType?: string; cacheControl?: string } }): Promise<unknown> };
+
+/** The R2 binding and its public base URL, when running on Workers with both configured. */
+export function r2Target(): { bucket: R2Put; publicUrl: string } | null {
+  if (!onWorkers()) return null;
+  try {
+    const { env } = getCloudflareContext();
+    const bucket = (env as unknown as { MEDIA_BUCKET?: R2Put }).MEDIA_BUCKET;
+    const publicUrl = (env as unknown as { MEDIA_PUBLIC_URL?: string }).MEDIA_PUBLIC_URL || process.env.MEDIA_PUBLIC_URL;
+    return bucket && publicUrl ? { bucket, publicUrl: publicUrl.replace(/\/+$/, "") } : null;
+  } catch {
+    return null;
+  }
+}
+
 export function storageReady(env: NodeJS.ProcessEnv = process.env) {
-  return Boolean(s3Config(env)) || !ephemeralDisk(env);
+  return Boolean(r2Target()) || Boolean(s3Config(env)) || !ephemeralDisk(env);
+}
+
+export function storageMode(env: NodeJS.ProcessEnv = process.env): "r2-binding" | "s3" | "local-disk" | "not-configured" {
+  if (r2Target()) return "r2-binding";
+  if (s3Config(env)) return "s3";
+  return ephemeralDisk(env) ? "not-configured" : "local-disk";
 }
 
 function objectName(userId: string, ext: string) {
@@ -100,11 +125,19 @@ async function putS3(cfg: S3Config, key: string, body: Buffer, contentType: stri
 /** Saves the bytes and returns the public URL (https://… or /uploads/…). */
 export async function storeUpload(userId: string, body: Buffer, contentType: string, ext: string) {
   const { safeUser, name } = objectName(userId, ext);
+  const r2 = r2Target();
+  if (r2) {
+    const key = `uploads/${safeUser}/${name}`;
+    await r2.bucket.put(key, new Uint8Array(body), {
+      httpMetadata: { contentType, cacheControl: "public, max-age=31536000, immutable" },
+    });
+    return `${r2.publicUrl}/${key}`;
+  }
   const cfg = s3Config();
   if (cfg) return putS3(cfg, `uploads/${safeUser}/${name}`, body, contentType);
   if (ephemeralDisk()) {
     throw new StorageNotConfigured(
-      "Uploads aren't set up on this server yet. Add the S3_* settings (see DEPLOY.md).",
+      "Uploads aren't set up on this server yet. Bind MEDIA_BUCKET and set MEDIA_PUBLIC_URL (see DEPLOY.md).",
     );
   }
   const dir = path.join(process.cwd(), "public", "uploads", safeUser);

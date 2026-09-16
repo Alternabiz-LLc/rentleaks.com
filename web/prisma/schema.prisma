@@ -21,6 +21,13 @@ model User {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
+  // Founder controls. A suspended account cannot sign in and its sessions
+  // are revoked; its listings are paused by the same action.
+  suspendedAt   DateTime?
+  suspendReason String?
+  // A free listing trial granted by an invite (see TrialInvite).
+  trialEndsAt   DateTime?
+
   identity            IdentityVerification?
   listings            Listing[]
   sentMessages        Message[]
@@ -38,6 +45,8 @@ model User {
   reportsFiled   Report[]    @relation("ReportsFiled")
   blocksMade     UserBlock[] @relation("BlocksMade")
   blocksReceived UserBlock[] @relation("BlocksReceived")
+  trialInvites   TrialInvite[]
+  contact        Contact?
 
   @@index([role])
 }
@@ -432,4 +441,224 @@ model Lead {
 
   @@index([status, createdAt])
   @@index([listingId])
+}
+
+/* ------------------------------------------------------------------------
+   Founder tools: CRM, outreach, campaigns, social, ads, trials, audit.
+   ------------------------------------------------------------------------ */
+
+/// One person or company the business talks to — a renter, a host, an
+/// operator to recruit, a partner. Leads and sign-ups create or update one
+/// automatically; outreach prospects are added by hand or imported.
+/// `marketingConsent` is the only thing that puts a contact in a newsletter
+/// or bulk send; `unsubscribedAt` takes them out for good.
+model Contact {
+  id               String    @id @default(cuid())
+  email            String    @unique
+  name             String    @default("")
+  phone            String?
+  company          String?
+  // renter | host | operator | partner | press | other
+  kind             String    @default("renter")
+  // new | contacted | qualified | customer | lost
+  stage            String    @default("new")
+  // JSON string[]
+  tags             String    @default("[]")
+  // lead | signup | import | manual | newsletter | invite
+  source           String    @default("manual")
+  cityId           String?
+  note             String?
+  userId           String?   @unique
+  user             User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  marketingConsent Boolean   @default(false)
+  consentAt        DateTime?
+  consentSource    String?
+  unsubscribedAt   DateTime?
+  // Newsletter double opt-in: set until the address is confirmed.
+  confirmToken     String?   @unique
+  lastContactedAt  DateTime?
+  nextFollowUpAt   DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  activities ContactActivity[]
+  sends      CampaignSend[]
+
+  @@index([kind])
+  @@index([stage])
+  @@index([nextFollowUpAt])
+  @@index([marketingConsent])
+  @@index([createdAt])
+}
+
+/// The timeline on a contact: notes, calls, emails, stage changes.
+model ContactActivity {
+  id        String   @id @default(cuid())
+  contactId String
+  contact   Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  // note | email | call | sms | meeting | stage | lead | campaign | trial | signup
+  kind      String
+  subject   String   @default("")
+  body      String   @default("")
+  actorId   String?
+  createdAt DateTime @default(now())
+
+  @@index([contactId, createdAt])
+}
+
+/// Reusable message. Merge fields: {{name}}, {{first_name}}, {{email}},
+/// {{city}}, {{invite_link}}, {{app_url}}.
+model EmailTemplate {
+  id        String   @id @default(cuid())
+  name      String
+  // outreach | newsletter | bulk | trial
+  purpose   String   @default("outreach")
+  subject   String
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// A bulk email: newsletter, announcement or outreach wave. Recipients are
+/// frozen into CampaignSend rows when sending starts; the outbox job sends
+/// them in small batches.
+model Campaign {
+  id          String    @id @default(cuid())
+  name        String
+  // newsletter | bulk | outreach
+  kind        String    @default("newsletter")
+  subject     String
+  body        String
+  // { kinds: string[], stages: string[], tags: string[], cityId?: string, consentOnly: boolean }
+  audience    Json      @default("{}")
+  // draft | scheduled | sending | sent | cancelled
+  status      String    @default("draft")
+  scheduledAt DateTime?
+  startedAt   DateTime?
+  finishedAt  DateTime?
+  total       Int       @default(0)
+  sent        Int       @default(0)
+  failed      Int       @default(0)
+  createdById String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  sends CampaignSend[]
+
+  @@index([status, scheduledAt])
+}
+
+model CampaignSend {
+  id         String    @id @default(cuid())
+  campaignId String
+  campaign   Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  contactId  String?
+  contact    Contact?  @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  email      String
+  name       String    @default("")
+  // queued | sent | failed | skipped
+  status     String    @default("queued")
+  error      String?
+  sentAt     DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@unique([campaignId, email])
+  @@index([campaignId, status])
+}
+
+/// Addresses that must never receive marketing mail again.
+model EmailSuppression {
+  email     String   @id
+  // unsubscribed | bounced | complaint | manual
+  reason    String   @default("unsubscribed")
+  createdAt DateTime @default(now())
+}
+
+/// A social media post, drafted here and published to the Facebook Page by
+/// the outbox job (when FB_PAGE_TOKEN is set) or posted by hand.
+model SocialPost {
+  id          String    @id @default(cuid())
+  // facebook | instagram | linkedin | x | tiktok
+  channel     String    @default("facebook")
+  body        String
+  imageUrl    String?
+  link        String?
+  // draft | scheduled | published | failed | manual
+  status      String    @default("draft")
+  scheduledAt DateTime?
+  publishedAt DateTime?
+  externalId  String?
+  error       String?
+  batch       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status, scheduledAt])
+}
+
+/// A paid campaign on Meta, Google or elsewhere. Leads carry the
+/// utm_campaign they arrived with, so cost per lead is computed, not typed.
+model AdCampaign {
+  id          String   @id @default(cuid())
+  name        String
+  // meta | google | tiktok | reddit | other
+  platform    String   @default("meta")
+  objective   String   @default("leads")
+  // planned | active | paused | ended
+  status      String   @default("planned")
+  utmCampaign String   @unique
+  landingUrl  String
+  // Whole units of `currency`.
+  dailyBudget Int      @default(0)
+  spend       Int      @default(0)
+  currency    String   @default("USD")
+  startDate   String?
+  endDate     String?
+  note        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+/// An invitation to list free for a week (or `days`).
+model TrialInvite {
+  id          String    @id @default(cuid())
+  code        String    @unique
+  email       String
+  name        String    @default("")
+  days        Int       @default(7)
+  // pending | sent | redeemed | expired | revoked
+  status      String    @default("pending")
+  note        String?
+  sentAt      DateTime?
+  expiresAt   DateTime
+  redeemedAt  DateTime?
+  userId      String?
+  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdById String?
+  createdAt   DateTime  @default(now())
+
+  @@index([email])
+  @@index([status])
+}
+
+/// Who did what in the founder view.
+model AdminAction {
+  id         String   @id @default(cuid())
+  actorId    String
+  action     String
+  targetType String
+  targetId   String   @default("")
+  detail     Json     @default("{}")
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([targetType, targetId])
+}
+
+/// Small editable settings (mailing address for the email footer, sender
+/// name) and job heartbeats.
+model AppSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
 }

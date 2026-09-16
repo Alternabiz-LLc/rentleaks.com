@@ -1,12 +1,9 @@
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
-import LeadsInbox, { type LeadRow } from "@/components/LeadsInbox";
 import ModerationQueue, { type QueueItem } from "@/components/ModerationQueue";
-import { Shell } from "@/components/Shell";
-import { getCurrentUser } from "@/lib/auth";
-import { isAdmin } from "@/lib/roles";
+import { PageHead, Stats } from "@/components/admin/ui";
+import { requireAdminPage } from "@/lib/admin/guard";
 import { prisma } from "@/lib/prisma";
-import { KIND_LABEL, leadSummary, type LeadKind, type ViewingSlot } from "@/lib/leads";
+import { recurringMonthly } from "@/lib/admin/metrics";
 import { checkListing, type Fee } from "@/lib/listing-rules";
 import { fmtMoney, typeLabel } from "@/lib/site";
 
@@ -28,9 +25,9 @@ export const metadata = { title: "Founder view — RentLeaks" };
  * not move themselves.
  */
 export default async function AdminPage() {
-  const user = await getCurrentUser();
-  if (!user) redirect("/login?next=/admin");
-  if (!isAdmin(user)) notFound();
+  await requireAdminPage();
+  const now = new Date();
+  const weekAgo = new Date(now.getTime() - 7 * 86_400_000);
 
   const [listings, users, cities] = await Promise.all([
     prisma.listing.findMany({
@@ -41,22 +38,23 @@ export default async function AdminPage() {
     prisma.city.findMany({ orderBy: { rank: "asc" } }),
   ]);
 
-  const leads = await loadLeads();
-  const newLeads = leads?.filter((l) => l.status === "new").length ?? 0;
+  const safe = <T,>(p: Promise<T>, fallback: T) => p.catch(() => fallback);
+  const [newLeads, leadsWeek, followUps, openReports, sending, trialsActive, contacts, subscribers] = await Promise.all([
+    safe(prisma.lead.count({ where: { status: "new" } }), 0),
+    safe(prisma.lead.count({ where: { createdAt: { gte: weekAgo } } }), 0),
+    safe(prisma.contact.count({ where: { nextFollowUpAt: { lte: now } } }), 0),
+    safe(prisma.report.count({ where: { status: "open" } }), 0),
+    safe(prisma.campaign.count({ where: { status: { in: ["sending", "scheduled"] } } }), 0),
+    safe(prisma.user.count({ where: { trialEndsAt: { gt: now } } }), 0),
+    safe(prisma.contact.count(), 0),
+    safe(prisma.contact.count({ where: { marketingConsent: true, unsubscribedAt: null, confirmToken: null } }), 0),
+  ]);
+  const signupsWeek = users.filter((u) => u.createdAt >= weekAgo).length;
 
   const live = listings.filter((l) => l.status === "active");
   const sponsored = listings.filter((l) => l.sponsored);
 
-  /* Recurring revenue, at the posted rates. Lease-breaks publish free and
-     paused listings are not billed, so neither counts. */
-  const monthly = listings
-    .filter((l) => l.status !== "paused" && l.housingType !== "lease-break")
-    .reduce((sum, l) => {
-      const weekly = l.plan !== "month";
-      const listing = weekly ? 14 : 60;
-      const promo = l.sponsored ? (weekly ? 45 : 120) : 0;
-      return sum + (weekly ? (listing + promo) * 4.33 : listing + promo);
-    }, 0);
+  const monthly = recurringMonthly(listings);
 
   /* Same gate as the composer, re-run over stored rows — once, and read by
      both the review queue and the compliance table below it. */
@@ -165,178 +163,105 @@ export default async function AdminPage() {
     .sort((a, b) => b.total - a.total);
 
   return (
-    <Shell>
-      <section className="container page-hero">
-        <h1>Founder view</h1>
-        <p>Everything, across every account. Verification status only — never the documents behind it.</p>
-      </section>
+    <>
+      <PageHead title="Founder view" sub="Everything, across every account. Verification status only — never the documents behind it." />
 
-      <section className="rl-page">
-        <div className="container">
-          <div className="s-summary">
-            <div><span className="s-summary__k">Listings</span><b>{listings.length}</b><small>{live.length} live</small></div>
-            <div><span className="s-summary__k">Accounts</span><b>{users.length}</b><small>{users.filter((u) => u.role !== "renter").length} sellers</small></div>
-            <div><span className="s-summary__k">Sponsored</span><b>{sponsored.length}</b><small>across {new Set(sponsored.map((l) => l.cityId)).size} markets</small></div>
-            <div><span className="s-summary__k">Awaiting review</span><b>{queue.length}</b><small>{listings.filter((l) => l.moderation === "declined").length} declined</small></div>
-            <div><span className="s-summary__k">Recurring</span><b>${Math.round(monthly)}</b><small>per month at posted rates</small></div>
-          </div>
+      <Stats
+        items={[
+          { k: "New leads", v: <Link href="/admin/leads">{newLeads}</Link>, s: `${leadsWeek} this week` },
+          { k: "Follow-ups due", v: <Link href="/admin/crm?due=1">{followUps}</Link>, s: `${contacts} contacts` },
+          { k: "Awaiting review", v: <Link href="/admin/listings?moderation=pending">{queue.length}</Link>, s: `${listings.filter((l) => l.moderation === "declined").length} declined` },
+          { k: "Open reports", v: <Link href="/admin/reports">{openReports}</Link>, s: "trust & safety" },
+          { k: "Accounts", v: <Link href="/admin/accounts">{users.length}</Link>, s: `${signupsWeek} new this week · ${trialsActive} on trial` },
+          { k: "Listings", v: listings.length, s: `${live.length} live · ${sponsored.length} sponsored` },
+          { k: "Subscribers", v: subscribers, s: `${sending} campaign${sending === 1 ? "" : "s"} going out` },
+          { k: "Recurring", v: `$${Math.round(monthly)}`, s: "per month at posted rates" },
+        ]}
+      />
 
-          <h2 className="a-h2" id="leads">Leads{newLeads ? ` · ${newLeads} new` : ""}</h2>
-          <p className="v-note" style={{ marginTop: 0 }}>
-            Requests from the Facebook landing page and the other public forms. Reply within a day — a renter who
-            waits books elsewhere. Contact details were given for this request only.
-          </p>
-          {leads ? (
-            <LeadsInbox leads={leads} />
-          ) : (
-            <p className="v-note">
-              The leads table isn&rsquo;t in this database yet. Run <code>npx prisma migrate deploy</code> in web/.
+      <h2 className="a-h2">Waiting on review{queue.length ? ` · ${queue.length}` : ""}</h2>
+      <p className="v-note" style={{ marginTop: 0 }}>
+        Nothing reaches renters until it is approved here. Decline needs a reason and the seller is shown it
+        verbatim — a rejection with no reason comes back as the same listing next week.
+      </p>
+      <ModerationQueue items={queue} />
+
+      <h2 className="a-h2">Needs attention</h2>
+      <div className="a-cols">
+        <div className="c-section">
+          <div className="c-section__head">
+            <h3 className="c-section__title">Listings breaching their market</h3>
+            <p className="c-section__sub">
+              The composer&rsquo;s gate, re-run against what is stored. Rules change and catalogues do not move
+              themselves, so anything written before a rule shifted surfaces here.
             </p>
+          </div>
+          {failing.length === 0 ? (
+            <p className="v-note">Nothing breaching. Every stored listing passes the gate for its own market.</p>
+          ) : (
+            <ul className="c-checks">
+              {failing.slice(0, 25).map(({ listing, blocked }) => (
+                <li className="c-check" data-ok="block" key={listing.id}>
+                  <span className="c-check__m" aria-hidden="true">!</span>
+                  <span>
+                    <b><Link href={`/listings/${listing.id}`}>{listing.title}</Link> · {listing.city.name}</b>
+                    {blocked.map((b) => b.title).join(" · ")}
+                  </span>
+                </li>
+              ))}
+            </ul>
           )}
-
-          <h2 className="a-h2">Waiting on review{queue.length ? ` · ${queue.length}` : ""}</h2>
-          <p className="v-note" style={{ marginTop: 0 }}>
-            Nothing reaches renters until it is approved here. Decline needs a reason and the seller is shown it
-            verbatim — a rejection with no reason comes back as the same listing next week.
-          </p>
-          <ModerationQueue items={queue} />
-
-          <h2 className="a-h2">Needs attention</h2>
-          <div className="a-cols">
-            <div className="c-section">
-              <div className="c-section__head">
-                <h3 className="c-section__title">Listings breaching their market</h3>
-                <p className="c-section__sub">
-                  The composer&rsquo;s gate, re-run against what is stored. Rules change and catalogues do not move
-                  themselves, so anything written before a rule shifted surfaces here.
-                </p>
-              </div>
-              {failing.length === 0 ? (
-                <p className="v-note">Nothing breaching. Every stored listing passes the gate for its own market.</p>
-              ) : (
-                <ul className="c-checks">
-                  {failing.slice(0, 25).map(({ listing, blocked }) => (
-                    <li className="c-check" data-ok="block" key={listing.id}>
-                      <span className="c-check__m" aria-hidden="true">!</span>
-                      <span>
-                        <b><Link href={`/listings/${listing.id}`}>{listing.title}</Link> · {listing.city.name}</b>
-                        {blocked.map((b) => b.title).join(" · ")}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-
-            <div className="c-section">
-              <div className="c-section__head">
-                <h3 className="c-section__title">Sellers without verification</h3>
-                <p className="c-section__sub">Status only. The documents are matched and discarded, so there is nothing here to open.</p>
-              </div>
-              {unverifiedHosts.length === 0 ? (
-                <p className="v-note">Every seller account is verified.</p>
-              ) : (
-                <ul className="c-checks">
-                  {unverifiedHosts.slice(0, 25).map((u) => (
-                    <li className="c-check" data-ok="0" key={u.id}>
-                      <span className="c-check__m" aria-hidden="true">–</span>
-                      <span>
-                        <b>{u.name}</b>
-                        {u.identity?.status || "no verification started"} · {listings.filter((l) => l.hostId === u.id).length} listings
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </div>
-
-          <h2 className="a-h2">Markets</h2>
-          <div className="a-scroll">
-            <table className="a-table">
-              <thead>
-                <tr>
-                  <th>Market</th><th>Listings</th><th>Live</th><th>Sponsored</th><th>No end date</th><th>Breaching</th>
-                </tr>
-              </thead>
-              <tbody>
-                {byMarket.map((m) => (
-                  <tr key={m.id}>
-                    <td>{m.name} <span className="a-dim">{m.country}</span></td>
-                    <td>{m.total}</td>
-                    <td>{m.live}</td>
-                    <td>{m.sponsored || "—"}</td>
-                    <td className={m.noWindow ? "a-warn" : undefined}>{m.noWindow || "—"}</td>
-                    <td className={m.breaching ? "a-bad" : undefined}>{m.breaching || "—"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <p className="v-note">
-            <b>No end date</b> is the column worth watching. A listing without one cannot answer a date-range search,
-            so it is invisible to anyone who knows when they need to move — which is most of this market.
-          </p>
         </div>
-      </section>
-    </Shell>
-  );
-}
 
-/** The newest 300 leads, shaped for the inbox; null when the table is missing. */
-async function loadLeads(): Promise<LeadRow[] | null> {
-  try {
-    const rows = await prisma.lead.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 300,
-      include: { listing: { select: { id: true, title: true } } },
-    });
-    const now = Date.now();
-    return rows.map((l) => {
-      let slots: ViewingSlot[] = [];
-      try {
-        const parsed = JSON.parse(l.viewingSlots) as unknown;
-        if (Array.isArray(parsed)) slots = parsed as ViewingSlot[];
-      } catch {
-        slots = [];
-      }
-      const kind = (l.kind in KIND_LABEL ? l.kind : "match") as LeadKind;
-      return {
-        id: l.id,
-        kind,
-        kindLabel: KIND_LABEL[kind],
-        status: l.status,
-        name: l.name,
-        email: l.email,
-        phone: l.phone,
-        summary: leadSummary(
-          {
-            kind,
-            name: l.name,
-            cityId: l.cityId,
-            housingType: l.housingType,
-            budgetMax: l.budgetMax,
-            currency: l.currency,
-            moveIn: l.moveIn,
-            moveOut: l.moveOut,
-            stayMonths: l.stayMonths,
-            viewingSlots: slots,
-            viewingMode: l.viewingMode === "video" ? "video" : l.viewingMode ? "in-person" : null,
-            message: l.message,
-          },
-          l.listing ? { title: l.listing.title } : null,
-        ),
-        listingTitle: l.listing?.title ?? null,
-        listingHref: l.listing ? `/listings/${l.listing.id}` : null,
-        source: l.source,
-        campaign: l.campaign,
-        note: l.note,
-        createdAt: l.createdAt.toISOString().slice(0, 16).replace("T", " "),
-        waitingHours: l.status === "new" ? Math.floor((now - l.createdAt.getTime()) / 3_600_000) : null,
-      };
-    });
-  } catch (err) {
-    console.error("[admin] leads unavailable:", err instanceof Error ? err.message : err);
-    return null;
-  }
+        <div className="c-section">
+          <div className="c-section__head">
+            <h3 className="c-section__title">Sellers without verification</h3>
+            <p className="c-section__sub">Status only. The documents are matched and discarded, so there is nothing here to open.</p>
+          </div>
+          {unverifiedHosts.length === 0 ? (
+            <p className="v-note">Every seller account is verified.</p>
+          ) : (
+            <ul className="c-checks">
+              {unverifiedHosts.slice(0, 25).map((u) => (
+                <li className="c-check" data-ok="0" key={u.id}>
+                  <span className="c-check__m" aria-hidden="true">–</span>
+                  <span>
+                    <b>{u.name}</b>
+                    {u.identity?.status || "no verification started"} · {listings.filter((l) => l.hostId === u.id).length} listings
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+
+      <h2 className="a-h2">Markets</h2>
+      <div className="a-scroll">
+        <table className="a-table">
+          <thead>
+            <tr>
+              <th>Market</th><th>Listings</th><th>Live</th><th>Sponsored</th><th>No end date</th><th>Breaching</th>
+            </tr>
+          </thead>
+          <tbody>
+            {byMarket.map((m) => (
+              <tr key={m.id}>
+                <td>{m.name} <span className="a-dim">{m.country}</span></td>
+                <td>{m.total}</td>
+                <td>{m.live}</td>
+                <td>{m.sponsored || "—"}</td>
+                <td className={m.noWindow ? "a-warn" : undefined}>{m.noWindow || "—"}</td>
+                <td className={m.breaching ? "a-bad" : undefined}>{m.breaching || "—"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="v-note">
+        <b>No end date</b> is the column worth watching. A listing without one cannot answer a date-range search,
+        so it is invisible to anyone who knows when they need to move — which is most of this market.
+      </p>
+    </>
+  );
 }

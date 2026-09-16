@@ -44,6 +44,7 @@ async function findUser(hashed: string) {
     include: { user: { include: { identity: true } } },
   });
   if (!session || session.expiresAt < new Date()) return null;
+  if (session.user.suspendedAt) return null;
   return session.user;
 }
 

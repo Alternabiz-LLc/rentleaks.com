@@ -20,7 +20,9 @@ export default async function LoginPage({
       ? "Check the email and password, then try again."
       : params.error === "exists"
         ? "That email already has an account. Sign in instead."
-        : "";
+        : params.error === "suspended"
+          ? "This account is suspended. Reply to any RentLeaks email if you think this is a mistake."
+          : "";
 
   return (
     <Shell>

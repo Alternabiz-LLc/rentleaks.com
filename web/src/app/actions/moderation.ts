@@ -50,7 +50,7 @@ export async function reviewListing(id: string, decision: string, note: string):
     },
   });
 
-  revalidatePath("/admin");
+  revalidatePath("/admin", "layout");
   revalidatePath("/account");
   revalidatePath("/stays");
   revalidatePath(`/listings/${id}`);

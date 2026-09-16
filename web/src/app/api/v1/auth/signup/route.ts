@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { hashPassword, publicUser } from "@/lib/auth";
 import { clientKey, fail, handle, ok, rateLimit, readJson, str } from "@/lib/v1/http";
 import { issueToken } from "@/lib/v1/session";
+import { contactFromUser } from "@/lib/crm";
+import { redeemInvite } from "@/lib/trials";
 
 export const dynamic = "force-dynamic";
 
@@ -37,6 +39,9 @@ export const POST = handle(async (req: Request) => {
     },
     include: { identity: true },
   });
+  await contactFromUser(user);
+  const invite = str(body.inviteCode, 20);
+  if (invite) await redeemInvite(invite, user).catch(() => undefined);
   const session = await issueToken(user.id);
   return ok({ ...session, user: publicUser(user) }, 201);
 });

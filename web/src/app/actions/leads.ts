@@ -31,6 +31,6 @@ export async function updateLead(id: string, status: string, note: string): Prom
       ...(status !== "new" && !lead.contactedAt ? { contactedAt: new Date() } : {}),
     },
   });
-  revalidatePath("/admin");
+  revalidatePath("/admin", "layout");
   return { ok: true };
 }

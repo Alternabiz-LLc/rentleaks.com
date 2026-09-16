@@ -1,3 +1,4 @@
+import { getCurrentUser } from "@/lib/auth";
 import { Shell } from "@/components/Shell";
 import ListingComposer from "@/components/ListingComposer";
 import { createListingFromComposer } from "@/app/actions/listings";
@@ -22,6 +23,8 @@ const HOUSING_TYPES = [
 ];
 
 export default async function ListPage() {
+  const user = await getCurrentUser();
+  const onTrial = user?.trialEndsAt && user.trialEndsAt > new Date() ? user.trialEndsAt : null;
   const cities = await prisma.city.findMany({
     orderBy: [{ rank: "asc" }, { name: "asc" }],
     select: { id: true, slug: true, name: true, state: true, country: true, currency: true },
@@ -36,6 +39,12 @@ export default async function ListPage() {
           Lease-breaks publish free. Everything else carries an all-in price, so renters see the real number rather
           than a base rent with the fees hidden behind it.
         </p>
+        {onTrial ? (
+          <p className="adm-flash adm-flash--ok">
+            Your free trial is active until {onTrial.toISOString().slice(0, 10)} — listings you publish now carry no fee
+            until then.
+          </p>
+        ) : null}
       </section>
       <section className="rl-page">
         <div className="container">

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { createSession, destroySession, hashPassword, verifyPassword } from "@/lib/auth";
 import { safePath } from "@/lib/site";
+import { contactFromUser } from "@/lib/crm";
 
 export async function signInAction(formData: FormData) {
   const email = String(formData.get("email") || "").trim().toLowerCase();
@@ -13,6 +14,7 @@ export async function signInAction(formData: FormData) {
   if (!user || !verifyPassword(password, user.passwordHash)) {
     redirect(`/login?error=invalid&next=${encodeURIComponent(next)}`);
   }
+  if (user.suspendedAt) redirect("/login?error=suspended");
   await createSession(user.id);
   redirect(next);
 }
@@ -42,6 +44,7 @@ export async function signUpAction(formData: FormData) {
       identity: { create: { status: "unverified", provider: "demo" } },
     },
   });
+  await contactFromUser(user);
   await createSession(user.id);
   redirect(next);
 }

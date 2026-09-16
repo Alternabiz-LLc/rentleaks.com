@@ -57,6 +57,7 @@ export default async function AccountPage() {
         <p>
           {user.email} · {user.role === "host" ? "Seller account" : user.role}
           {isAdmin(user) ? " · founder" : ""}
+          {user.trialEndsAt && user.trialEndsAt > new Date() ? ` · free trial until ${user.trialEndsAt.toISOString().slice(0, 10)}` : ""}
         </p>
         <p style={{ display: "flex", gap: "var(--s-3)", flexWrap: "wrap" }}>
           <Link className="btn btn--primary" href="/list">List a place</Link>

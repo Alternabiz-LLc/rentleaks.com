@@ -24,18 +24,22 @@
   "hyperdrive": [
     {
       "binding": "HYPERDRIVE",
-      "id": "REPLACE_WITH_HYPERDRIVE_ID",
+      "id": "52b076debed34ef4a1f3b41fc8c7bd18",
       "localConnectionString": "postgresql://rentleaks:rentleaks@localhost:5434/rentleaks"
     }
   ],
 
   /* Cache for pre-rendered pages (Next.js incremental cache). */
   "r2_buckets": [
-    { "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "rentleaks-next-cache" }
+    { "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "rentleaks-next-cache" },
+    /* Listing photos and videos, served at MEDIA_PUBLIC_URL (bucket custom domain). */
+    { "binding": "MEDIA_BUCKET", "bucket_name": "rentleaks-media" }
   ],
 
-  /* Hourly saved-search alerts (worker.ts → /api/v1/cron/alerts). */
-  "triggers": { "crons": ["0 * * * *"] },
+  /* Hourly saved-search alerts (→ /api/v1/cron/alerts) and the five-minute
+     outbox: campaign emails, scheduled social posts, invite expiry
+     (→ /api/cron/outbox). See worker.ts. */
+  "triggers": { "crons": ["0 * * * *", "*/5 * * * *"] },
 
   /* Plain settings. Secrets go in the dashboard, never here. */
   "vars": {
@@ -45,6 +49,8 @@
     "NEXT_PUBLIC_CATALOG_ORIGIN": "https://rentleaks.com",
     "MAIL_FROM": "RentLeaks <no-reply@rentleaks.com>",
     "S3_REGION": "auto",
+    "MEDIA_PUBLIC_URL": "https://media.rentleaks.com",
+    "MAIL_REPLY_TO": "RentLeaks <hello@rentleaks.com>",
     "IOS_BUNDLE_ID": "com.alternabiz.rentleaks",
     "ANDROID_PACKAGE": "com.alternabiz.rentleaks"
   }

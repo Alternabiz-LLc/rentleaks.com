@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # One-pass first deploy of the RentLeaks app to Cloudflare (app.rentleaks.com).
 #
-#   bash tools/deploy-cloudflare.sh
+#   bash tools/deploy-cloudflare.sh              # build, migrate, deploy
+#   bash tools/deploy-cloudflare.sh --secrets    # email (Resend / SMTP), Facebook, feed keys
+#   bash tools/deploy-cloudflare.sh --data-only  # migrations + catalogue, no build
 #
 # Before running (see DEPLOY.md §0–2):
 #   - rentleaks.com is added to your Cloudflare account and shows "Active";
@@ -14,20 +16,68 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-DATA_ONLY=""; [ "${1:-}" = "--data-only" ] && DATA_ONLY=1   # migrations + catalogue, no build
+MODE="${1:-}"
+DATA_ONLY=""; [ "$MODE" = "--data-only" ] && DATA_ONLY=1
 cd "$ROOT/web"
 say()  { printf '\n\033[1m== %s\033[0m\n' "$*"; }
 fail() { printf '\n\033[31mStopped: %s\033[0m\n' "$*" >&2; exit 1; }
 W() { npx --yes wrangler "$@"; }
 
 say "1/8 Packages"
-[ -d node_modules/wrangler ] || npm install
+npm install --no-audit --no-fund --loglevel=error
 
 say "2/8 Cloudflare login"
 if ! W whoami 2>/dev/null | grep -qi "associated with the email"; then
   W login
 fi
 W whoami | grep -i -E "email|account" | head -5 || true
+
+secret_names() { W secret list 2>/dev/null | grep -oE '"name": *"[A-Z0-9_]+"' | grep -oE '[A-Z0-9_]+"$' | tr -d '"' || true; }
+put_secret() { printf '%s' "$2" | W secret put "$1" >/dev/null && echo "  ✓ $1 saved"; }
+ask() { local v; read -rp "$1" v; printf '%s' "${v:-$2}"; }
+ask_hidden() { local v; printf '%s' "$1" >&2; read -rs v; echo >&2; printf '%s' "$v"; }
+
+integrations() {
+  local have; have="$(secret_names)"
+  say "Email · Resend (password resets, lead alerts, newsletters, campaigns)"
+  echo "resend.com → API Keys → Create (Sending access). Enter keeps the current value."
+  local v; v="$(ask_hidden "Resend API key${have:+$(echo "$have" | grep -q RESEND_API_KEY && echo ' [set]')}: ")"
+  [ -n "$v" ] && put_secret RESEND_API_KEY "$v"
+
+  say "Email · your own mailbox over SMTP (one-to-one outreach, invites)"
+  echo "Namecheap Private Email: host mail.privateemail.com, port 465, your full address and its password."
+  local user; user="$(ask "Mailbox address (Enter to skip): " "")"
+  if [ -n "$user" ]; then
+    put_secret SMTP_HOST "$(ask "SMTP host [mail.privateemail.com]: " "mail.privateemail.com")"
+    put_secret SMTP_PORT "$(ask "SMTP port [465]: " "465")"
+    put_secret SMTP_USER "$user"
+    v="$(ask_hidden "Mailbox password: ")"
+    [ -n "$v" ] && put_secret SMTP_PASS "$v"
+  fi
+
+  say "Facebook Page auto-posting (optional)"
+  echo "Needs a long-lived Page access token with pages_manage_posts (Meta for Developers → Graph API Explorer)."
+  local page; page="$(ask "Facebook Page ID (Enter to skip) [61594270177079]: " "")"
+  if [ -n "$page" ]; then
+    put_secret FB_PAGE_ID "$page"
+    v="$(ask_hidden "Page access token: ")"
+    [ -n "$v" ] && put_secret FB_PAGE_TOKEN "$v"
+  fi
+
+  if ! echo "$have" | grep -q META_FEED_KEY; then
+    local key; key="$(openssl rand -hex 16)"
+    put_secret META_FEED_KEY "$key"
+    echo "  Meta catalog feed: https://app.rentleaks.com/feeds/meta-home-listings.csv?key=$key"
+  fi
+  v=""; unset v
+}
+
+if [ "$MODE" = "--secrets" ]; then
+  integrations
+  echo
+  echo "Done. Secrets apply immediately — check Admin → System → Health, then send a test email."
+  exit 0
+fi
 
 say "3/8 Database address"
 DB_URL="${NEON_DIRECT_URL:-}"
@@ -76,6 +126,13 @@ export DATABASE_URL="$DB_URL" DIRECT_URL="$DB_URL"
 
 say "4/8 Tables (Prisma migrations on Neon)"
 npx prisma migrate deploy
+if ! npx prisma migrate diff --from-url "$DB_URL" --to-schema-datamodel prisma/schema.prisma --exit-code >/tmp/rentleaks-drift.sql 2>&1; then
+  if grep -qiE "^(-- |ALTER|CREATE|DROP)" /tmp/rentleaks-drift.sql; then
+    echo "⚠ The live database differs from prisma/schema.prisma. Send this to your developer:"
+    sed -n 1,40p /tmp/rentleaks-drift.sql
+  fi
+fi
+rm -f /tmp/rentleaks-drift.sql
 
 if [ -n "$DATA_ONLY" ]; then
   say "Cities, operators and the example catalogue"
@@ -121,15 +178,12 @@ export NEXT_PUBLIC_APP_URL=https://app.rentleaks.com NEXT_PUBLIC_CATALOG_ORIGIN=
 unset DATABASE_URL DIRECT_URL   # the Worker uses Hyperdrive, not this string
 npm run cf:deploy
 
-SECRETS="$(W secret list 2>/dev/null || true)"
-if ! echo "$SECRETS" | grep -q CRON_SECRET; then
-  openssl rand -hex 32 | W secret put CRON_SECRET
-fi
-if ! echo "$SECRETS" | grep -q RESEND_API_KEY; then
-  printf '\nResend API key for lead emails (hidden; Enter to skip for now): '
-  read -rs RESEND; echo
-  [ -n "$RESEND" ] && printf '%s' "$RESEND" | W secret put RESEND_API_KEY
-  unset RESEND
+HAVE="$(secret_names)"
+echo "$HAVE" | grep -q CRON_SECRET || put_secret CRON_SECRET "$(openssl rand -hex 32)"
+echo "$HAVE" | grep -q UNSUBSCRIBE_SECRET || put_secret UNSUBSCRIBE_SECRET "$(openssl rand -hex 32)"
+if ! echo "$HAVE" | grep -qE "RESEND_API_KEY|SMTP_PASS"; then
+  read -rp "Set up email (Resend / your mailbox) and Facebook now? [Y/n] " yn
+  [ "${yn:-Y}" = "n" ] || [ "${yn:-Y}" = "N" ] || integrations
 fi
 
 say "8/8 Founder account on the live database"
@@ -138,13 +192,15 @@ if [ -n "$(command -v gh)" ] && gh auth status >/dev/null 2>&1; then
 else
   echo "Add the GitHub secret DATABASE_DIRECT_URL by hand (DEPLOY.md §2.3) so future migrations run on push."
 fi
-read -rp "Create or update your founder login now? [Y/n] " yn
-if [ "${yn:-Y}" != "n" ] && [ "${yn:-Y}" != "N" ]; then
+read -rp "Create or change your founder login now? [y/N] " yn
+if [ "${yn:-N}" = "y" ] || [ "${yn:-N}" = "Y" ]; then
   DATABASE_URL="$DB_URL" DIRECT_URL="$DB_URL" npm run founder
 fi
-say "Cities, operators and the example catalogue (safe to repeat)"
-if ! DATABASE_URL="$DB_URL" DIRECT_URL="$DB_URL" npx prisma db seed; then
-  echo "Skipped: the catalogue needs a founder account. Run this script again and answer Y."
+read -rp "Reload cities, operators and the example catalogue from data.js? (resets edits made in Admin → Markets) [y/N] " yn
+if [ "${yn:-N}" = "y" ] || [ "${yn:-N}" = "Y" ]; then
+  if ! DATABASE_URL="$DB_URL" DIRECT_URL="$DB_URL" npx prisma db seed; then
+    echo "Skipped: the catalogue needs a founder account. Run this script again and answer y to the founder question."
+  fi
 fi
 unset DB_URL
 

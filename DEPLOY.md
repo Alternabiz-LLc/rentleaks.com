@@ -151,6 +151,61 @@ Every push to `main` then rebuilds the app; migrations run in GitHub Actions.
 `RESEND_API_KEY`. Leads show at `/admin#leads`. Details:
 marketing/facebook/PAGE-KIT.md §7.
 
+## Email, photos and integrations
+
+After the first deploy, run:
+
+```sh
+cd ~/Apps/rentleaks.com && bash tools/deploy-cloudflare.sh --secrets
+```
+
+It asks, each optional (Enter skips or keeps the current value):
+
+| Secret | What it does |
+|---|---|
+| `RESEND_API_KEY` | Password resets, lead alerts, newsletters and campaigns. Verify `rentleaks.com` in Resend first (its DNS records go in Cloudflare → DNS). |
+| `SMTP_HOST` `SMTP_PORT` `SMTP_USER` `SMTP_PASS` | Your own mailbox, e.g. Namecheap Private Email (`mail.privateemail.com`, 465). One-to-one CRM emails and trial invites go from it, so replies land in your inbox. Used for everything if Resend isn't set. |
+| `FB_PAGE_ID` `FB_PAGE_TOKEN` | Lets Admin → Social publish scheduled posts to the Facebook Page by itself. Without it, due posts wait for you to post and tick “Mark posted”. |
+| `META_FEED_KEY` | Generated for you; protects the Meta catalog feed URL. |
+| `UNSUBSCRIBE_SECRET`, `CRON_SECRET` | Generated on deploy. |
+
+Namecheap Private Email is a paid Namecheap product with its own MX records;
+switching rentleaks.com's MX from email forwarding to Private Email stops the
+forwarding. Resend needs no MX change (it uses a `send.` subdomain).
+
+**Photos** are written to the `rentleaks-media` bucket through the
+`MEDIA_BUCKET` binding — no access keys. Serve them by connecting the custom
+domain: Cloudflare → R2 → rentleaks-media → Settings → Custom Domains →
+`media.rentleaks.com`. Admin → System → “Test photo upload” checks the whole
+path.
+
+**Scheduled jobs**: `0 * * * *` saved-search alerts; `*/5 * * * *` the outbox
+(campaign emails in paced batches, due Facebook posts, invite expiry). Admin →
+System shows when each last ran.
+
+## Founder admin
+
+`https://app.rentleaks.com/admin` (founder account only):
+
+| Section | For |
+|---|---|
+| Overview | Today's numbers, the review queue, market compliance. |
+| Leads | The Facebook/landing-page inbox, reply times, sources. |
+| Listings | Search every listing; bulk approve / decline / pause / sponsor / feature / verify; edit price, plan, host. |
+| Accounts | Roles, verification, free days, sign out everywhere, suspend (signs out and pauses listings). |
+| Reports & safety | Member reports; remove a listing or suspend an account; scam-guard flags. |
+| CRM | Every renter, host, operator and partner with stage, tags, follow-ups, timeline, one-to-one email, CSV import/export. Leads and sign-ups are added automatically. |
+| Outreach | Templates (6 starters), follow-ups due, prospect counts. |
+| Email & newsletters | Newsletters (opted-in only, double opt-in via `POST /api/newsletter`), announcements and outreach waves with preview, test send, schedule, paced sending, unsubscribe and suppression. Needs the mailing address in System. |
+| Social posts | Compose once for several channels, bulk-schedule (posts separated by `---`), auto-publish to the Facebook Page. |
+| Paid ads | Campaigns with tracking links; leads and bookings per campaign; cost per lead. |
+| Free-trial invites | Invite hosts (one or 200 at a time) to list free for N days; `/invite/<code>` creates the account and starts the trial. |
+| Revenue & analytics | Payments, recurring revenue, weekly accounts / leads / listings, funnel. |
+| Markets & operators | Rank, featured markets, local medians; operator pages. |
+| System & settings | Health of every integration, mailing address, test email, photo-upload test, suppression, audit log. |
+
+Every change made here is written to the audit log.
+
 ## How the app runs on Workers
 
 - `wrangler.jsonc` — Worker config, Hyperdrive, R2 cache bucket, hourly cron, plain vars.
