@@ -593,6 +593,12 @@ function StepDates({ d, set, rules }: StepProps & { rules: ReturnType<typeof rul
   );
 }
 
+/* Listing photos are stored at this size: sharp on any phone or laptop screen,
+   typically 300-500 KB, so storage and page weight stay low. Same values as
+   web/src/lib/image-resize.ts. */
+const PHOTO_MAX_EDGE = 1920;
+const PHOTO_QUALITY = 0.8;
+
 function StepPhotos({ d, setD }: { d: ComposerDraft; setD: React.Dispatch<React.SetStateAction<ComposerDraft>> }) {
   const t = useTheme();
   const [tips, setTips] = useState(d.photos.length === 0);
@@ -608,11 +614,11 @@ function StepPhotos({ d, setD }: { d: ComposerDraft; setD: React.Dispatch<React.
         /* Resize to a sane long edge and re-encode before upload: faster on
            mobile data, and strips most EXIF (including GPS) from the file. */
         const ctx = ImageManipulator.ImageManipulator.manipulate(p.uri);
-        if ((p.width ?? 0) > 2400 || (p.height ?? 0) > 2400) {
-          ctx.resize((p.width ?? 0) >= (p.height ?? 0) ? { width: 2400 } : { height: 2400 });
+        if ((p.width ?? 0) > PHOTO_MAX_EDGE || (p.height ?? 0) > PHOTO_MAX_EDGE) {
+          ctx.resize((p.width ?? 0) >= (p.height ?? 0) ? { width: PHOTO_MAX_EDGE } : { height: PHOTO_MAX_EDGE });
         }
         const ref = await ctx.renderAsync();
-        const out = await ref.saveAsync({ compress: 0.82, format: ImageManipulator.SaveFormat.JPEG });
+        const out = await ref.saveAsync({ compress: PHOTO_QUALITY, format: ImageManipulator.SaveFormat.JPEG });
         const up = await uploadFile(out.uri, "image/jpeg");
         patchPhoto(p.uri, { status: "done", path: up.path, uri: up.url });
       } catch (e) {

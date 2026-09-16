@@ -1,3 +1,5 @@
+import { shrinkPhoto } from "./image-resize";
+
 export function isPublicMediaSrc(value: string) {
   return /^https:\/\//i.test(value) || /^\/uploads\/[a-z0-9_-]+\/[a-z0-9._-]+$/i.test(value);
 }
@@ -28,7 +30,7 @@ export async function persistMediaFiles(
   for (const item of items) {
     if (item.file) {
       const body = new FormData();
-      body.append("file", item.file);
+      body.append("file", await shrinkPhoto(item.file));
       const res = await fetch("/api/media", { method: "POST", body });
       const data = (await res.json().catch(() => null)) as { url?: string; error?: string } | null;
       if (!res.ok || !data?.url) {
