@@ -2,7 +2,8 @@
 """
 Facebook post images for the site's menu sections and the trend post.
 
-    python3 tools/make-facebook-posts.py
+    python3 tools/make-facebook-posts.py           # full graphic cards
+    python3 tools/make-facebook-posts.py --photo   # overlays for the site's photos
 
 Writes 1080 x 1350 PNGs (Facebook's 4:5 feed size) to marketing/facebook/posts/.
 Text comes from the site's own pages (see marketing/facebook/PAGE-CONTENT.md
@@ -13,6 +14,7 @@ Set FONT_DIR to a folder holding the @expo-google-fonts packages
 (default: mobile/node_modules/@expo-google-fonts).
 """
 import os
+import sys
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -74,7 +76,34 @@ def spaced(draw, xy, text, fnt, fill, tracking):
     return x
 
 
+PHOTO_H = 520 * S          # photo band height in overlay mode
+
+
+def overlay_background():
+    """Ink panel with a transparent band on top where the site photo goes."""
+    im = Image.new("RGBA", (W, H), INK + (255,))
+    alpha = Image.new("L", (W, H), 255)
+    a = ImageDraw.Draw(alpha)
+    fade_top, fade_end = PHOTO_H - 220 * S, PHOTO_H + 40 * S
+    for y in range(0, fade_end):
+        if y < fade_top:
+            v = 0
+        else:
+            t = (y - fade_top) / (fade_end - fade_top)
+            v = int(255 * (t ** 1.6))
+        a.line((0, y, W, y), fill=v)
+    # a light shade at the very top so the logo reads on any photo
+    shade = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    sd = ImageDraw.Draw(shade)
+    for y in range(0, 260 * S):
+        sd.line((0, y, W, y), fill=INK + (int(150 * (1 - y / (260 * S))),))
+    im.putalpha(alpha)
+    return Image.alpha_composite(im, shade)
+
+
 def background(icon):
+    if PHOTO:
+        return overlay_background()
     im = Image.new("RGB", (W, H), INK)
     # soft light from the top right, like the cover
     glow = Image.new("L", (W, H), 0)
@@ -113,11 +142,16 @@ def footer(d, url, left):
     d.text((W - PAD - d.textlength(left, font=f), y + 34 * S), left, font=f, fill=MUTED)
 
 
-def place(im, layer, height, top=200 * S):
-    """Centre the content layer between the header and the footer."""
+def place(im, layer, height, top=None):
+    """Centre the content layer between the header (or photo) and the footer."""
+    if top is None:
+        top = (PHOTO_H - 40 * S) if PHOTO else 200 * S
     room = FOOTER_TOP - 40 * S - top
     y = top + max(0, (room - height) // 2)
-    im.paste(layer, (0, int(y)), layer)
+    if im.mode == "RGBA":
+        im.alpha_composite(layer.crop((0, 0, W, H - int(y))), dest=(0, int(y)))
+    else:
+        im.paste(layer, (0, int(y)), layer)
 
 
 def kicker(d, y, icon, text):
@@ -139,19 +173,20 @@ def section_card(slug, icon, kick, title, sub, bullets, url, trend=None):
     d = ImageDraw.Draw(layer, "RGBA")
     width = W - 2 * PAD
 
-    y = kicker(d, 0, icon, kick) + 44 * S
+    y = kicker(d, 0, icon, kick) + (30 if PHOTO else 44) * S
 
-    ft = font("fraunces", 600, 92)
+    ft = font("fraunces", 600, 78 if PHOTO else 92)
     for line in wrap(d, title, ft, width):
         d.text((PAD, y), line, font=ft, fill=PAPER)
-        y += 100 * S
-    y += 34 * S
+        y += (86 if PHOTO else 100) * S
+    y += (22 if PHOTO else 34) * S
 
-    fs = font("inter", 400, 34)
-    for line in wrap(d, sub, fs, width - 40 * S):
-        d.text((PAD, y), line, font=fs, fill=ON_DARK)
-        y += 48 * S
-    y += 34 * S
+    if not PHOTO:
+        fs = font("inter", 400, 34)
+        for line in wrap(d, sub, fs, width - 40 * S):
+            d.text((PAD, y), line, font=fs, fill=ON_DARK)
+            y += 48 * S
+        y += 34 * S
 
     fb = font("inter", 500, 32)
     fc = font("icons", 500, 38)
@@ -192,11 +227,11 @@ def trend_card():
     d = ImageDraw.Draw(layer, "RGBA")
     width = W - 2 * PAD
     y = kicker(d, 0, "location_city", "The new way to live in big cities") + 40 * S
-    ft = font("fraunces", 600, 80)
-    for line in wrap(d, "Big-city living is changing. Fast.", ft, width):
+    ft = font("fraunces", 600, 70 if PHOTO else 80)
+    for line in wrap(d, "Big-city living is changing." if PHOTO else "Big-city living is changing. Fast.", ft, width):
         d.text((PAD, y), line, font=ft, fill=PAPER)
-        y += 88 * S
-    y += 30 * S
+        y += (78 if PHOTO else 88) * S
+    y += (22 if PHOTO else 30) * S
 
     tiles = [
         ("13 of 30", "top U.S. roommate markets hit record room rents in 2025", "SpareRoom", CELESTE_200),
@@ -206,8 +241,8 @@ def trend_card():
     ]
     gap = 20 * S
     tw = (width - gap) // 2
-    th = 262 * S
-    fn = font("fraunces", 600, 66)
+    th = (190 if PHOTO else 262) * S
+    fn = font("fraunces", 600, 50 if PHOTO else 66)
     fl = font("inter", 500, 26)
     fsrc = font("inter", 500, 21)
     for i, (num, label, src, color) in enumerate(tiles):
@@ -215,22 +250,23 @@ def trend_card():
         y0 = y + (i // 2) * (th + gap)
         d.rounded_rectangle((x0, y0, x0 + tw, y0 + th), radius=26 * S, fill=(8, 20, 25, 150), outline=(255, 255, 255, 40), width=2 * S)
         d.text((x0 + 30 * S, y0 + 20 * S), num, font=fn, fill=color)
-        ly = y0 + 108 * S
+        ly = y0 + (80 if PHOTO else 108) * S
         for line in wrap(d, label, fl, tw - 64 * S):
             d.text((x0 + 30 * S, ly), line, font=fl, fill=PAPER)
             ly += 36 * S
-        d.text((x0 + 30 * S, y0 + th - 42 * S), src, font=fsrc, fill=MUTED)
+        d.text((x0 + 30 * S, y0 + th - (36 if PHOTO else 42) * S), src, font=fsrc, fill=MUTED)
     y += 2 * th + gap
 
-    place(im, layer, y)
+    place(im, layer, y, top=(PHOTO_H - 60 * S) if PHOTO else None)
     footer(ImageDraw.Draw(im, "RGBA"), "rentleaks.com", "Rooms · Co-living · Furnished · 1-month+")
     save(im, "00-trend")
 
 
 def save(im, slug):
-    os.makedirs(OUT, exist_ok=True)
+    folder = os.path.join(OUT, "overlay") if PHOTO else OUT
+    os.makedirs(folder, exist_ok=True)
     out = im.resize((W // S, H // S), Image.LANCZOS)
-    path = os.path.join(OUT, f"{slug}.png")
+    path = os.path.join(folder, f"{slug}.png")
     out.save(path, optimize=True)
     print("wrote", os.path.relpath(path, ROOT))
 
@@ -290,7 +326,29 @@ SECTIONS = [
      "rentleaks.com/operators", None),
 ]
 
+# The site's own photos (Unsplash, as used on rentleaks.com) behind each post
+# in --photo mode. The overlay PNGs leave the top band transparent; the photo
+# is composited underneath (see marketing/facebook/posts/photos.json).
+PHOTOS = {
+    "00-trend": "photo-1449824913935-59a10b8d2000",
+    "01-rooms": "photo-1522771739844-6a9f6d5f14af",
+    "02-coliving": "photo-1536376072261-38c75010e6c9",
+    "03-furnished": "photo-1540518614846-7eded433c457",
+    "04-one-month-plus": "photo-1560185127-6ed189bf02f4",
+    "05-aparthotel": "photo-1505693416388-ac5ce068fe85",
+    "06-lease-break": "photo-1560448204-e02f11c3d0e2",
+    "07-cities": "photo-1486406146926-c627a92ad1ab",
+    "08-operators": "photo-1574362848149-11496d93a7c7",
+}
+
+PHOTO = "--photo" in sys.argv
+
 if __name__ == "__main__":
+    if PHOTO:
+        import json
+        with open(os.path.join(OUT, "photos.json"), "w") as fh:
+            json.dump({"photoHeight": PHOTO_H // S, "width": W // S, "height": H // S,
+                       "photos": {k: f"https://images.unsplash.com/{v}" for k, v in PHOTOS.items()}}, fh, indent=1)
     trend_card()
     for args in SECTIONS:
         section_card(*args)

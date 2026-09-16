@@ -1,0 +1,16 @@
+{
+ "photoHeight": 520,
+ "width": 1080,
+ "height": 1350,
+ "photos": {
+  "00-trend": "https://images.unsplash.com/photo-1449824913935-59a10b8d2000",
+  "01-rooms": "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af",
+  "02-coliving": "https://images.unsplash.com/photo-1536376072261-38c75010e6c9",
+  "03-furnished": "https://images.unsplash.com/photo-1540518614846-7eded433c457",
+  "04-one-month-plus": "https://images.unsplash.com/photo-1560185127-6ed189bf02f4",
+  "05-aparthotel": "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85",
+  "06-lease-break": "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2",
+  "07-cities": "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab",
+  "08-operators": "https://images.unsplash.com/photo-1574362848149-11496d93a7c7"
+ }
+}
