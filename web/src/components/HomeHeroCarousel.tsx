@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import type { BrowseListing, GalleryItem } from "@/lib/listings";
+import type { BrowseListing, GalleryItem } from "@/lib/listing-shapes";
 import { money, typeLabel } from "@/lib/site";
 
 const SLIDE_MS = 6000;

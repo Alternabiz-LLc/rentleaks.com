@@ -2,7 +2,7 @@
 
 import { useCallback, useState, useSyncExternalStore, type MouseEvent } from "react";
 import Link from "next/link";
-import type { BrowseListing } from "@/lib/listings";
+import type { BrowseListing } from "@/lib/listing-shapes";
 import { formatDate, listingSpecs, money, remainingMonths, typeLabel } from "@/lib/site";
 import { GalleryLightbox } from "./GalleryLightbox";
 

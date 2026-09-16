@@ -4,7 +4,7 @@ import { useEffect, useMemo } from "react";
 import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import type { MapPin } from "@/lib/listings";
+import type { MapPin } from "@/lib/listing-shapes";
 import { money, typeLabel } from "@/lib/site";
 
 function priceIcon(allIn: number, active: boolean) {

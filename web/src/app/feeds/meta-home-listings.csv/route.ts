@@ -19,9 +19,9 @@
  *    in the X-RentLeaks-Skipped header, so the gap is visible.
  */
 import { liveListingWhere } from "@/lib/billing";
-import { loadCatalog } from "@/lib/catalog-source";
 import { mediaFromDetail } from "@/lib/media";
 import { prisma } from "@/lib/prisma";
+import { sampleCatalogIds } from "@/lib/sample-catalog";
 import { appUrl } from "@/lib/site";
 import { absolute, publicAddress } from "@/lib/v1/listing-view";
 
@@ -100,7 +100,7 @@ export async function GET(req: Request) {
 
   let sampleIds: Set<string>;
   try {
-    sampleIds = new Set(loadCatalog().listings.map((l) => l.id));
+    sampleIds = await sampleCatalogIds();
   } catch {
     return new Response("Feed unavailable: the sample catalogue could not be loaded, so sample homes cannot be excluded.", {
       status: 503,

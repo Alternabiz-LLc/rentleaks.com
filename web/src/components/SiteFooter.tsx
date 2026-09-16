@@ -3,7 +3,7 @@
 import { useEffect, useId, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { FEATURED_MONTHLY, FEATURED_WEEKLY, MONTHLY_PLAN, WEEKLY_PLAN } from "@/lib/billing";
+import { FEATURED_MONTHLY, FEATURED_WEEKLY, MONTHLY_PLAN, WEEKLY_PLAN } from "@/lib/plans";
 import { CITIES } from "@/lib/catalog";
 
 const COMPANY = {

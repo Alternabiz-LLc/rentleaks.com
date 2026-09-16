@@ -3,7 +3,8 @@ import Stripe from "stripe";
 export function getStripe() {
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key) return null;
-  return new Stripe(key);
+  /* The fetch client works on Node and on Cloudflare Workers alike. */
+  return new Stripe(key, { httpClient: Stripe.createFetchHttpClient() });
 }
 
 export function stripeEnabled() {

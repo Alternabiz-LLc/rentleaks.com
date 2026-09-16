@@ -1,0 +1,48 @@
+/**
+ * Cloudflare Worker for the RentLeaks app + API (app.rentleaks.com).
+ * Setup: DEPLOY.md. Secrets (CRON_SECRET, S3_*, UPSTASH_*, RESEND_API_KEY,
+ * STRIPE_*) are set in the dashboard or with `npx wrangler secret put NAME`.
+ */
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "rentleaks-app",
+  "main": "worker.ts",
+  "compatibility_date": "2026-09-16",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "observability": { "enabled": true },
+
+  /* Pooled Postgres connection to Neon. Create it with:
+     npx wrangler hyperdrive create rentleaks-db --connection-string="<Neon direct URL>"
+     and paste the id below. localConnectionString is used by `npm run cf:preview`. */
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "REPLACE_WITH_HYPERDRIVE_ID",
+      "localConnectionString": "postgresql://rentleaks:rentleaks@localhost:5434/rentleaks"
+    }
+  ],
+
+  /* Cache for pre-rendered pages (Next.js incremental cache). */
+  "r2_buckets": [
+    { "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "rentleaks-next-cache" }
+  ],
+
+  /* Hourly saved-search alerts (worker.ts → /api/v1/cron/alerts). */
+  "triggers": { "crons": ["0 * * * *"] },
+
+  /* Plain settings. Secrets go in the dashboard, never here. */
+  "vars": {
+    "APP_URL": "https://app.rentleaks.com",
+    "NEXT_PUBLIC_APP_URL": "https://app.rentleaks.com",
+    "CATALOG_ORIGIN": "https://rentleaks.com",
+    "NEXT_PUBLIC_CATALOG_ORIGIN": "https://rentleaks.com",
+    "MAIL_FROM": "RentLeaks <no-reply@rentleaks.com>",
+    "S3_REGION": "auto",
+    "IOS_BUNDLE_ID": "com.alternabiz.rentleaks",
+    "ANDROID_PACKAGE": "com.alternabiz.rentleaks"
+  }
+}

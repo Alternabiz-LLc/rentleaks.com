@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import type { MapPin } from "@/lib/listings";
+import type { MapPin } from "@/lib/listing-shapes";
 
 const ListingMapInner = dynamic(() => import("./ListingMapInner"), {
   ssr: false,

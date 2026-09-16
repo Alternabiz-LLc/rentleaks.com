@@ -4,9 +4,9 @@
  * - With S3_BUCKET etc. set (Cloudflare R2 recommended), files are PUT to the
  *   bucket and the public URL is https://…, which isPublicMediaSrc accepts.
  * - Without it, files go to public/uploads on local disk. That only works on
- *   a machine with a persistent disk (your Mac, a VPS). Hosted platforms such
- *   as Vercel have no writable disk, so there the store refuses with a clear
- *   error instead of losing files.
+ *   a machine with a persistent disk (your Mac, a VPS). Cloudflare Workers
+ *   and Vercel have no writable disk, so there the store refuses with a
+ *   clear error instead of losing files.
  *
  * Env:
  *   S3_ENDPOINT          https://<account>.r2.cloudflarestorage.com  (or https://s3.<region>.amazonaws.com)
@@ -18,6 +18,7 @@
 import { randomBytes } from "crypto";
 import { mkdir, writeFile } from "fs/promises";
 import path from "path";
+import { onWorkers } from "../runtime";
 import { amzDateNow, sha256Hex, signV4 } from "./sigv4";
 
 export class StorageNotConfigured extends Error {}
@@ -46,7 +47,7 @@ export function s3Config(env: NodeJS.ProcessEnv = process.env): S3Config | null 
 
 /** True where the local disk can't be trusted to keep files. */
 function ephemeralDisk(env: NodeJS.ProcessEnv = process.env) {
-  return Boolean(env.VERCEL || env.NETLIFY || env.AWS_LAMBDA_FUNCTION_NAME || env.RENTLEAKS_EPHEMERAL_DISK);
+  return onWorkers() || Boolean(env.VERCEL || env.NETLIFY || env.AWS_LAMBDA_FUNCTION_NAME || env.RENTLEAKS_EPHEMERAL_DISK);
 }
 
 export function storageReady(env: NodeJS.ProcessEnv = process.env) {

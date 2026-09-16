@@ -1,110 +1,172 @@
 # Deploying RentLeaks
 
-Two separate things are hosted:
-
 | What | Where | Address |
 |---|---|---|
-| Public website (static HTML in the repo root) | GitHub Pages, deployed by `.github/workflows/pages.yml` on every push to `main` | https://rentleaks.com |
-| App + API + database (`web/`) | Vercel (app), Neon (Postgres), Cloudflare R2 (uploads), Upstash (rate limits) | https://app.rentleaks.com |
+| Public website (static HTML in the repo root) | GitHub Pages, `.github/workflows/pages.yml` on every push to `main` | https://rentleaks.com |
+| App + API (`web/`) | **Cloudflare Workers** (OpenNext) | https://app.rentleaks.com |
+| Database | **Neon** Postgres, reached through **Cloudflare Hyperdrive** | — |
+| Photos and videos | **Cloudflare R2** | https://media.rentleaks.com |
+| Rate limits | **Upstash** Redis | — |
+| Schema migrations | GitHub Actions, `.github/workflows/db-migrate.yml` | — |
 
-The Pages workflow publishes only the website. `web/`, `mobile/`, `tools/`,
-`marketing/`, `outreach/`, `Claude outputs/`, Markdown notes and zips stay in
-the repo but are never served; the workflow fails if any of them slips in.
+The Pages workflow publishes only the website; `web/`, `mobile/`, `tools/`,
+`marketing/`, `outreach/`, `Claude outputs/` and notes are never served.
 
-Domain, DNS and email forwarding stay at Namecheap.
+Monthly cost at launch: **$5** (Workers Paid). Neon, R2 and Upstash start on
+their free tiers.
 
 ---
 
-## 1. Database — Neon
+## 0. Move rentleaks.com's DNS to Cloudflare (one time)
 
-1. Create a project at neon.com (region: AWS US East, close to Vercel's default).
-2. Open **Connect** and copy two connection strings for the `neondb` database:
-   - **Pooled** (host contains `-pooler`) → `DATABASE_URL`
-   - **Direct** (no `-pooler`) → `DIRECT_URL`
+Workers custom domains and R2 custom domains need the domain's DNS on
+Cloudflare. Namecheap stays the registrar (renewals stay there).
 
-   Both need `?sslmode=require`. Add `&pgbouncer=true&connection_limit=1` to the pooled one.
-3. Nothing to run by hand: the Vercel build applies migrations
-   (`prisma migrate deploy`) using `DIRECT_URL`.
+1. Cloudflare dashboard → **Add a domain** → `rentleaks.com` → **Free** plan.
+2. Cloudflare scans the current records. Check the list contains, and add any missing:
+   - `A @ 185.199.108.153`, `.109.153`, `.110.153`, `.111.153` — **DNS only** (grey cloud)
+   - `CNAME www alternabiz-llc.github.io` — **DNS only**
+   - the Namecheap email-forwarding records: `MX @ eforward1.registrar-servers.com`
+     … `eforward5` and `TXT @ v=spf1 include:spf.efwd.registrar-servers.com ~all`
+3. Namecheap → Domain List → rentleaks.com → **Nameservers → Custom DNS** →
+   paste the two Cloudflare nameservers. Activation takes minutes to a few hours.
+4. Check https://rentleaks.com still loads, then keep going.
 
-The free plan (0.5 GB) is enough to launch. Move to the Launch plan when
-storage or compute gets close to the limit.
+## 1. Workers plan and CLI
 
-## 2. Uploads — Cloudflare R2
+1. Cloudflare → **Workers & Pages** → **Plans** → **Workers Paid** ($5/month).
+2. On your Mac, once: `cd ~/Apps/rentleaks.com/web && npm install && npx wrangler login`
 
-1. Cloudflare dashboard → **R2** → **Create bucket** `rentleaks-media`.
-2. Bucket → **Settings → Custom Domains** → connect `media.rentleaks.com`.
-   (Cloudflare shows a CNAME to add; add it at Namecheap → Advanced DNS.)
-   Until then the bucket's `r2.dev` public URL works for testing.
-3. R2 → **Manage API tokens** → create a token with **Object Read & Write** on that bucket.
-4. Values:
-   - `S3_ENDPOINT` = `https://<ACCOUNT_ID>.r2.cloudflarestorage.com`
-   - `S3_REGION` = `auto`
-   - `S3_BUCKET` = `rentleaks-media`
-   - `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` = from the token
-   - `S3_PUBLIC_URL` = `https://media.rentleaks.com`
+## 2. Database — Neon + Hyperdrive
 
-Without these, uploads on Vercel answer "Uploads aren't set up on this server
-yet" instead of silently losing files (Vercel has no persistent disk).
-Locally, uploads keep going to `web/public/uploads`.
+1. neon.com → new project (region **AWS US East**). **Connect** → copy the
+   **direct** connection string (host without `-pooler`), with `?sslmode=require`.
+2. Create the Hyperdrive pool and paste its id into `web/wrangler.jsonc`
+   (`REPLACE_WITH_HYPERDRIVE_ID`):
 
-## 3. Rate limits — Upstash Redis
+   ```sh
+   npx wrangler hyperdrive create rentleaks-db --connection-string="<Neon direct URL>"
+   ```
 
-1. console.upstash.com → **Create database** (Regional, same region as Neon).
-2. Copy **REST URL** → `UPSTASH_REDIS_REST_URL` and **REST token** → `UPSTASH_REDIS_REST_TOKEN`.
+3. GitHub → repository → **Settings → Secrets and variables → Actions** →
+   new secret `DATABASE_DIRECT_URL` = the Neon direct URL. Then **Actions →
+   Database migrations → Run workflow** to create the tables.
 
-Without them each server instance counts on its own. If Upstash is down,
-requests are allowed and the error is logged.
+## 3. Storage — R2
 
-## 4. App — Vercel
+```sh
+npx wrangler r2 bucket create rentleaks-media        # photos and videos
+npx wrangler r2 bucket create rentleaks-next-cache   # Next.js page cache
+```
 
-1. vercel.com → **Add New → Project** → import `Alternabiz-LLc/rentleaks.com`.
-2. **Root Directory**: `web`. Framework: Next.js (detected). Leave the build
-   command empty: `package.json` has `vercel-build`
-   (`prisma generate && prisma migrate deploy && next build`).
-3. **Environment Variables** (Production), from `web/.env.example`:
+- `rentleaks-media` → **Settings → Custom Domains** → `media.rentleaks.com`.
+- R2 → **Manage API tokens** → token with **Object Read & Write** on `rentleaks-media`.
 
-   | Name | Value |
-   |---|---|
-   | `DATABASE_URL`, `DIRECT_URL` | from Neon |
-   | `APP_URL`, `NEXT_PUBLIC_APP_URL` | `https://app.rentleaks.com` |
-   | `CATALOG_ORIGIN`, `NEXT_PUBLIC_CATALOG_ORIGIN` | `https://rentleaks.com` |
-   | `CRON_SECRET` | a long random string (`openssl rand -hex 32`) |
-   | `S3_*` | from R2 |
-   | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | from Upstash |
-   | `RESEND_API_KEY`, `MAIL_FROM` | from Resend (password-reset email) |
-   | `STRIPE_*` | when payments go live |
-   | `APPLE_TEAM_ID`, `IOS_BUNDLE_ID`, `ANDROID_CERT_SHA256`, `ANDROID_PACKAGE` | app links |
-   | `FACEBOOK_DOMAIN_VERIFICATION`, `META_FEED_KEY` | Meta, optional |
+## 4. Rate limits — Upstash
 
-4. **Deploy.** Plan: Pro ($20/month) — Hobby is non-commercial only.
-5. **Settings → Domains** → add `app.rentleaks.com`. At Namecheap → Advanced DNS
-   add the record Vercel shows (a CNAME `app` → `cname.vercel-dns.com`, or
-   whatever value Vercel displays).
-6. **Cron**: `web/vercel.json` calls `/api/v1/cron/alerts` hourly; Vercel sends
-   `Authorization: Bearer $CRON_SECRET` automatically.
+console.upstash.com → Redis database (same region) → copy the **REST URL** and **REST token**.
 
-## 5. After the first deploy
+## 5. Secrets on the Worker
 
-1. Create your admin account against the hosted database (from your Mac):
+Plain settings are already in `web/wrangler.jsonc` (`vars`). Add the secrets
+once each (or in the dashboard: Worker → Settings → Variables and Secrets):
+
+```sh
+cd ~/Apps/rentleaks.com/web
+npx wrangler secret put CRON_SECRET              # openssl rand -hex 32
+npx wrangler secret put S3_ENDPOINT              # https://<ACCOUNT_ID>.r2.cloudflarestorage.com
+npx wrangler secret put S3_BUCKET                # rentleaks-media
+npx wrangler secret put S3_ACCESS_KEY_ID
+npx wrangler secret put S3_SECRET_ACCESS_KEY
+npx wrangler secret put S3_PUBLIC_URL            # https://media.rentleaks.com
+npx wrangler secret put UPSTASH_REDIS_REST_URL
+npx wrangler secret put UPSTASH_REDIS_REST_TOKEN
+npx wrangler secret put RESEND_API_KEY           # password-reset email
+# when ready: STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, APPLE_TEAM_ID,
+# ANDROID_CERT_SHA256, FACEBOOK_DOMAIN_VERIFICATION, META_FEED_KEY
+```
+
+## 6. Deploy
+
+**First deploy, from your Mac:**
+
+```sh
+cd ~/Apps/rentleaks.com/web
+npm run cf:deploy
+```
+
+Then Worker `rentleaks-app` → **Settings → Domains & Routes → Add → Custom domain** → `app.rentleaks.com`.
+
+**Automatic deploys after that:** Worker → **Settings → Build** → connect the
+GitHub repository `Alternabiz-LLc/rentleaks.com`:
+
+| Setting | Value |
+|---|---|
+| Root directory | `web` |
+| Build command | `npx opennextjs-cloudflare build` |
+| Deploy command | `npx wrangler deploy` |
+| Build variables | `NEXT_PUBLIC_APP_URL=https://app.rentleaks.com`, `NEXT_PUBLIC_CATALOG_ORIGIN=https://rentleaks.com` |
+
+Every push to `main` then rebuilds the app; migrations run in GitHub Actions.
+
+## 7. After the first deploy
+
+1. Founder account on the hosted database (from your Mac):
 
    ```sh
    cd ~/Apps/rentleaks.com/web
    DATABASE_URL="<Neon direct URL>" DIRECT_URL="<Neon direct URL>" npm run founder
    ```
 
-2. Check: `https://app.rentleaks.com/api/v1/meta` answers JSON; sign in at
-   `https://app.rentleaks.com/login`; upload a photo and confirm its URL starts
-   with `https://media.rentleaks.com/`.
-3. Mobile: production builds already use `EXPO_PUBLIC_API_URL=https://app.rentleaks.com`
-   (`mobile/eas.json`). Build with `eas build --profile production`.
-4. Resend: verify `rentleaks.com` (it gives DNS records to add at Namecheap).
+2. Checks:
+   - https://app.rentleaks.com/api/v1/meta returns JSON
+   - sign in at https://app.rentleaks.com/login
+   - upload a photo; its address starts with `https://media.rentleaks.com/`
+   - Worker → **Logs** shows the hourly `0 * * * *` cron without errors
+3. Mobile: production builds already call `https://app.rentleaks.com`
+   (`mobile/eas.json`): `eas build --profile production`.
+4. Resend: verify `rentleaks.com` (DNS records now go in Cloudflare).
 5. Meta catalog feed: `https://app.rentleaks.com/feeds/meta-home-listings.csv?key=<META_FEED_KEY>`.
+
+## How the app runs on Workers
+
+- `wrangler.jsonc` — Worker config, Hyperdrive, R2 cache bucket, hourly cron, plain vars.
+- `worker.ts` — OpenNext's handler plus the cron (`/api/v1/cron/alerts`).
+- `src/lib/prisma.ts` — one Prisma client per request through Hyperdrive on
+  Workers; the usual single client on Node. The rest of the code just imports `prisma`.
+- `src/lib/storage` — uploads go to R2 over the S3 API; Workers have no disk.
+- `src/lib/listing-shapes.ts`, `src/lib/plans.ts` — browser-safe pieces, so
+  client components never bundle the database driver.
+- `npm run cf:preview` — runs the production Worker locally against the
+  Docker database (`localConnectionString` in `wrangler.jsonc`).
 
 ## Local development is unchanged
 
 ```sh
-npm run db:up        # Postgres in Docker on :5434
-cd web && npm run dev
+npm run db:up                  # Postgres in Docker on :5434
+cd web && npm run dev          # http://localhost:3100
 ```
 
 `web/.env` needs `DIRECT_URL` equal to `DATABASE_URL` (already added).
+
+---
+
+## Moving to Vercel later
+
+The same code runs on Vercel unchanged (`vercel.json`, `vercel-build`).
+Nothing depends on Cloudflare except `wrangler.jsonc` and `worker.ts`.
+Consider it when one of these happens, not because of traffic alone
+(Workers handle high traffic well and cost less):
+
+- a Next.js feature you need isn't supported by OpenNext yet, or an
+  OpenNext upgrade blocks a Next.js upgrade for more than a few weeks;
+- Worker-specific bugs cost you real time (database connection errors,
+  requests timing out) more than once a month;
+- the team grows and wants preview deployments per pull request with
+  comments, which Vercel does out of the box;
+- revenue makes the price difference ($20 vs $5/month plus usage) irrelevant.
+
+Steps: create the Vercel project with root `web`, copy the same secrets, use
+Neon's **pooled** URL as `DATABASE_URL` and the direct one as `DIRECT_URL`,
+move `app.rentleaks.com` to Vercel, and disable the Worker's cron (Vercel runs
+it from `vercel.json`).

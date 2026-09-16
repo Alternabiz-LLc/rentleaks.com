@@ -4,8 +4,8 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CITIES, HOUSING_TYPES } from "@/lib/catalog";
-import type { BrowseListing } from "@/lib/listings";
-import { toMapPin } from "@/lib/listings";
+import type { BrowseListing } from "@/lib/listing-shapes";
+import { toMapPin } from "@/lib/listing-shapes";
 import { ListingCard } from "./ListingCard";
 import { ListingMap } from "./ListingMap";
 

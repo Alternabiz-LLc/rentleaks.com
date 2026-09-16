@@ -1,0 +1,41 @@
+name: Database migrations
+
+# Applies Prisma migrations to the production database (Neon) whenever a new
+# migration lands on main. Cloudflare builds the app separately and never
+# touches the schema.
+#
+# Repository secret required: DATABASE_DIRECT_URL (Neon's direct, non-pooled URL).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "web/prisma/migrations/**"
+      - "web/prisma/schema.prisma"
+  workflow_dispatch:
+
+concurrency:
+  group: db-migrate
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - name: Apply migrations
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_DIRECT_URL }}
+          DIRECT_URL: ${{ secrets.DATABASE_DIRECT_URL }}
+        run: |
+          if [ -z "$DIRECT_URL" ]; then echo "::error::Add the DATABASE_DIRECT_URL repository secret (see DEPLOY.md)"; exit 1; fi
+          npx prisma migrate deploy

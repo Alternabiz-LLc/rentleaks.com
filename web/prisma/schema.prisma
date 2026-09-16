@@ -1,5 +1,7 @@
 generator client {
   provider = "prisma-client-js"
+  // No `output`: OpenNext (Cloudflare) expects the client in node_modules.
+  // Workers reach Postgres through @prisma/adapter-pg, see lib/prisma.ts.
 }
 
 datasource db {

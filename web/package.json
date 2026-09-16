@@ -5,6 +5,10 @@
   "scripts": {
     "dev": "next dev -p 3100",
     "build": "next build",
+    "cf:build": "opennextjs-cloudflare build",
+    "cf:preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "cf:deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "cf:typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "vercel-build": "prisma generate && prisma migrate deploy && next build",
     "postinstall": "prisma generate",
     "start": "next start -p 3100",
@@ -21,10 +25,13 @@
     "founder": "tsx scripts/set-founder.ts"
   },
   "dependencies": {
+    "@opennextjs/cloudflare": "^1.20.6",
+    "@prisma/adapter-pg": "6.19.3",
     "@prisma/client": "^6.19.3",
     "bcryptjs": "^3.0.3",
     "leaflet": "^1.9.4",
-    "next": "16.1.6",
+    "next": "16.3.5",
+    "pg": "^8.23.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-leaflet": "^5.0.0",
@@ -38,11 +45,12 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.1.6",
+    "eslint-config-next": "16.3.5",
     "prisma": "^6.19.3",
     "tailwindcss": "^4",
     "tsx": "^4.23.13",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wrangler": "^4.132.0"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

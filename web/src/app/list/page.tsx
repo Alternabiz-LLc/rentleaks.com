@@ -3,6 +3,9 @@ import ListingComposer from "@/components/ListingComposer";
 import { createListingFromComposer } from "@/app/actions/listings";
 import { prisma } from "@/lib/prisma";
 
+/* Cities come from the database: render per request, never at build time. */
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "List a place — RentLeaks",
   description:
