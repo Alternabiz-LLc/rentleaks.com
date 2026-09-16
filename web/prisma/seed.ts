@@ -5,14 +5,37 @@ import { hashPassword } from "../src/lib/password";
 
 const prisma = new PrismaClient();
 
+/* `npm run db:up` returns before Postgres accepts connections, so wait for it
+   rather than failing on the first query. */
+async function waitForDatabase(tries = 30) {
+  for (let i = 1; ; i++) {
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+      return;
+    } catch (error) {
+      if (i >= tries) throw error;
+      if (i === 1) console.log("Waiting for the database…");
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+  }
+}
+
 async function main() {
+  await waitForDatabase();
+
   /* The catalogue is owned by the founder account. No shared demo logins:
      credentials come from the environment and are never written to the repo.
        FOUNDER_EMAIL=you@example.com FOUNDER_PASSWORD='…' npx prisma db seed
+     Without FOUNDER_EMAIL the seed uses the founder already created with
+     `npm run founder` (the oldest admin account).
      An existing founder keeps their password unless FOUNDER_PASSWORD is set. */
-  const email = (process.env.FOUNDER_EMAIL || "").trim().toLowerCase();
+  let email = (process.env.FOUNDER_EMAIL || "").trim().toLowerCase();
   if (!email) {
-    throw new Error("Set FOUNDER_EMAIL (and FOUNDER_PASSWORD on first run), or run `npm run founder` first.");
+    const founder = await prisma.user.findFirst({ where: { role: "admin" }, orderBy: { createdAt: "asc" } });
+    if (!founder) {
+      throw new Error("No founder account yet. Run `npm run founder` first, then `npm run db:seed` again.");
+    }
+    email = founder.email;
   }
   const name = process.env.FOUNDER_NAME || "Yves Dikoume";
   const password = process.env.FOUNDER_PASSWORD || "";
@@ -97,7 +120,7 @@ main()
     await prisma.$disconnect();
   })
   .catch(async (error) => {
-    console.error(error);
+    console.error(error instanceof Error && !process.env.DEBUG ? `Seed failed: ${error.message}` : error);
     await prisma.$disconnect();
     process.exit(1);
   });
