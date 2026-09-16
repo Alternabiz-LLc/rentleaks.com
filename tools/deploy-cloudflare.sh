@@ -14,6 +14,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+DATA_ONLY=""; [ "${1:-}" = "--data-only" ] && DATA_ONLY=1   # migrations + catalogue, no build
 cd "$ROOT/web"
 say()  { printf '\n\033[1m== %s\033[0m\n' "$*"; }
 fail() { printf '\n\033[31mStopped: %s\033[0m\n' "$*" >&2; exit 1; }
@@ -75,6 +76,13 @@ export DATABASE_URL="$DB_URL" DIRECT_URL="$DB_URL"
 
 say "4/8 Tables (Prisma migrations on Neon)"
 npx prisma migrate deploy
+
+if [ -n "$DATA_ONLY" ]; then
+  say "Cities, operators and the example catalogue"
+  npx prisma db seed
+  echo "Done (data only)."
+  exit 0
+fi
 
 say "5/8 Hyperdrive (pooled database connection)"
 if grep -q REPLACE_WITH_HYPERDRIVE_ID wrangler.jsonc; then
@@ -142,5 +150,9 @@ unset DB_URL
 
 say "Checking https://app.rentleaks.com"
 sleep 5
-curl -fsS https://app.rentleaks.com/api/v1/meta | head -c 300 && echo && echo "Live." \
-  || echo "Not answering yet — the certificate for app.rentleaks.com can take a few minutes. Try: curl https://app.rentleaks.com/api/v1/meta"
+if META="$(curl -fsS https://app.rentleaks.com/api/v1/meta 2>/dev/null)"; then
+  echo "${META:0:120}…"
+  echo "Live."
+else
+  echo "Not answering yet — the certificate for app.rentleaks.com can take a few minutes. Try: curl https://app.rentleaks.com/api/v1/meta"
+fi

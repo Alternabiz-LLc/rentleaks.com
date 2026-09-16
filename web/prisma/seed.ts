@@ -80,7 +80,10 @@ async function main() {
     // The static catalog carries a few non-rental rows; the marketplace only
     // serves rentals.
     if (listing.type && listing.type !== "rent") continue;
-    const data = toDbListing(listing, host.id);
+    /* The catalogue is ours, so it is approved on load. The moderation
+       migration backfills 'approved' only for rows that already existed; on a
+       fresh database the seed runs after it and rows would sit in 'pending'. */
+    const data = { ...toDbListing(listing, host.id), moderation: "approved", moderatedAt: new Date() };
     const { id, ...rest } = data;
     await prisma.listing.upsert({
       where: { id },
