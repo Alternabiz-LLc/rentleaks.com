@@ -32,6 +32,21 @@ Cloudflare. Namecheap stays the registrar (renewals stay there).
    paste the two Cloudflare nameservers. Activation takes minutes to a few hours.
 4. Check https://rentleaks.com still loads, then keep going.
 
+## Short path: one script
+
+After §0 (domain active on Cloudflare), Workers Paid, and a Neon project exist:
+
+```sh
+cd ~/Apps/rentleaks.com && bash tools/deploy-cloudflare.sh
+```
+
+It logs in to Cloudflare, runs the migrations on Neon, creates Hyperdrive and
+the R2 buckets, builds and deploys to `app.rentleaks.com` (the domain is in
+`wrangler.jsonc` → `routes`), sets `CRON_SECRET` and optionally
+`RESEND_API_KEY`, and creates your founder login. Safe to run again. §1–7 below
+are the same steps by hand; §3 R2 token, §4 Upstash and §5 S3 secrets are
+still needed for photo uploads and shared rate limits.
+
 ## 1. Workers plan and CLI
 
 1. Cloudflare → **Workers & Pages** → **Plans** → **Workers Paid** ($5/month).
@@ -95,7 +110,7 @@ cd ~/Apps/rentleaks.com/web
 npm run cf:deploy
 ```
 
-Then Worker `rentleaks-app` → **Settings → Domains & Routes → Add → Custom domain** → `app.rentleaks.com`.
+`app.rentleaks.com` is attached by the deploy itself (`routes` in `wrangler.jsonc`).
 
 **Automatic deploys after that:** Worker → **Settings → Build** → connect the
 GitHub repository `Alternabiz-LLc/rentleaks.com`:
