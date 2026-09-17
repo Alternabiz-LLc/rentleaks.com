@@ -1,9 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { isAdmin } from "@/lib/roles";
+import { requireAdminAction } from "@/lib/admin/guard";
 
 /**
  * Listing review, for the founder account only.
@@ -13,7 +12,7 @@ import { isAdmin } from "@/lib/roles";
  * verbatim: a listing rejected without a reason is a support ticket, and a
  * seller who cannot tell what was wrong will submit the same listing again.
  *
- * The check is `isAdmin` on every path. A server action is a public endpoint
+ * The check is `requireAdminAction("listings")` on every path. A server action is a public endpoint
  * with a stable name — "the button only renders on /admin" is not access
  * control, and the failure here would be any signed-in account moderating the
  * whole catalogue.
@@ -25,9 +24,9 @@ const DECISIONS = ["approved", "declined", "pending"] as const;
 type Decision = (typeof DECISIONS)[number];
 
 export async function reviewListing(id: string, decision: string, note: string): Promise<ReviewResult> {
-  const user = await getCurrentUser();
-  if (!user) return { ok: false, error: "Sign in again." };
-  if (!isAdmin(user)) return { ok: false, error: "Reviewing listings is a founder-account action." };
+  const guard = await requireAdminAction("listings");
+  if (!guard.ok) return guard;
+  const user = guard.user;
 
   if (!DECISIONS.includes(decision as Decision)) {
     return { ok: false, error: "Unknown decision." };

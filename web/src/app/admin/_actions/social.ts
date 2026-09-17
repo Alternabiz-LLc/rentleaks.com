@@ -16,7 +16,7 @@ function channelsOf(fd: FormData) {
 
 export async function createPost(fd: FormData) {
   const path = returnTo(fd, BASE);
-  const guard = await requireAdminAction();
+  const guard = await requireAdminAction("social");
   if (!guard.ok) back(path, "err", guard.error);
   const channels = channelsOf(fd);
   const body = field(fd, "body", 63_000);
@@ -46,7 +46,7 @@ export async function createPost(fd: FormData) {
 
 export async function bulkPosts(fd: FormData) {
   const path = returnTo(fd, BASE);
-  const guard = await requireAdminAction();
+  const guard = await requireAdminAction("social");
   if (!guard.ok) back(path, "err", guard.error);
   const channels = channelsOf(fd);
   const blocks = splitBulkPosts(field(fd, "posts", 200_000)).map(parsePostBlock).filter((b) => b.body);
@@ -68,7 +68,7 @@ export async function bulkPosts(fd: FormData) {
 
 export async function postAction(fd: FormData) {
   const path = returnTo(fd, BASE);
-  const guard = await requireAdminAction();
+  const guard = await requireAdminAction("social");
   if (!guard.ok) back(path, "err", guard.error);
   const id = field(fd, "id", 60);
   const op = field(fd, "op");

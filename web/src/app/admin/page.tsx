@@ -5,6 +5,8 @@ import { DeskHeader } from "@/components/admin/desk/DeskHeader";
 import { Icon } from "@/components/admin/desk/Icon";
 import { NextBest } from "@/components/admin/desk/NextBest";
 import { ago, Chip, GradeChip, Panel } from "@/components/admin/desk/parts";
+import { flashOf, readParams, type SP } from "@/components/admin/ui";
+import { accessKeyForPath, canAccess, isFounder, type AccessKey } from "@/lib/access";
 import { loadNextActions } from "@/lib/admin/copilot";
 import { requireAdminPage } from "@/lib/admin/guard";
 import { bucketWeeks, lastWeeks, nowMs, recurringMonthly } from "@/lib/admin/metrics";
@@ -54,8 +56,17 @@ function dayKey(d: Date) {
  * the documents are matched and discarded) and renter contact details outside
  * the lead they were given in.
  */
-export default async function AdminPage() {
-  await requireAdminPage();
+export default async function AdminPage({ searchParams }: { searchParams: SP }) {
+  const me = await requireAdminPage();
+  const p = await readParams(searchParams);
+  const can = (k: AccessKey) => canAccess(me, k);
+  const founder = isFounder(me);
+  /* Employees see the parts of the book their access covers — and the queries
+     for the rest never run. */
+  const allowedHref = (href: string) => {
+    const k = accessKeyForPath(href);
+    return !k || can(k);
+  };
   const now = new Date();
   const t = nowMs();
   const weekAgo = new Date(t - 7 * DAY);
@@ -64,32 +75,37 @@ export default async function AdminPage() {
   const since12w = new Date(`${weeks[0]}T00:00:00Z`);
   const safe = <T,>(p: Promise<T>, fallback: T) => p.catch(() => fallback);
 
-  const [listings, users, cities, actions] = await Promise.all([
-    prisma.listing.findMany({
-      include: { city: true, host: { select: { name: true, identity: true } } },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.user.findMany({ include: { identity: true }, orderBy: { createdAt: "desc" } }),
-    prisma.city.findMany({ orderBy: { rank: "asc" } }),
+  const seesCatalogue = can("listings") || can("markets") || can("revenue");
+  const [listings, users, cities, allActions] = await Promise.all([
+    seesCatalogue
+      ? prisma.listing.findMany({
+          include: { city: true, host: { select: { name: true, identity: true } } },
+          orderBy: { createdAt: "desc" },
+        })
+      : Promise.resolve([]),
+    can("accounts") ? prisma.user.findMany({ include: { identity: true }, orderBy: { createdAt: "desc" } }) : Promise.resolve([]),
+    can("markets") ? prisma.city.findMany({ orderBy: { rank: "asc" } }) : Promise.resolve([]),
     loadNextActions(now),
   ]);
+  const actions = allActions.filter((a) => allowedHref(a.href));
+  const none = <T,>(v: T) => Promise.resolve(v);
 
   const [leads30, leads12w, recentLeads, followUps, openReports, sending, trialsActive, trialsEnding, contacts, subscribers, activity, adminLog, failedPosts, manualDue] =
     await Promise.all([
-      safe(prisma.lead.findMany({ where: { createdAt: { gte: since30 } }, select: { createdAt: true, status: true, kind: true, source: true, contactedAt: true } }), []),
-      safe(prisma.lead.findMany({ where: { createdAt: { gte: since12w } }, select: { createdAt: true } }), []),
-      safe(prisma.lead.findMany({ orderBy: { createdAt: "desc" }, take: 8, include: { listing: { select: { title: true } } } }), []),
-      safe(prisma.contact.count({ where: { nextFollowUpAt: { lte: now } } }), 0),
-      safe(prisma.report.count({ where: { status: "open" } }), 0),
-      safe(prisma.campaign.count({ where: { status: { in: ["sending", "scheduled"] } } }), 0),
-      safe(prisma.user.count({ where: { trialEndsAt: { gt: now } } }), 0),
-      safe(prisma.user.count({ where: { trialEndsAt: { gt: now, lte: new Date(t + 3 * DAY) } } }), 0),
-      safe(prisma.contact.count(), 0),
-      safe(prisma.contact.count({ where: { marketingConsent: true, unsubscribedAt: null, confirmToken: null } }), 0),
-      safe(prisma.contactActivity.findMany({ orderBy: { createdAt: "desc" }, take: 10, include: { contact: { select: { id: true, name: true, email: true } } } }), []),
-      safe(prisma.adminAction.findMany({ orderBy: { createdAt: "desc" }, take: 6 }), []),
-      safe(prisma.socialPost.count({ where: { status: "failed" } }), 0),
-      safe(prisma.socialPost.count({ where: { status: "scheduled", scheduledAt: { lte: now }, channel: { not: "facebook" } } }), 0),
+      can("leads") ? safe(prisma.lead.findMany({ where: { createdAt: { gte: since30 } }, select: { createdAt: true, status: true, kind: true, source: true, contactedAt: true } }), []) : none([]),
+      can("leads") ? safe(prisma.lead.findMany({ where: { createdAt: { gte: since12w } }, select: { createdAt: true } }), []) : none([]),
+      can("leads") ? safe(prisma.lead.findMany({ orderBy: { createdAt: "desc" }, take: 8, include: { listing: { select: { title: true } } } }), []) : none([]),
+      can("crm") ? safe(prisma.contact.count({ where: { nextFollowUpAt: { lte: now } } }), 0) : none(0),
+      can("reports") ? safe(prisma.report.count({ where: { status: "open" } }), 0) : none(0),
+      can("campaigns") ? safe(prisma.campaign.count({ where: { status: { in: ["sending", "scheduled"] } } }), 0) : none(0),
+      can("trials") || can("accounts") ? safe(prisma.user.count({ where: { trialEndsAt: { gt: now } } }), 0) : none(0),
+      can("trials") ? safe(prisma.user.count({ where: { trialEndsAt: { gt: now, lte: new Date(t + 3 * DAY) } } }), 0) : none(0),
+      can("crm") ? safe(prisma.contact.count(), 0) : none(0),
+      can("campaigns") ? safe(prisma.contact.count({ where: { marketingConsent: true, unsubscribedAt: null, confirmToken: null } }), 0) : none(0),
+      can("crm") ? safe(prisma.contactActivity.findMany({ orderBy: { createdAt: "desc" }, take: 10, include: { contact: { select: { id: true, name: true, email: true } } } }), []) : none([]),
+      founder ? safe(prisma.adminAction.findMany({ orderBy: { createdAt: "desc" }, take: 6 }), []) : none([]),
+      can("social") ? safe(prisma.socialPost.count({ where: { status: "failed" } }), 0) : none(0),
+      can("social") ? safe(prisma.socialPost.count({ where: { status: "scheduled", scheduledAt: { lte: now }, channel: { not: "facebook" } } }), 0) : none(0),
     ]);
 
   const signupsWeek = users.filter((u) => u.createdAt >= weekAgo).length;
@@ -232,13 +248,13 @@ export default async function AdminPage() {
   const peakLabel = leads30.length ? `${peak % 12 || 12}:00 ${peak >= 12 ? "PM" : "AM"}` : "—";
 
   const watch = [
-    { n: waiting, tone: "bad", label: "Leads waiting over a day", sub: "A renter who waits books elsewhere", href: "/admin/leads?status=new&sort=oldest" },
-    { n: queue.length, tone: "", label: "Listings awaiting review", sub: "Nothing reaches renters until approved", href: "/admin/listings?moderation=pending&view=board" },
-    { n: openReports, tone: "bad", label: "Open safety reports", sub: "Oldest first", href: "/admin/reports" },
-    { n: followUps, tone: "", label: "Follow-ups due", sub: "Contacts you promised to get back to", href: "/admin/crm?due=1" },
-    { n: trialsEnding, tone: "brand", label: "Free weeks ending in 3 days", sub: "Nudge them to list or keep listing", href: "/admin/trials" },
-    { n: manualDue + failedPosts, tone: "brand", label: "Social posts to handle", sub: `${manualDue} due to copy · ${failedPosts} failed`, href: "/admin/social?tab=queue" },
-  ];
+    { key: "leads" as AccessKey, n: waiting, tone: "bad", label: "Leads waiting over a day", sub: "A renter who waits books elsewhere", href: "/admin/leads?status=new&sort=oldest" },
+    { key: "listings" as AccessKey, n: queue.length, tone: "", label: "Listings awaiting review", sub: "Nothing reaches renters until approved", href: "/admin/listings?moderation=pending&view=board" },
+    { key: "reports" as AccessKey, n: openReports, tone: "bad", label: "Open safety reports", sub: "Oldest first", href: "/admin/reports" },
+    { key: "crm" as AccessKey, n: followUps, tone: "", label: "Follow-ups due", sub: "Contacts you promised to get back to", href: "/admin/crm?due=1" },
+    { key: "trials" as AccessKey, n: trialsEnding, tone: "brand", label: "Free weeks ending in 3 days", sub: "Nudge them to list or keep listing", href: "/admin/trials" },
+    { key: "social" as AccessKey, n: manualDue + failedPosts, tone: "brand", label: "Social posts to handle", sub: `${manualDue} due to copy · ${failedPosts} failed`, href: "/admin/social?tab=queue" },
+  ].filter((w) => can(w.key));
   const urgent = watch.filter((w) => w.n > 0);
 
   const feed = [
@@ -266,21 +282,29 @@ export default async function AdminPage() {
     <div className="dk-stack">
       <DeskHeader
         href="/admin"
-        title="Founder desk"
-        signals={[
-          { label: "New leads", value: `${newLeads} · ${waiting} waiting`, tone: waiting ? "critical" : "live", href: "/admin/leads?status=new" },
-          { label: "Awaiting review", value: `${queue.length} listings`, tone: queue.length ? "warn" : "ok", href: "/admin/listings?moderation=pending&view=board" },
-          { label: "Next best moves", value: `${actions.length} ranked`, tone: "ok", href: "#next-best" },
-          { label: "Recurring", value: `$${Math.round(monthly).toLocaleString("en-US")}/mo`, tone: "ok", href: "/admin/revenue" },
-        ]}
+        title={founder ? "Founder desk" : `Welcome, ${me.name.split(/\s+/)[0]}`}
+        brief={founder ? undefined : "Your part of the book: what's waiting, what's due, and the best next move."}
+        flash={flashOf(p)}
+        signals={(
+          [
+            { key: "leads", label: "New leads", value: `${newLeads} · ${waiting} waiting`, tone: waiting ? "critical" : "live", href: "/admin/leads?status=new" },
+            { key: "listings", label: "Awaiting review", value: `${queue.length} listings`, tone: queue.length ? "warn" : "ok", href: "/admin/listings?moderation=pending&view=board" },
+            { key: "overview", label: "Next best moves", value: `${actions.length} ranked`, tone: "ok", href: "#next-best" },
+            { key: "revenue", label: "Recurring", value: `$${Math.round(monthly).toLocaleString("en-US")}/mo`, tone: "ok", href: "/admin/revenue" },
+          ] as const
+        )
+          .filter((x) => can(x.key))
+          .map((x) => ({ label: x.label, value: x.value, tone: x.tone, href: x.href }))}
         actions={
           <>
             <Link prefetch={false} className="dk-btn dk-btn--onink" href="/admin">
               Refresh
             </Link>
-            <Link prefetch={false} className="dk-btn dk-btn--light" href="/admin/leads?view=board">
-              <Icon name="board" size={15} /> Lead board
-            </Link>
+            {can("leads") ? (
+              <Link prefetch={false} className="dk-btn dk-btn--light" href="/admin/leads?view=board">
+                <Icon name="board" size={15} /> Lead board
+              </Link>
+            ) : null}
           </>
         }
       />
@@ -306,37 +330,50 @@ export default async function AdminPage() {
       </Panel>
 
       <div className="dk-kpis">
-        <Kpi label="New leads" value={newLeads} sub={`${leadsWeek} this week${weekTrend !== null ? ` · ${weekTrend >= 0 ? "+" : ""}${weekTrend}% vs last` : ""}`} href="/admin/leads?status=new" spark={leadSpark} tone={waiting ? "alert" : undefined} />
-        <Kpi label="Follow-ups due" value={followUps} sub={`${contacts.toLocaleString("en-US")} contacts`} href="/admin/crm?due=1" />
-        <Kpi label="Awaiting review" value={queue.length} sub={`${listings.filter((l) => l.moderation === "declined").length} declined`} href="/admin/listings?moderation=pending&view=board" />
-        <Kpi label="Open reports" value={openReports} sub="trust & safety" href="/admin/reports" tone={openReports ? "alert" : undefined} />
-        <Kpi label="Accounts" value={users.length} sub={`${signupsWeek} new this week · ${trialsActive} on trial`} href="/admin/accounts" spark={signupSpark} />
-        <Kpi label="Live listings" value={live.length} sub={`${listings.length} total · ${sponsored.length} sponsored`} href="/admin/listings?status=active" spark={listingSpark} />
-        <Kpi label="Subscribers" value={subscribers} sub={`${sending} campaign${sending === 1 ? "" : "s"} going out`} href="/admin/campaigns" tone="good" />
-        <Kpi label="Recurring" value={Math.round(monthly)} fmt="usd" sub="per month at posted rates" href="/admin/revenue" tone="value" />
+        {can("leads") ? <Kpi label="New leads" value={newLeads} sub={`${leadsWeek} this week${weekTrend !== null ? ` · ${weekTrend >= 0 ? "+" : ""}${weekTrend}% vs last` : ""}`} href="/admin/leads?status=new" spark={leadSpark} tone={waiting ? "alert" : undefined} /> : null}
+        {can("crm") ? <Kpi label="Follow-ups due" value={followUps} sub={`${contacts.toLocaleString("en-US")} contacts`} href="/admin/crm?due=1" /> : null}
+        {can("listings") ? <Kpi label="Awaiting review" value={queue.length} sub={`${listings.filter((l) => l.moderation === "declined").length} declined`} href="/admin/listings?moderation=pending&view=board" /> : null}
+        {can("reports") ? <Kpi label="Open reports" value={openReports} sub="trust & safety" href="/admin/reports" tone={openReports ? "alert" : undefined} /> : null}
+        {can("accounts") ? <Kpi label="Accounts" value={users.length} sub={`${signupsWeek} new this week · ${trialsActive} on trial`} href="/admin/accounts" spark={signupSpark} /> : null}
+        {can("listings") ? <Kpi label="Live listings" value={live.length} sub={`${listings.length} total · ${sponsored.length} sponsored`} href="/admin/listings?status=active" spark={listingSpark} /> : null}
+        {can("campaigns") ? <Kpi label="Subscribers" value={subscribers} sub={`${sending} campaign${sending === 1 ? "" : "s"} going out`} href="/admin/campaigns" tone="good" /> : null}
+        {can("revenue") ? <Kpi label="Recurring" value={Math.round(monthly)} fmt="usd" sub="per month at posted rates" href="/admin/revenue" tone="value" /> : null}
       </div>
 
       <div className="dk-toolbar__group">
-        <Link prefetch={false} className="dk-btn dk-btn--primary" href="/admin/leads?view=board">
+        {can("leads") ? (
+  <Link prefetch={false} className="dk-btn dk-btn--primary" href="/admin/leads?view=board">
           <Icon name="leads" size={15} /> Leads →
         </Link>
-        <Link prefetch={false} className="dk-btn" href="/admin/crm?view=board">
+        ) : null}
+        {can("crm") ? (
+  <Link prefetch={false} className="dk-btn" href="/admin/crm?view=board">
           <Icon name="crm" size={15} /> CRM board
         </Link>
-        <Link prefetch={false} className="dk-btn" href="/admin/campaigns#new">
+        ) : null}
+        {can("campaigns") ? (
+  <Link prefetch={false} className="dk-btn" href="/admin/campaigns#new">
           <Icon name="mail" size={15} /> New campaign
         </Link>
-        <Link prefetch={false} className="dk-btn" href="/admin/social#compose">
+        ) : null}
+        {can("social") ? (
+  <Link prefetch={false} className="dk-btn" href="/admin/social?tab=compose">
           <Icon name="social" size={15} /> Schedule posts
         </Link>
-        <Link prefetch={false} className="dk-btn" href="/admin/trials#invite">
+        ) : null}
+        {can("trials") ? (
+  <Link prefetch={false} className="dk-btn" href="/admin/trials#invite">
           <Icon name="ticket" size={15} /> Invite hosts
         </Link>
-        <Link prefetch={false} className="dk-btn" href="/admin/revenue">
+        ) : null}
+        {can("revenue") ? (
+  <Link prefetch={false} className="dk-btn" href="/admin/revenue">
           <Icon name="revenue" size={15} /> Analytics
         </Link>
+        ) : null}
       </div>
 
+      {can("leads") ? (
       <div className="dk-grid dk-grid--2-1">
         <Panel
           title="Lead activity — last 14 days"
@@ -349,19 +386,29 @@ export default async function AdminPage() {
           <Donut items={kinds} centerLabel="LEADS · 30D" />
         </Panel>
       </div>
+      ) : null}
 
+      {can("leads") || can("listings") ? (
       <div className="dk-grid dk-grid--4">
-        <Panel>
-          <Gauge pct={real ? (answered / real) * 100 : 0} label="Reply rate" sub={`${answered} of ${real} leads answered · 30d`} />
-        </Panel>
-        <Panel>
-          <Gauge pct={real ? (booked / real) * 100 : 0} label="Booking rate" sub={`${booked} booked · 30d`} />
-        </Panel>
-        <Panel className="dk-span-2" title="Catalogue by type" actions={<Link prefetch={false} href="/admin/listings">Listings →</Link>}>
-          <Columns rows={types} height={150} />
-        </Panel>
+        {can("leads") ? (
+          <>
+            <Panel>
+              <Gauge pct={real ? (answered / real) * 100 : 0} label="Reply rate" sub={`${answered} of ${real} leads answered · 30d`} />
+            </Panel>
+            <Panel>
+              <Gauge pct={real ? (booked / real) * 100 : 0} label="Booking rate" sub={`${booked} booked · 30d`} />
+            </Panel>
+          </>
+        ) : null}
+        {can("listings") ? (
+          <Panel className="dk-span-2" title="Catalogue by type" actions={<Link prefetch={false} href="/admin/listings">Listings →</Link>}>
+            <Columns rows={types} height={150} />
+          </Panel>
+        ) : null}
       </div>
+      ) : null}
 
+      {can("leads") ? (
       <Panel
         title="Peak lead hour"
         sub="When leads arrive over the last 30 days, New York time. Be at the desk then — the first reply wins the booking."
@@ -373,9 +420,11 @@ export default async function AdminPage() {
       >
         <Columns rows={hours.map((v, h) => ({ label: h % 3 === 0 ? `${h % 12 || 12}${h >= 12 ? "p" : "a"}` : "", value: v }))} height={110} />
       </Panel>
+      ) : null}
 
       <div className="dk-grid dk-grid--2">
-        <Panel title="Recent activity" sub="Timeline entries and founder actions, newest first." actions={<Link prefetch={false} href="/admin/system#audit">Audit log →</Link>}>
+        {feed.length || can("crm") || founder ? (
+        <Panel title="Recent activity" sub="Timeline entries and founder actions, newest first." actions={founder ? <Link prefetch={false} href="/admin/system#audit">Audit log →</Link> : undefined}>
           {feed.length === 0 ? (
             <p className="dk-empty">Nothing yet.</p>
           ) : (
@@ -397,7 +446,9 @@ export default async function AdminPage() {
             </ul>
           )}
         </Panel>
-        <Panel title="Leads by source" sub="Last 30 days — click a source to filter the inbox." actions={<Link prefetch={false} href="/admin/ads">Paid ads →</Link>}>
+        ) : null}
+        {can("leads") ? (
+        <Panel title="Leads by source" sub="Last 30 days — click a source to filter the inbox." actions={can("ads") ? <Link prefetch={false} href="/admin/ads">Paid ads →</Link> : undefined}>
           <RankedBars rows={sources} empty="No leads in the last 30 days." />
           <div style={{ marginTop: 18 }}>
             <FunnelLanes
@@ -409,8 +460,10 @@ export default async function AdminPage() {
             />
           </div>
         </Panel>
+        ) : null}
       </div>
 
+      {can("listings") ? (
       <Panel
         id="review"
         kicker="Moderation"
@@ -426,8 +479,10 @@ export default async function AdminPage() {
           <ModerationQueue items={queue} />
         </div>
       </Panel>
+      ) : null}
 
       <div className="dk-grid dk-grid--2">
+        {can("listings") ? (
         <Panel title="Listings breaching their market" sub="The composer's gate, re-run against what is stored — anything written before a rule shifted surfaces here.">
           {failing.length === 0 ? (
             <p className="dk-empty">Nothing breaching. Every stored listing passes the gate for its own market.</p>
@@ -453,6 +508,8 @@ export default async function AdminPage() {
           )}
           {failing.length > 12 ? <p className="dk-hint">…and {failing.length - 12} more.</p> : null}
         </Panel>
+        ) : null}
+        {can("accounts") ? (
         <Panel title="Sellers without verification" sub="Status only. The documents are matched and discarded, so there is nothing here to open.">
           {unverifiedHosts.length === 0 ? (
             <p className="dk-empty">Every seller account is verified.</p>
@@ -477,8 +534,10 @@ export default async function AdminPage() {
             </ul>
           )}
         </Panel>
+        ) : null}
       </div>
 
+      {can("markets") ? (
       <Panel flush title="Markets" sub="“No end date” is the column to watch: without one a listing cannot answer a date-range search." actions={<Link prefetch={false} href="/admin/markets">Markets →</Link>}>
         <div className="dk-tablewrap">
           <table className="dk-table">
@@ -509,7 +568,9 @@ export default async function AdminPage() {
           </table>
         </div>
       </Panel>
+      ) : null}
 
+      {can("leads") ? (
       <Panel flush title="Recent leads" actions={<Link prefetch={false} href="/admin/leads">View all →</Link>}>
         <div className="dk-tablewrap">
           <table className="dk-table">
@@ -556,6 +617,7 @@ export default async function AdminPage() {
           </table>
         </div>
       </Panel>
+      ) : null}
     </div>
   );
 }

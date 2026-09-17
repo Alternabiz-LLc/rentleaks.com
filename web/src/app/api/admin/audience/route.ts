@@ -1,8 +1,7 @@
-import { getCurrentUser } from "@/lib/auth";
 import { audienceWhere, CAMPAIGN_KINDS, coerceAudience, describeAudience, mergeFields, renderEmail } from "@/lib/marketing";
 import { CAMPAIGN_REASON, mailingAddress } from "@/lib/outbox";
 import { prisma } from "@/lib/prisma";
-import { isAdmin } from "@/lib/roles";
+import { staffForRoute } from "@/lib/admin/guard";
 import { appUrl } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
@@ -13,8 +12,8 @@ export const dynamic = "force-dynamic";
  * Read-only; nothing is created or sent here.
  */
 export async function POST(req: Request) {
-  const user = await getCurrentUser();
-  if (!user || !isAdmin(user)) return new Response("Not found", { status: 404 });
+  const user = await staffForRoute("campaigns");
+  if (!user) return new Response("Not found", { status: 404 });
   let input: { kind?: string; audience?: unknown; subject?: string; body?: string; sampleId?: string };
   try {
     input = (await req.json()) as typeof input;

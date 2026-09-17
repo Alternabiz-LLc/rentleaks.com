@@ -66,6 +66,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: SP }) 
         { email: { contains: p.q, mode: "insensitive" } },
         { phone: { contains: p.q } },
         { message: { contains: p.q, mode: "insensitive" } },
+        { campaign: { contains: p.q, mode: "insensitive" } },
         { listing: { title: { contains: p.q, mode: "insensitive" } } },
       ],
     });
@@ -274,7 +275,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: SP }) 
         {view !== "cards" ? <input type="hidden" name="view" value={view} /> : null}
         {!showCharts ? <input type="hidden" name="charts" value="0" /> : null}
         <Field label="Search leads">
-          <input name="q" defaultValue={p.q} placeholder="Name, email, phone, message or home" />
+          <input name="q" defaultValue={p.q} placeholder="Name, email, phone, message, home or campaign" />
         </Field>
         <Field label="Kind">
           <select name="kind" defaultValue={p.kind}>

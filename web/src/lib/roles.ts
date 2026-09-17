@@ -15,7 +15,8 @@
 
 export type RoleCarrier = { role?: string | null };
 
-export const ROLES = ["renter", "host", "admin"] as const;
+/** "staff" is an employee of the business: desk access only, see lib/access.ts. */
+export const ROLES = ["renter", "host", "admin", "staff"] as const;
 export type Role = (typeof ROLES)[number];
 
 export function isAdmin(user: RoleCarrier | null | undefined) {

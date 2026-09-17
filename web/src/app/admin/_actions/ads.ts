@@ -2,11 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { audit, requireAdminAction } from "@/lib/admin/guard";
-import { back, field } from "@/lib/admin/flash";
+import { back, field, returnTo } from "@/lib/admin/flash";
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/site";
 
-const path = "/admin/ads";
+const BASE = "/admin/ads";
 const PLATFORMS = ["meta", "google", "tiktok", "reddit", "other"];
 const STATUSES = ["planned", "active", "paused", "ended"];
 const SOURCE: Record<string, string> = { meta: "fb_ad", google: "google_ad", tiktok: "tiktok_ad", reddit: "reddit_ad", other: "ad" };
@@ -21,7 +21,8 @@ function landingUrl(base: string, platform: string, utmCampaign: string) {
 }
 
 export async function saveAd(fd: FormData) {
-  const guard = await requireAdminAction();
+  const path = returnTo(fd, BASE);
+  const guard = await requireAdminAction("ads");
   if (!guard.ok) back(path, "err", guard.error);
   const id = field(fd, "id", 60);
   const platform = PLATFORMS.includes(field(fd, "platform")) ? field(fd, "platform") : "meta";
@@ -40,7 +41,7 @@ export async function saveAd(fd: FormData) {
   if (id) {
     await prisma.adCampaign.update({ where: { id }, data: common });
     await audit(guard.user.id, "ad.edit", "ad", id, { spend: common.spend, status });
-    revalidatePath(path);
+    revalidatePath(BASE);
     back(path, "ok", "Saved.");
   }
   const name = field(fd, "name", 120);
@@ -57,15 +58,17 @@ export async function saveAd(fd: FormData) {
   }
   const created = await prisma.adCampaign.create({ data: { ...common, name, utmCampaign: utm, landingUrl: url } });
   await audit(guard.user.id, "ad.create", "ad", created.id, { name, platform, source: SOURCE[platform] });
-  revalidatePath(path);
-  back(path, "ok", `Created. Use the tracking link in your ${platform} ad so leads are attributed.`);
+  revalidatePath(BASE);
+  back(`${BASE}?tab=campaigns&open=${created.id}`, "ok", `Created. Copy the tracking link below into your ${platform} ad so every lead is counted.`);
 }
 
 export async function deleteAd(fd: FormData) {
-  const guard = await requireAdminAction();
+  const path = returnTo(fd, BASE);
+  const guard = await requireAdminAction("ads");
   if (!guard.ok) back(path, "err", guard.error);
   const id = field(fd, "id", 60);
   await prisma.adCampaign.delete({ where: { id } }).catch(() => undefined);
   await audit(guard.user.id, "ad.delete", "ad", id);
-  back(path, "ok", "Deleted. Leads keep their campaign tag.");
+  revalidatePath(BASE);
+  back(`${BASE}?tab=campaigns`, "ok", "Deleted. Leads keep their campaign tag.");
 }

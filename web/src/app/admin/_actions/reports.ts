@@ -8,7 +8,7 @@ import { prisma } from "@/lib/prisma";
 
 export async function resolveReport(fd: FormData) {
   const path = "/admin/reports";
-  const guard = await requireAdminAction();
+  const guard = await requireAdminAction("reports");
   if (!guard.ok) back(path, "err", guard.error);
   const id = field(fd, "id", 60);
   const op = field(fd, "op", 30);

@@ -29,7 +29,7 @@ function parseRecipients(text: string) {
 }
 
 export async function inviteHosts(fd: FormData) {
-  const guard = await requireAdminAction();
+  const guard = await requireAdminAction("trials");
   if (!guard.ok) back(path, "err", guard.error);
   const recipients = parseRecipients(field(fd, "recipients", 100_000));
   if (!recipients.length) back(path, "err", "Add at least one email address.");
@@ -65,7 +65,7 @@ export async function inviteHosts(fd: FormData) {
 }
 
 export async function inviteAction(fd: FormData) {
-  const guard = await requireAdminAction();
+  const guard = await requireAdminAction("trials");
   if (!guard.ok) back(path, "err", guard.error);
   const id = field(fd, "id", 60);
   const op = field(fd, "op");

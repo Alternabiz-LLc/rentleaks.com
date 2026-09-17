@@ -13,7 +13,7 @@ import { sendMail, type MailPurpose } from "@/lib/v1/mail";
 const path = "/admin/system";
 
 export async function saveSettings(fd: FormData) {
-  const guard = await requireAdminAction();
+  const guard = await requireAdminAction("system");
   if (!guard.ok) back(path, "err", guard.error);
   const address = field(fd, "address", 300);
   const sender = field(fd, "sender", 80);
@@ -25,7 +25,7 @@ export async function saveSettings(fd: FormData) {
 }
 
 export async function sendTestEmail(fd: FormData) {
-  const guard = await requireAdminAction();
+  const guard = await requireAdminAction("system");
   if (!guard.ok) back(path, "err", guard.error);
   const to = field(fd, "to", 160).toLowerCase() || guard.user.email;
   const purpose = (["transactional", "personal", "bulk"].includes(field(fd, "purpose")) ? field(fd, "purpose") : "transactional") as MailPurpose;
@@ -41,7 +41,7 @@ export async function sendTestEmail(fd: FormData) {
 }
 
 export async function testUpload() {
-  const guard = await requireAdminAction();
+  const guard = await requireAdminAction("system");
   if (!guard.ok) back(path, "err", guard.error);
   const r2 = r2Target();
   if (!r2) back(path, "err", "The MEDIA_BUCKET binding or MEDIA_PUBLIC_URL isn't available on this server.");
@@ -63,7 +63,7 @@ export async function testUpload() {
 }
 
 export async function runOutboxNow() {
-  const guard = await requireAdminAction();
+  const guard = await requireAdminAction("system");
   if (!guard.ok) back(path, "err", guard.error);
   let r: Awaited<ReturnType<typeof processOutbox>>;
   try {
@@ -76,7 +76,7 @@ export async function runOutboxNow() {
 }
 
 export async function suppressEmail(fd: FormData) {
-  const guard = await requireAdminAction();
+  const guard = await requireAdminAction("system");
   if (!guard.ok) back(path, "err", guard.error);
   const email = field(fd, "email", 160).toLowerCase();
   if (!EMAIL_RE.test(email)) back(path, "err", "Enter a valid address.");

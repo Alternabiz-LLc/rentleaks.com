@@ -11,7 +11,7 @@ type Op = (typeof OPS)[number];
 /** Bulk and single listing operations from /admin/listings. */
 export async function listingsBulk(fd: FormData) {
   const path = returnTo(fd, "/admin/listings");
-  const guard = await requireAdminAction();
+  const guard = await requireAdminAction("listings");
   if (!guard.ok) back(path, "err", guard.error);
   const op = field(fd, "op") as Op;
   const ids = fields(fd, "ids").slice(0, 500);
@@ -47,7 +47,7 @@ export async function listingsBulk(fd: FormData) {
 export async function listingEdit(fd: FormData) {
   const id = field(fd, "id", 200);
   const path = returnTo(fd, `/admin/listings?q=${encodeURIComponent(id)}`);
-  const guard = await requireAdminAction();
+  const guard = await requireAdminAction("listings");
   if (!guard.ok) back(path, "err", guard.error);
   const title = field(fd, "title", 140);
   const price = Math.round(Number(field(fd, "price")));

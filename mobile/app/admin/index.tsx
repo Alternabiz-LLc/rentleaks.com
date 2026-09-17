@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Alert, FlatList, Pressable, View } from "react-native";
 import { useQueue, useResolveReport, useReview } from "@/api/hooks";
 import type { QueueListing, QueueReport } from "@/api/types";
-import { useAuth } from "@/auth/AuthProvider";
+import { isDeskRole, useAuth } from "@/auth/AuthProvider";
 import { Badge, Button, Card, EmptyState, ErrorState, Field, Notice, Segmented, Text } from "@/components/ui";
 import { money, timeAgo } from "@/lib/format";
 import { useTheme } from "@/theme/ThemeProvider";
@@ -14,7 +14,7 @@ import { space } from "@/theme/tokens";
 export default function AdminQueue() {
   const t = useTheme();
   const { user } = useAuth();
-  const isAdmin = user?.role === "admin";
+  const isAdmin = isDeskRole(user);
   const q = useQueue(isAdmin);
   const [tab, setTab] = useState<"listings" | "reports">("listings");
 

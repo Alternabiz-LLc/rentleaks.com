@@ -4,6 +4,7 @@ import { Shell } from "@/components/Shell";
 import SellerListings, { type SellerListing } from "@/components/SellerListings";
 import { getCurrentUser } from "@/lib/auth";
 import { isAdmin } from "@/lib/roles";
+import { isStaffRole } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
 import { typeLabel } from "@/lib/site";
 
@@ -55,13 +56,17 @@ export default async function AccountPage() {
       <section className="container page-hero">
         <h1>{user.name}</h1>
         <p>
-          {user.email} · {user.role === "host" ? "Seller account" : user.role}
+          {user.email} · {user.role === "host" ? "Seller account" : user.role === "staff" ? "RentLeaks team" : user.role}
           {isAdmin(user) ? " · founder" : ""}
           {user.trialEndsAt && user.trialEndsAt > new Date() ? ` · free trial until ${user.trialEndsAt.toISOString().slice(0, 10)}` : ""}
         </p>
         <p style={{ display: "flex", gap: "var(--s-3)", flexWrap: "wrap" }}>
           <Link className="btn btn--primary" href="/list">List a place</Link>
-          {isAdmin(user) && <Link className="btn btn--outline" href="/admin">Founder view</Link>}
+          {isStaffRole(user) && (
+            <Link className="btn btn--outline" href="/admin">
+              {isAdmin(user) ? "Founder desk" : "Team desk"}
+            </Link>
+          )}
         </p>
       </section>
 

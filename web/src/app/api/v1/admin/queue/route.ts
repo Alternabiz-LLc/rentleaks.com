@@ -2,10 +2,10 @@ import { prisma } from "@/lib/prisma";
 import { blockersFor } from "@/lib/listing-rules";
 import { parseFees } from "@/lib/listing-evidence";
 import { mediaFromDetail } from "@/lib/media";
-import { isAdmin } from "@/lib/roles";
-import { fail, handle, ok } from "@/lib/v1/http";
+import { canAccess } from "@/lib/access";
+import { handle, ok } from "@/lib/v1/http";
 import { toCard } from "@/lib/v1/listing-view";
-import { requireUser } from "@/lib/v1/session";
+import { requireStaff } from "@/lib/v1/session";
 
 export const dynamic = "force-dynamic";
 
@@ -15,8 +15,8 @@ export const dynamic = "force-dynamic";
  * it was submitted), plus open reports. Status only — never documents.
  */
 export const GET = handle(async (req: Request) => {
-  const user = await requireUser(req);
-  if (!isAdmin(user)) return fail(403, "forbidden", "Founder account only.");
+  const user = await requireStaff(req, "listings");
+  const seesReports = canAccess(user, "reports");
   const url = new URL(req.url);
 
   const [pending, reports] = await Promise.all([
@@ -31,7 +31,7 @@ export const GET = handle(async (req: Request) => {
       },
     }),
     prisma.report.findMany({
-      where: { status: "open" },
+      where: seesReports ? { status: "open" } : { id: "__none__" },
       orderBy: { createdAt: "asc" },
       take: 100,
       include: {

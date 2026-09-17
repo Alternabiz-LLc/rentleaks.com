@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DESK_ACTIONS, DESK_MODULES, type DeskIcon } from "@/lib/admin/nav";
+import type { AccessKey } from "@/lib/access";
 import { Icon } from "./Icon";
 
 const OPEN_EVENT = "rl-desk-palette";
@@ -28,7 +29,7 @@ const KIND: Record<SearchHit["kind"], { label: string; icon: DeskIcon }> = {
  * email or id. Records come from /api/admin/search, debounced, so typing a
  * renter's name lands on their lead or contact in two keystrokes and Enter.
  */
-export function CommandPalette() {
+export function CommandPalette({ allowed }: { allowed: AccessKey[] }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
@@ -92,14 +93,20 @@ export function CommandPalette() {
   const hits = useMemo<Hit[]>(() => {
     const term = q.trim().toLowerCase();
     const match = (s: string) => !term || s.toLowerCase().includes(term);
-    const modules = DESK_MODULES.filter((m) => match(`${m.label} ${m.brief} ${m.keywords ?? ""} ${m.code}`)).map((m) => ({
+    const modules = DESK_MODULES.filter((m) => allowed.includes(m.key) && match(`${m.label} ${m.brief} ${m.keywords ?? ""} ${m.code}`)).map((m) => ({
       href: m.href,
       label: m.label,
       hint: m.code,
       icon: m.icon,
       group: "Go to",
     }));
-    const actions = DESK_ACTIONS.filter((a) => match(`${a.label} ${a.hint}`)).map((a) => ({ ...a, group: "Do" }));
+    const actions = DESK_ACTIONS.filter((a) => (a.key === "any" || allowed.includes(a.key)) && match(`${a.label} ${a.hint}`)).map((a) => ({
+      href: a.href,
+      label: a.label,
+      hint: a.hint,
+      icon: a.icon,
+      group: "Do",
+    }));
     const found = (term.length >= 2 ? records : []).map((r) => ({
       href: r.href,
       label: r.title,
@@ -108,7 +115,7 @@ export function CommandPalette() {
       group: "Records",
     }));
     return [...found, ...modules, ...actions].slice(0, 40);
-  }, [q, records]);
+  }, [q, records, allowed]);
 
   const go = (hit: Hit | undefined) => {
     if (!hit) return;

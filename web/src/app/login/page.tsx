@@ -22,7 +22,11 @@ export default async function LoginPage({
         ? "That email already has an account. Sign in instead."
         : params.error === "suspended"
           ? "This account is suspended. Reply to any RentLeaks email if you think this is a mistake."
-          : "";
+          : params.error === "slow"
+            ? "Too many attempts. Wait a minute, then try again."
+            : params.error === "expired"
+              ? "That sign-in took too long. Enter your email and password again."
+              : "";
 
   return (
     <Shell>

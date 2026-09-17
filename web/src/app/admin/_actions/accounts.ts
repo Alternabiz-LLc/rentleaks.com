@@ -10,13 +10,16 @@ import { normaliseRole } from "@/lib/roles";
 /** One action per submit button: name="op" on the button. */
 export async function accountAction(fd: FormData) {
   const path = returnTo(fd, "/admin/accounts");
-  const guard = await requireAdminAction();
+  const guard = await requireAdminAction("accounts");
   if (!guard.ok) back(path, "err", guard.error);
   const id = field(fd, "id", 60);
   const op = field(fd, "op", 30);
   const user = await prisma.user.findUnique({ where: { id }, include: { identity: true } });
   if (!user) back(path, "err", "That account no longer exists.");
   const self = user.id === guard.user.id;
+  /* Desk accounts are managed from Team & access, by the founder only. */
+  if (user.role === "staff") back(path, "err", `${user.name} is on the team — manage them in Team & access.`);
+  if (user.role === "admin" && !guard.founder) back(path, "err", "Only the account owner can change a founder account.");
   const done = async (msg: string, detail: Record<string, unknown> = {}) => {
     await audit(guard.user.id, `account.${op}`, "user", id, detail);
     revalidatePath("/admin", "layout");
@@ -27,6 +30,8 @@ export async function accountAction(fd: FormData) {
     case "role": {
       const role = normaliseRole(field(fd, "role"));
       if (self && role !== "admin") back(path, "err", "You can't remove your own founder access.");
+      if (role === "staff") back(path, "err", "Add team members from Team & access, so they get an invite and two-factor.");
+      if (role === "admin" && !guard.founder) back(path, "err", "Only the account owner can grant founder access.");
       await prisma.user.update({ where: { id }, data: { role } });
       return done(`${user.name} is now ${role}.`, { from: user.role, to: role });
     }

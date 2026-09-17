@@ -1,7 +1,7 @@
 /** Shapes returned by /api/v1 — mirror web/src/lib/v1/*.ts. */
 import type { Evidence } from "@/shared/listing-evidence";
 
-export type Role = "renter" | "host" | "admin";
+export type Role = "renter" | "host" | "admin" | "staff";
 
 export type User = {
   id: string;

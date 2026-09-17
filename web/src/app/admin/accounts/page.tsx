@@ -10,6 +10,7 @@ import { ago, Avatar, Chip, Empty, Field, FilterCard, Panel } from "@/components
 import { RouteDrawer } from "@/components/admin/desk/RouteDrawer";
 import { flashOf, qs, readParams, when, type SP } from "@/components/admin/ui";
 import { requireAdminPage } from "@/lib/admin/guard";
+import { isFounder } from "@/lib/access";
 import { bucketWeeks, lastWeeks, nowMs } from "@/lib/admin/metrics";
 import { prisma } from "@/lib/prisma";
 
@@ -129,6 +130,7 @@ export default async function AccountsAdmin({ searchParams }: { searchParams: SP
             <option value="host">Hosts</option>
             <option value="renter">Renters</option>
             <option value="admin">Founders</option>
+            <option value="staff">Team</option>
           </select>
         </Field>
         <Field label="State">
@@ -251,6 +253,15 @@ export default async function AccountsAdmin({ searchParams }: { searchParams: SP
             </div>
             <p className="dk-hint">{managing.email}</p>
             {managing.suspendReason ? <p className="dk-flash dk-flash--err">Suspended: {managing.suspendReason}</p> : null}
+            {managing.role === "staff" ? (
+              <p className="dk-flash dk-flash--warn">
+                Team member — access, two-factor and deactivation live in{" "}
+                <Link prefetch={false} href={`/admin/team?open=${managing.id}`}>
+                  Team &amp; access
+                </Link>
+                .
+              </p>
+            ) : null}
 
             <form action={accountAction} className="dk-form">
               <input type="hidden" name="id" value={managing.id} />
@@ -260,7 +271,7 @@ export default async function AccountsAdmin({ searchParams }: { searchParams: SP
                 <select name="role" defaultValue={managing.role}>
                   <option value="renter">renter</option>
                   <option value="host">host</option>
-                  <option value="admin">admin (founder)</option>
+                  {isFounder(me) ? <option value="admin">admin (founder)</option> : null}
                 </select>
               </label>
               <div className="dk-field" style={{ alignSelf: "end" }}>

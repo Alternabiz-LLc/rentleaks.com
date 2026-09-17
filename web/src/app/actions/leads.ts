@@ -1,10 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getCurrentUser } from "@/lib/auth";
 import { LEAD_STATUSES, type LeadStatus } from "@/lib/leads";
 import { prisma } from "@/lib/prisma";
-import { isAdmin } from "@/lib/roles";
+import { requireAdminAction } from "@/lib/admin/guard";
 
 /**
  * Working the Leads inbox on /admin. Founder account only, checked here on
@@ -14,9 +13,8 @@ import { isAdmin } from "@/lib/roles";
 export type LeadUpdateResult = { ok: true } | { ok: false; error: string };
 
 export async function updateLead(id: string, status: string, note: string): Promise<LeadUpdateResult> {
-  const user = await getCurrentUser();
-  if (!user) return { ok: false, error: "Sign in again." };
-  if (!isAdmin(user)) return { ok: false, error: "Leads are a founder-account view." };
+  const guard = await requireAdminAction("leads");
+  if (!guard.ok) return guard;
   if (!LEAD_STATUSES.includes(status as LeadStatus)) return { ok: false, error: "Unknown status." };
 
   const lead = await prisma.lead.findUnique({ where: { id }, select: { id: true, contactedAt: true } });

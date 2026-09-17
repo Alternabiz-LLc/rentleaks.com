@@ -10,13 +10,15 @@ const TOKEN_KEY = "rl.session";
 type AuthState = {
   ready: boolean;
   user: User | null;
-  signIn: (email: string, password: string) => Promise<void>;
+  /** `otp` is the authenticator code desk accounts are asked for. */
+  signIn: (email: string, password: string, otp?: string) => Promise<void>;
   signUp: (input: { name: string; email: string; password: string; role: "renter" | "host"; acceptTerms: boolean }) => Promise<void>;
   signOut: () => Promise<void>;
   refresh: () => Promise<void>;
   /** Apply a server-returned user (e.g. after switching to hosting). */
   setUser: (u: User) => void;
-  resetPassword: (token: string, password: string) => Promise<void>;
+  /** Resolves "signed-in", or "sign-in" when the account must sign in again (desk accounts). */
+  resetPassword: (token: string, password: string) => Promise<"signed-in" | "sign-in">;
   deleteAccount: () => Promise<void>;
 };
 
@@ -66,8 +68,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [clear]);
 
   const signIn = useCallback(
-    async (email: string, password: string) => {
-      const s = await api<Session>("/api/v1/auth/login", { body: { email, password } });
+    async (email: string, password: string, otp?: string) => {
+      const s = await api<Session>("/api/v1/auth/login", { body: { email, password, otp: otp || undefined } });
       await afterSignIn(s);
     },
     [afterSignIn],
@@ -90,8 +92,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const resetPassword = useCallback(
     async (token: string, password: string) => {
-      const s = await api<Session>("/api/v1/auth/reset", { body: { token, password } });
+      const s = await api<Session | { signInRequired: true }>("/api/v1/auth/reset", { body: { token, password } });
+      if (!("token" in s)) return "sign-in" as const;
       await afterSignIn(s);
+      return "signed-in" as const;
     },
     [afterSignIn],
   );
@@ -120,3 +124,5 @@ export function useAuth() {
 }
 
 export const isHostRole = (u: User | null) => !!u && (u.role === "host" || u.role === "admin");
+/** Founder or employee: may open the review queue (the server checks access). */
+export const isDeskRole = (u: User | null) => !!u && (u.role === "admin" || u.role === "staff");

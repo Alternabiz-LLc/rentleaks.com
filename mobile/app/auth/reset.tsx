@@ -21,8 +21,8 @@ export default function Reset() {
     setBusy(true);
     setError(null);
     try {
-      await resetPassword(String(token), password);
-      router.replace("/");
+      const next = await resetPassword(String(token), password);
+      router.replace(next === "sign-in" ? "/auth/sign-in" : "/");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Try again.");
     } finally {

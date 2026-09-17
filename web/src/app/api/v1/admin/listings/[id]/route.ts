@@ -1,15 +1,13 @@
 import { prisma } from "@/lib/prisma";
-import { isAdmin } from "@/lib/roles";
 import { fail, handle, ok, readJson, str } from "@/lib/v1/http";
 import { pushToUsers } from "@/lib/v1/push";
-import { requireUser } from "@/lib/v1/session";
+import { requireStaff } from "@/lib/v1/session";
 
 export const dynamic = "force-dynamic";
 
 /** Same rules as app/actions/moderation.ts: admin only, a decline needs a reason. */
 export const POST = handle(async (req: Request, ctx: { params: Promise<{ id: string }> }) => {
-  const user = await requireUser(req);
-  if (!isAdmin(user)) return fail(403, "forbidden", "Reviewing listings is a founder-account action.");
+  const user = await requireStaff(req, "listings");
   const { id } = await ctx.params;
   const body = await readJson(req);
   const decision = String(body.decision);

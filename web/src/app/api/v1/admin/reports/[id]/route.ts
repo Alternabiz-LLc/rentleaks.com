@@ -1,13 +1,11 @@
 import { prisma } from "@/lib/prisma";
-import { isAdmin } from "@/lib/roles";
 import { fail, handle, ok, readJson } from "@/lib/v1/http";
-import { requireUser } from "@/lib/v1/session";
+import { requireStaff } from "@/lib/v1/session";
 
 export const dynamic = "force-dynamic";
 
 export const POST = handle(async (req: Request, ctx: { params: Promise<{ id: string }> }) => {
-  const user = await requireUser(req);
-  if (!isAdmin(user)) return fail(403, "forbidden", "Founder account only.");
+  const user = await requireStaff(req, "reports");
   const { id } = await ctx.params;
   const body = await readJson(req);
   const status = body.status === "actioned" ? "actioned" : body.status === "dismissed" ? "dismissed" : null;

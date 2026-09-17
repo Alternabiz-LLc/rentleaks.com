@@ -51,7 +51,7 @@ export function DeskHeader({
                   {m.live}
                 </span>
                 <span className="dk-head__code">
-                  {m.code} · RentLeaks · founder desk
+                  {m.code} · RentLeaks desk
                 </span>
               </p>
               {crumbs?.length ? (

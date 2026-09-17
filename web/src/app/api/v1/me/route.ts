@@ -58,8 +58,8 @@ export const DELETE = handle(async (req: Request) => {
   if (body.confirm !== "DELETE") {
     return fail(400, "confirm", "Type DELETE to confirm. This removes your account, listings and messages.");
   }
-  if (user.role === "admin") {
-    return fail(403, "admin", "The founder account cannot be deleted from the app.");
+  if (user.role === "admin" || user.role === "staff") {
+    return fail(403, "admin", "Desk accounts can't be deleted from the app. The account owner removes them from Team & access.");
   }
   await prisma.$transaction([
     prisma.listing.deleteMany({ where: { hostId: user.id } }),

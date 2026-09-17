@@ -24,7 +24,7 @@ const DAY = 86_400_000;
 
 /** Lead board: drag a card to another column. */
 export async function moveLead(id: string, status: string): Promise<DeskResult> {
-  const guard = await requireAdminAction();
+  const guard = await requireAdminAction("leads");
   if (!guard.ok) return guard;
   if (!LEAD_STATUSES.includes(status as LeadStatus)) return { ok: false, error: "Unknown status." };
   const lead = await prisma.lead.findUnique({ where: { id }, select: { id: true, status: true, contactedAt: true, email: true } });
@@ -42,7 +42,7 @@ export async function moveLead(id: string, status: string): Promise<DeskResult> 
 }
 
 export async function saveLeadNote(id: string, note: string): Promise<DeskResult> {
-  const guard = await requireAdminAction();
+  const guard = await requireAdminAction("leads");
   if (!guard.ok) return guard;
   await prisma.lead.update({ where: { id }, data: { note: note.trim().slice(0, 1000) || null } }).catch(() => null);
   revalidatePath("/admin/leads");
@@ -51,7 +51,7 @@ export async function saveLeadNote(id: string, note: string): Promise<DeskResult
 
 /** CRM board: drag a contact to another stage. */
 export async function moveContact(id: string, stage: string): Promise<DeskResult> {
-  const guard = await requireAdminAction();
+  const guard = await requireAdminAction("crm");
   if (!guard.ok) return guard;
   if (!(CONTACT_STAGES as readonly string[]).includes(stage)) return { ok: false, error: "Unknown stage." };
   const c = await prisma.contact.findUnique({ where: { id }, select: { stage: true } });
@@ -66,7 +66,7 @@ export async function moveContact(id: string, stage: string): Promise<DeskResult
 
 /** Push a follow-up out by some days (the "snooze" on a Next-best card). */
 export async function snoozeContact(id: string, days: number): Promise<DeskResult> {
-  const guard = await requireAdminAction();
+  const guard = await requireAdminAction("crm");
   if (!guard.ok) return guard;
   const d = Math.min(60, Math.max(1, Math.round(days) || 2));
   const at = new Date(Date.now() + d * DAY);
@@ -80,7 +80,7 @@ export async function snoozeContact(id: string, days: number): Promise<DeskResul
 
 /** Listings board: approve / decline / send back, with the same reason rule as the queue. */
 export async function reviewFromBoard(id: string, decision: string, note: string): Promise<DeskResult> {
-  const guard = await requireAdminAction();
+  const guard = await requireAdminAction("listings");
   if (!guard.ok) return guard;
   if (!["approved", "declined", "pending"].includes(decision)) return { ok: false, error: "Unknown decision." };
   const reason = note.trim().slice(0, 600);
@@ -111,7 +111,7 @@ export async function reviewFromBoard(id: string, decision: string, note: string
  * otherwise. Logged on the contact's timeline; a lead moves to contacted.
  */
 export async function sendDraft(input: { kind: "lead" | "contact"; id: string; subject: string; body: string }): Promise<DeskResult> {
-  const guard = await requireAdminAction();
+  const guard = await requireAdminAction(input.kind === "lead" ? "leads" : "crm");
   if (!guard.ok) return guard;
   const subject = String(input.subject || "").trim().slice(0, 200);
   const body = String(input.body || "").trim().slice(0, 20_000);
@@ -188,13 +188,15 @@ export async function sendDraft(input: { kind: "lead" | "contact"; id: string; s
 /** Accounts: the floating bulk bar. */
 export async function accountsBulk(fd: FormData) {
   const path = returnTo(fd, "/admin/accounts");
-  const guard = await requireAdminAction();
+  const guard = await requireAdminAction("accounts");
   if (!guard.ok) back(path, "err", guard.error);
   const op = field(fd, "op", 20);
-  const ids = fields(fd, "ids")
+  const picked = fields(fd, "ids")
     .filter((id) => id !== guard.user.id)
     .slice(0, 500);
-  if (!ids.length) back(path, "err", "Tick at least one account (your own is skipped).");
+  /* Desk accounts (founder, staff) are never touched by bulk actions. */
+  const ids = (await prisma.user.findMany({ where: { id: { in: picked }, role: { notIn: ["admin", "staff"] } }, select: { id: true } })).map((u) => u.id);
+  if (!ids.length) back(path, "err", "Tick at least one account. Your own and team accounts are skipped.");
   const now = new Date();
   let count = 0;
   if (op === "verify" || op === "unverify") {
@@ -218,7 +220,7 @@ export async function accountsBulk(fd: FormData) {
   } else if (op === "signout") {
     count = (await prisma.session.deleteMany({ where: { userId: { in: ids } } })).count;
   } else if (op === "host" || op === "renter") {
-    count = (await prisma.user.updateMany({ where: { id: { in: ids }, role: { not: "admin" } }, data: { role: op } })).count;
+    count = (await prisma.user.updateMany({ where: { id: { in: ids }, role: { notIn: ["admin", "staff"] } }, data: { role: op } })).count;
   } else {
     back(path, "err", "Choose an action.");
   }
@@ -230,7 +232,7 @@ export async function accountsBulk(fd: FormData) {
 /** Leads: the floating bulk bar (set status). */
 export async function leadsBulk(fd: FormData) {
   const path = returnTo(fd, "/admin/leads");
-  const guard = await requireAdminAction();
+  const guard = await requireAdminAction("leads");
   if (!guard.ok) back(path, "err", guard.error);
   const ids = fields(fd, "ids").slice(0, 500);
   const op = field(fd, "op", 20);

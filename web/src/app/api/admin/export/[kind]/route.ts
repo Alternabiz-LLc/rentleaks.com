@@ -1,10 +1,9 @@
 import type { Prisma } from "@prisma/client";
-import { getCurrentUser } from "@/lib/auth";
 import { toCsv } from "@/lib/csv";
 import { parseTags } from "@/lib/marketing";
 import { prisma } from "@/lib/prisma";
-import { isAdmin } from "@/lib/roles";
-import { audit } from "@/lib/admin/guard";
+import { EXPORT_ACCESS } from "@/lib/access";
+import { audit, staffForRoute } from "@/lib/admin/guard";
 
 export const dynamic = "force-dynamic";
 
@@ -83,9 +82,10 @@ async function build(kind: string, url: URL): Promise<{ headers: string[]; rows:
 }
 
 export async function GET(req: Request, ctx: { params: Promise<{ kind: string }> }) {
-  const user = await getCurrentUser();
-  if (!user || !isAdmin(user)) return new Response("Not found", { status: 404 });
   const { kind } = await ctx.params;
+  const key = EXPORT_ACCESS[kind];
+  const user = key ? await staffForRoute(key) : null;
+  if (!user) return new Response("Not found", { status: 404 });
   const url = new URL(req.url);
   const table = await build(kind, url);
   if (!table) return new Response("Unknown export", { status: 404 });

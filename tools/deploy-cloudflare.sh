@@ -181,6 +181,8 @@ npm run cf:deploy
 HAVE="$(secret_names)"
 echo "$HAVE" | grep -q CRON_SECRET || put_secret CRON_SECRET "$(openssl rand -hex 32)"
 echo "$HAVE" | grep -q UNSUBSCRIBE_SECRET || put_secret UNSUBSCRIBE_SECRET "$(openssl rand -hex 32)"
+# Seals the desk's two-factor secrets. Created once; never rotate it by hand.
+echo "$HAVE" | grep -q AUTH_SECRET || put_secret AUTH_SECRET "$(openssl rand -hex 32)"
 if ! echo "$HAVE" | grep -qE "RESEND_API_KEY|SMTP_PASS"; then
   read -rp "Set up email (Resend / your mailbox) and Facebook now? [Y/n] " yn
   [ "${yn:-Y}" = "n" ] || [ "${yn:-Y}" = "N" ] || integrations
@@ -192,7 +194,7 @@ if [ -n "$(command -v gh)" ] && gh auth status >/dev/null 2>&1; then
 else
   echo "Add the GitHub secret DATABASE_DIRECT_URL by hand (DEPLOY.md §2.3) so future migrations run on push."
 fi
-read -rp "Create or change your founder login now? [y/N] " yn
+read -rp "Create or change your founder login (or reset its two-factor) now? [y/N] " yn
 if [ "${yn:-N}" = "y" ] || [ "${yn:-N}" = "Y" ]; then
   DATABASE_URL="$DB_URL" DIRECT_URL="$DB_URL" npm run founder
 fi

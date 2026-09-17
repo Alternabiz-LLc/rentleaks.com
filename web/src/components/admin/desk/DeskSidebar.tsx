@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logoutAction } from "@/app/actions/auth";
-import { DESK_GROUPS, moduleFor, type DeskModule } from "@/lib/admin/nav";
+import { moduleFor, type DeskGroup, type DeskModule } from "@/lib/admin/nav";
 import { Icon } from "./Icon";
 import { openPalette } from "./CommandPalette";
 
@@ -18,7 +18,17 @@ export type DeskCounts = Partial<Record<NonNullable<DeskModule["badge"]>, number
  * a folded group that holds the current page shows a dot rather than hiding
  * where you are.
  */
-export function DeskSidebar({ counts, user }: { counts: DeskCounts; user: { name: string; email: string } }) {
+export function DeskSidebar({
+  counts,
+  user,
+  groups,
+}: {
+  counts: DeskCounts;
+  user: { name: string; email: string; title: string; founder: boolean };
+  /** Only the modules this person may open (see groupsFor). */
+  groups: DeskGroup[];
+}) {
+  const deskName = user.founder ? "Founder desk" : "Team desk";
   const pathname = usePathname() || "/admin";
   const active = moduleFor(pathname);
   const [collapsed, setCollapsed] = useState<string[]>([]);
@@ -63,7 +73,7 @@ export function DeskSidebar({ counts, user }: { counts: DeskCounts; user: { name
           <span className="dk-brand__mark">RL</span>
           <span>
             <b>RentLeaks</b>
-            <small>Founder desk</small>
+            <small>{deskName}</small>
           </span>
         </Link>
         <button type="button" className="dk-iconbtn" onClick={openPalette} aria-label="Search the desk">
@@ -73,13 +83,13 @@ export function DeskSidebar({ counts, user }: { counts: DeskCounts; user: { name
 
       {open ? <button type="button" className="dk-scrim" aria-label="Close the menu" onClick={() => setOpen(false)} /> : null}
 
-      <aside className={`dk-rail${open ? " is-open" : ""}`} aria-label="Founder desk">
+      <aside className={`dk-rail${open ? " is-open" : ""}`} aria-label={deskName}>
         <div className="dk-rail__top">
           <Link href="/admin" className="dk-brand">
             <span className="dk-brand__mark">RL</span>
             <span>
               <b>RentLeaks</b>
-              <small>Founder desk</small>
+              <small>{deskName}</small>
             </span>
           </Link>
           <button type="button" className="dk-iconbtn dk-rail__close" onClick={() => setOpen(false)} aria-label="Close the menu">
@@ -94,7 +104,7 @@ export function DeskSidebar({ counts, user }: { counts: DeskCounts; user: { name
         </button>
 
         <nav className="dk-nav">
-          {DESK_GROUPS.map((group) => {
+          {groups.map((group) => {
             const holds = group.modules.some((m) => m.href === active?.href);
             const isFolded = collapsed.includes(group.title) && !holds;
             const groupCount = group.modules.reduce((n, m) => n + (m.badge ? counts[m.badge] || 0 : 0), 0);
@@ -146,10 +156,13 @@ export function DeskSidebar({ counts, user }: { counts: DeskCounts; user: { name
             <span className="dk-me__avatar">{initial}</span>
             <span className="dk-me__text">
               <b>{user.name || "Founder"}</b>
-              <small>{user.email}</small>
+              <small>{user.title}</small>
             </span>
           </div>
           <div className="dk-rail__actions">
+            <Link className={`dk-btn dk-btn--ghost${pathname === "/admin/security" ? " is-on" : ""}`} href="/admin/security">
+              <Icon name="lock" size={14} /> Security
+            </Link>
             <Link className="dk-btn dk-btn--ghost" href="/stays">
               <Icon name="external" size={14} /> View app
             </Link>

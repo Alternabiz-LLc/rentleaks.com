@@ -1,17 +1,16 @@
 import { prisma } from "@/lib/prisma";
 import { liveListingWhere } from "@/lib/billing";
-import { isAdmin } from "@/lib/roles";
 import { fail, handle, ok } from "@/lib/v1/http";
 import { hostStats } from "@/lib/v1/inbox";
 import { toCard, toDetail } from "@/lib/v1/listing-view";
-import { optionalUser } from "@/lib/v1/session";
+import { optionalSession, sessionCan } from "@/lib/v1/session";
 
 export const dynamic = "force-dynamic";
 
 export const GET = handle(async (req: Request, ctx: { params: Promise<{ id: string }> }) => {
   const { id } = await ctx.params;
   const url = new URL(req.url);
-  const [row, user, live] = await Promise.all([
+  const [row, session, live] = await Promise.all([
     prisma.listing.findUnique({
       where: { id },
       include: {
@@ -20,7 +19,7 @@ export const GET = handle(async (req: Request, ctx: { params: Promise<{ id: stri
         host: { select: { id: true, name: true, createdAt: true, identity: { select: { status: true } } } },
       },
     }),
-    optionalUser(req),
+    optionalSession(req),
     liveListingWhere(),
   ]);
   if (!row) return fail(404, "not_found", "This listing is no longer available.");
@@ -28,7 +27,9 @@ export const GET = handle(async (req: Request, ctx: { params: Promise<{ id: stri
   /* A listing still in review, declined or paused is visible to its owner
      and the founder account — nobody else. */
   const isLive = await prisma.listing.count({ where: { AND: [{ id }, live] } });
-  const privileged = !!user && (user.id === row.hostId || isAdmin(user));
+  const user = session?.user ?? null;
+  const reviewer = sessionCan(session, "listings");
+  const privileged = !!user && (user.id === row.hostId || reviewer);
   if (!isLive && !privileged) return fail(404, "not_found", "This listing is no longer available.");
 
   const [peers, similar, stats, saved, convo] = await Promise.all([
@@ -55,7 +56,7 @@ export const GET = handle(async (req: Request, ctx: { params: Promise<{ id: stri
       saved: saved > 0,
       conversationId: convo?.id ?? null,
       isOwner: !!user && user.id === row.hostId,
-      canReview: !!user && isAdmin(user),
+      canReview: reviewer,
     },
   });
 });

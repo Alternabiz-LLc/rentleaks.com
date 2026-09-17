@@ -78,6 +78,7 @@ export function slugify(value: string) {
 }
 
 export function safePath(path: string, fallback = "/") {
-  if (path.startsWith("/") && !path.startsWith("//")) return path;
+  /* "/\\host" is read as "//host" by browsers, so backslashes are refused too. */
+  if (path.startsWith("/") && !path.startsWith("//") && !path.includes("\\") && !/[\u0000-\u001f]/.test(path)) return path;
   return fallback;
 }

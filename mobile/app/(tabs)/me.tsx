@@ -4,7 +4,7 @@ import { Alert, Linking, View } from "react-native";
 import { api } from "@/api/client";
 import { API_URL, WEB_URL } from "@/api/config";
 import { useBecomeHost, useMe } from "@/api/hooks";
-import { isHostRole, useAuth } from "@/auth/AuthProvider";
+import { isDeskRole, isHostRole, useAuth } from "@/auth/AuthProvider";
 import { Screen } from "@/components/Screen";
 import { Badge, Button, Card, Row, Section, Text } from "@/components/ui";
 import { space } from "@/theme/tokens";
@@ -50,7 +50,7 @@ export default function MeTab() {
         <Card style={{ gap: space.md }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
             <Text variant="h3" style={{ flex: 1 }}>{user.email}</Text>
-            <Badge label={user.role === "admin" ? "Founder" : user.role === "host" ? "Hosting" : "Renting"} tone="brand" />
+            <Badge label={user.role === "admin" ? "Founder" : user.role === "staff" ? "Team" : user.role === "host" ? "Hosting" : "Renting"} tone="brand" />
           </View>
           {user.identityStatus === "verified" ? (
             <Badge label="Government ID verified" tone="success" icon="shield-checkmark" />
@@ -103,7 +103,7 @@ export default function MeTab() {
               onPress={() => router.push("/host")}
               last={user?.role !== "admin"}
             />
-            {user?.role === "admin" ? <Row icon="checkmark-done-outline" label="Review queue" onPress={() => router.push("/admin")} last /> : null}
+            {isDeskRole(user) ? <Row icon="checkmark-done-outline" label="Review queue" onPress={() => router.push("/admin")} last /> : null}
           </Card>
         </Section>
       ) : null}

@@ -9,7 +9,10 @@
  *   2. moves every listing owned by host@rentleaks.com to that account;
  *   3. deletes host@rentleaks.com and renter@rentleaks.com (their sessions,
  *      saved items and conversations go with them);
- *   4. signs the founder out everywhere else.
+ *   4. signs the founder out everywhere else;
+ *   5. optionally turns two-factor off, for a lost phone AND lost recovery
+ *      codes — running this script needs the database itself, which is the
+ *      proof of ownership. The desk asks to set it up again at next sign-in.
  *
  * The password is typed hidden and only its scrypt hash is stored.
  */
@@ -49,11 +52,15 @@ async function main() {
   if (again !== password) throw new Error("The two passwords don't match. Nothing was changed.");
 
   const passwordHash = hashPassword(password);
+  const resetTwoFactor = /^y/i.test(await ask("Also turn off two-factor (lost phone and recovery codes)? [y/N]: "));
 
   const result = await prisma.$transaction(async (tx) => {
+    const twoFactorOff = resetTwoFactor
+      ? { totpSecret: null, totpPendingSecret: null, totpEnabledAt: null, totpLastStep: null, mfaFailures: 0, mfaLockedUntil: null }
+      : {};
     const founder = await tx.user.upsert({
       where: { email },
-      update: { name, role: "admin", passwordHash },
+      update: { name, role: "admin", passwordHash, suspendedAt: null, suspendReason: null, ...twoFactorOff },
       create: { email, name, role: "admin", passwordHash, identity: { create: { status: "unverified", provider: "demo" } } },
     });
 
@@ -71,6 +78,7 @@ async function main() {
     }
     const removed = await tx.user.deleteMany({ where: { id: { in: demoIds } } });
     await tx.session.deleteMany({ where: { userId: founder.id } });
+    if (resetTwoFactor) await tx.recoveryCode.deleteMany({ where: { userId: founder.id } });
 
     return { founder, moved: moved.count, removed: removed.count };
   });
@@ -78,7 +86,8 @@ async function main() {
   console.log(
     `\nDone. ${result.founder.email} is the founder account (${result.founder.name}).\n` +
       `Listings moved to you: ${result.moved}. Demo accounts removed: ${result.removed}.\n` +
-      `Sign in on the web at /login or in the app with this email and your new password.`,
+      `Sign in on the web at /login or in the app with this email and your new password.` +
+      (resetTwoFactor ? `\nTwo-factor is off: the desk will walk you through setting it up again at sign-in.` : `\nThe desk will ask for your two-factor code as usual.`),
   );
 }
 

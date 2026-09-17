@@ -28,6 +28,25 @@ model User {
   // A free listing trial granted by an invite (see TrialInvite).
   trialEndsAt   DateTime?
 
+  // Staff (role "staff"): the desk modules this employee may open, as access
+  // keys from lib/access.ts. The founder (role "admin") ignores this list.
+  staffAccess    String[]  @default([])
+  staffTitle     String?
+  staffInvitedAt DateTime?
+  staffJoinedAt  DateTime?
+  invitedById    String?
+
+  // Two-factor sign-in (authenticator app, RFC 6238). Secrets are sealed with
+  // AUTH_SECRET (lib/security/seal.ts); the database never holds them plain.
+  totpSecret        String?
+  totpPendingSecret String?
+  totpEnabledAt     DateTime?
+  // The last 30-second step accepted, so a code cannot be replayed.
+  totpLastStep      Int?
+  mfaFailures       Int       @default(0)
+  mfaLockedUntil    DateTime?
+  lastSignInAt      DateTime?
+
   identity            IdentityVerification?
   listings            Listing[]
   sentMessages        Message[]
@@ -47,6 +66,7 @@ model User {
   blocksReceived UserBlock[] @relation("BlocksReceived")
   trialInvites   TrialInvite[]
   contact        Contact?
+  recoveryCodes  RecoveryCode[]
 
   @@index([role])
 }
@@ -58,6 +78,27 @@ model Session {
   token     String   @unique
   expiresAt DateTime
   createdAt DateTime @default(now())
+  // Set when this session passed the second factor. Desk pages and staff
+  // actions refuse sessions without it.
+  mfaAt     DateTime?
+  // Shown on the Security page so a member can recognise their devices.
+  userAgent String?
+  // "session" (web or app sign-in) or a single-use helper row that shares the
+  // table: "mfa" (between password and code), "reset", "invite", "handoff".
+  kind      String    @default("session")
+
+  @@index([userId])
+}
+
+/// Single-use recovery codes for a lost authenticator. Stored as sha256 —
+/// the codes are random (50 bits), so a fast hash is enough.
+model RecoveryCode {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash  String    @unique
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
 
   @@index([userId])
 }

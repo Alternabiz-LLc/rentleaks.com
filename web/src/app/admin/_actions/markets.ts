@@ -13,7 +13,7 @@ const int = (v: string, min: number, max: number) => {
 
 export async function saveCity(fd: FormData) {
   const path = "/admin/markets";
-  const guard = await requireAdminAction();
+  const guard = await requireAdminAction("markets");
   if (!guard.ok) back(path, "err", guard.error);
   const id = field(fd, "id", 60);
   const rank = int(field(fd, "rank"), 1, 9999);
@@ -32,7 +32,7 @@ export async function saveCity(fd: FormData) {
 
 export async function saveOperator(fd: FormData) {
   const path = "/admin/markets?tab=operators";
-  const guard = await requireAdminAction();
+  const guard = await requireAdminAction("markets");
   if (!guard.ok) back(path, "err", guard.error);
   const existingId = field(fd, "id", 80);
   const name = field(fd, "name", 120);

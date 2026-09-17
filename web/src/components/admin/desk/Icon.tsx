@@ -5,6 +5,8 @@ import type { DeskIcon } from "@/lib/admin/nav";
  * every tile in the sidebar reads as a set rather than a collection.
  */
 const PATHS: Record<DeskIcon, string> = {
+  team: "M8 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM2 20v-.5A5.5 5.5 0 0 1 7.5 14h1a5.5 5.5 0 0 1 5.5 5.5v.5M16 4.2a3.5 3.5 0 0 1 0 6.6M17.5 14a5.5 5.5 0 0 1 4.5 5.4v.6",
+  lock: "M6 11h12v10H6zM8.5 11V7.5a3.5 3.5 0 0 1 7 0V11M12 15v2",
   overview: "M3 13h8V3H3zM13 21h8V11h-8zM3 21h8v-6H3zM13 3v6h8V3z",
   leads: "M4 4h16v12H5.5L4 17.5zM8 9h8M8 12h5",
   listings: "M3 11l9-7 9 7M5 10v10h14V10M10 20v-6h4v6",

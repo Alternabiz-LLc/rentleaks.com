@@ -23,7 +23,7 @@ import { sendMail } from "@/lib/v1/mail";
 
 export async function saveTemplate(fd: FormData) {
   const path = "/admin/outreach?tab=templates";
-  const guard = await requireAdminAction();
+  const guard = await requireAdminAction("outreach");
   if (!guard.ok) back(path, "err", guard.error);
   const id = field(fd, "id", 60);
   const name = field(fd, "name", 120);
@@ -40,7 +40,7 @@ export async function saveTemplate(fd: FormData) {
 
 export async function deleteTemplate(fd: FormData) {
   const path = "/admin/outreach?tab=templates";
-  const guard = await requireAdminAction();
+  const guard = await requireAdminAction("outreach");
   if (!guard.ok) back(path, "err", guard.error);
   const id = field(fd, "id", 60);
   await prisma.emailTemplate.delete({ where: { id } }).catch(() => undefined);
@@ -50,7 +50,7 @@ export async function deleteTemplate(fd: FormData) {
 
 export async function loadStarterTemplates() {
   const path = "/admin/outreach?tab=templates";
-  const guard = await requireAdminAction();
+  const guard = await requireAdminAction("outreach");
   if (!guard.ok) back(path, "err", guard.error);
   const existing = new Set((await prisma.emailTemplate.findMany({ select: { name: true } })).map((t) => t.name));
   const fresh = STARTER_TEMPLATES.filter((t) => !existing.has(t.name));
@@ -76,7 +76,7 @@ function audienceFrom(fd: FormData, kind: string) {
 
 export async function createCampaign(fd: FormData) {
   const path = "/admin/campaigns";
-  const guard = await requireAdminAction();
+  const guard = await requireAdminAction("campaigns");
   if (!guard.ok) back(path, "err", guard.error);
   const kind = (CAMPAIGN_KINDS as readonly string[]).includes(field(fd, "kind")) ? field(fd, "kind") : "newsletter";
   let subject = field(fd, "subject", 200);
@@ -109,7 +109,7 @@ export async function createCampaign(fd: FormData) {
 export async function updateCampaign(fd: FormData) {
   const id = field(fd, "id", 60);
   const path = `/admin/campaigns/${id}`;
-  const guard = await requireAdminAction();
+  const guard = await requireAdminAction("campaigns");
   if (!guard.ok) back(path, "err", guard.error);
   const c = await prisma.campaign.findUnique({ where: { id } });
   if (!c) back("/admin/campaigns", "err", "That campaign no longer exists.");
@@ -132,7 +132,7 @@ export async function updateCampaign(fd: FormData) {
 export async function testCampaign(fd: FormData) {
   const id = field(fd, "id", 60);
   const path = `/admin/campaigns/${id}`;
-  const guard = await requireAdminAction();
+  const guard = await requireAdminAction("campaigns");
   if (!guard.ok) back(path, "err", guard.error);
   const to = (field(fd, "to", 160) || guard.user.email).toLowerCase();
   if (!EMAIL_RE.test(to)) back(path, "err", "Enter a valid address.");
@@ -153,7 +153,7 @@ export async function testCampaign(fd: FormData) {
 export async function scheduleCampaign(fd: FormData) {
   const id = field(fd, "id", 60);
   const path = `/admin/campaigns/${id}`;
-  const guard = await requireAdminAction();
+  const guard = await requireAdminAction("campaigns");
   if (!guard.ok) back(path, "err", guard.error);
   const op = field(fd, "op");
   const c = await prisma.campaign.findUnique({ where: { id } });
@@ -196,7 +196,7 @@ export async function scheduleCampaign(fd: FormData) {
 
 export async function duplicateCampaign(fd: FormData) {
   const id = field(fd, "id", 60);
-  const guard = await requireAdminAction();
+  const guard = await requireAdminAction("campaigns");
   if (!guard.ok) back(`/admin/campaigns/${id}`, "err", guard.error);
   const c = await prisma.campaign.findUnique({ where: { id } });
   if (!c) back("/admin/campaigns", "err", "That campaign no longer exists.");

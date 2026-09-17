@@ -30,7 +30,7 @@ const dateOf = (v: string) => {
 
 export async function addContact(fd: FormData) {
   const path = "/admin/crm";
-  const guard = await requireAdminAction();
+  const guard = await requireAdminAction("crm");
   if (!guard.ok) back(path, "err", guard.error);
   const email = field(fd, "email", 160).toLowerCase();
   if (!EMAIL_RE.test(email)) back(path, "err", "Enter a valid email.");
@@ -56,7 +56,7 @@ export async function addContact(fd: FormData) {
  */
 export async function importContacts(fd: FormData) {
   const path = "/admin/crm";
-  const guard = await requireAdminAction();
+  const guard = await requireAdminAction("crm");
   if (!guard.ok) back(path, "err", guard.error);
   let text = field(fd, "csv", 2_000_000);
   const file = fd.get("file");
@@ -105,7 +105,7 @@ export async function importContacts(fd: FormData) {
 
 export async function contactsBulk(fd: FormData) {
   const path = returnTo(fd, "/admin/crm");
-  const guard = await requireAdminAction();
+  const guard = await requireAdminAction("crm");
   if (!guard.ok) back(path, "err", guard.error);
   const ids = fields(fd, "ids").slice(0, 1000);
   const op = field(fd, "op");
@@ -148,7 +148,7 @@ export async function contactsBulk(fd: FormData) {
 export async function updateContact(fd: FormData) {
   const id = field(fd, "id", 60);
   const path = `/admin/crm/${id}`;
-  const guard = await requireAdminAction();
+  const guard = await requireAdminAction("crm");
   if (!guard.ok) back(path, "err", guard.error);
   const contact = await prisma.contact.findUnique({ where: { id } });
   if (!contact) back("/admin/crm", "err", "That contact no longer exists.");
@@ -185,7 +185,7 @@ export async function updateContact(fd: FormData) {
 export async function addActivity(fd: FormData) {
   const id = field(fd, "id", 60);
   const path = `/admin/crm/${id}`;
-  const guard = await requireAdminAction();
+  const guard = await requireAdminAction("crm");
   if (!guard.ok) back(path, "err", guard.error);
   const kind = ["note", "call", "sms", "meeting"].includes(field(fd, "kind")) ? field(fd, "kind") : "note";
   const body = field(fd, "body", 5000);
@@ -207,7 +207,7 @@ export async function addActivity(fd: FormData) {
 export async function emailContact(fd: FormData) {
   const id = field(fd, "id", 60);
   const path = `/admin/crm/${id}`;
-  const guard = await requireAdminAction();
+  const guard = await requireAdminAction("crm");
   if (!guard.ok) back(path, "err", guard.error);
   const contact = await prisma.contact.findUnique({ where: { id } });
   if (!contact) back("/admin/crm", "err", "That contact no longer exists.");
@@ -245,7 +245,7 @@ export async function emailContact(fd: FormData) {
 
 export async function deleteContact(fd: FormData) {
   const id = field(fd, "id", 60);
-  const guard = await requireAdminAction();
+  const guard = await requireAdminAction("crm");
   if (!guard.ok) back(`/admin/crm/${id}`, "err", guard.error);
   if (field(fd, "confirm") !== "DELETE") back(`/admin/crm/${id}`, "err", "Type DELETE to confirm.");
   const c = await prisma.contact.delete({ where: { id } }).catch(() => null);
