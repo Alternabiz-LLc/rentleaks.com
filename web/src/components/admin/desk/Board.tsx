@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { moveContact, moveLead, reviewFromBoard, type DeskResult } from "@/app/admin/_actions/desk";
 import { moveBooking } from "@/app/admin/_actions/bookings";
 import { moveEngagement, moveRequest } from "@/app/admin/_actions/enterprise";
+import { moveSearch } from "@/app/admin/_actions/referrals";
 import type { Draft } from "@/lib/admin/score";
 import { Composer, Drawer } from "./Drawer";
 import { Icon } from "./Icon";
@@ -29,7 +30,7 @@ export type BoardCard = {
   image?: string | null;
 };
 
-type Mode = "lead" | "contact" | "listing" | "booking" | "request" | "engagement";
+type Mode = "lead" | "contact" | "listing" | "booking" | "request" | "engagement" | "search";
 
 const DRAG = "text/rl-card";
 
@@ -43,6 +44,7 @@ async function move(mode: Mode, id: string, to: string, note: string): Promise<D
   if (mode === "booking") return moveBooking(id, to);
   if (mode === "request") return moveRequest(id, to);
   if (mode === "engagement") return moveEngagement(id, to);
+  if (mode === "search") return moveSearch(id, to);
   return reviewFromBoard(id, to, note);
 }
 

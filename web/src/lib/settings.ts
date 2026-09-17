@@ -32,6 +32,13 @@ export const SETTING_KEYS = {
   enterprisePrices: "ent.prices",
   // "off" pauses the public request form (default on).
   enterpriseForm: "ent.form",
+  // Broker network: referral %, hours a partner has to answer a lead, offers per search, days an agreement stays open, tenant agreement term, "off" pauses intake.
+  netReferralPct: "net.referralPct",
+  netOfferHours: "net.offerHours",
+  netOffersPerSearch: "net.offersPerSearch",
+  netSignDays: "net.signDays",
+  netTermDays: "net.termDays",
+  netOpen: "net.open",
 } as const;
 
 export type SettingKey = (typeof SETTING_KEYS)[keyof typeof SETTING_KEYS];

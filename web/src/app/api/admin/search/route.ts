@@ -4,7 +4,7 @@ import { staffForRoute } from "@/lib/admin/guard";
 
 export const dynamic = "force-dynamic";
 
-type Hit = { kind: "lead" | "contact" | "listing" | "account" | "request" | "engagement" | "property"; id: string; title: string; sub: string; href: string };
+type Hit = { kind: "lead" | "contact" | "listing" | "account" | "request" | "engagement" | "property" | "search" | "partner"; id: string; title: string; sub: string; href: string };
 
 /**
  * Record search for the desk's ⌘K palette: leads, contacts, listings and
@@ -21,13 +21,14 @@ export async function GET(req: Request) {
     listings: canAccess(user, "listings"),
     accounts: canAccess(user, "accounts"),
     enterprise: canAccess(user, "enterprise"),
+    network: canAccess(user, "network"),
   };
   const none = Promise.resolve([] as never[]);
   const q = (new URL(req.url).searchParams.get("q") || "").trim().slice(0, 80);
   if (q.length < 2) return Response.json({ hits: [] });
   const has = { contains: q, mode: "insensitive" as const };
 
-  const [leads, contacts, listings, accounts, requests, engagements, properties] = await Promise.all([
+  const [leads, contacts, listings, accounts, requests, engagements, properties, nsearches, npartners] = await Promise.all([
     !can.leads ? none : prisma.lead
       .findMany({
         where: { OR: [{ name: has }, { email: has }, { phone: { contains: q } }, { id: q }] },
@@ -84,6 +85,22 @@ export async function GET(req: Request) {
         take: 4,
       })
       .catch(() => []),
+    !can.network ? none : prisma.networkSearch
+      .findMany({
+        where: { status: { not: "spam" }, OR: [{ name: has }, { email: has }, { city: has }, { phone: { contains: q } }] },
+        select: { id: true, name: true, city: true, state: true, status: true, budgetMax: true },
+        orderBy: { createdAt: "desc" },
+        take: 4,
+      })
+      .catch(() => []),
+    !can.network ? none : prisma.networkPartner
+      .findMany({
+        where: { OR: [{ name: has }, { email: has }, { brokerage: has }, { licenseNumber: has }] },
+        select: { id: true, name: true, brokerage: true, status: true, licenseState: true },
+        orderBy: { updatedAt: "desc" },
+        take: 4,
+      })
+      .catch(() => []),
   ]);
 
   const hits: Hit[] = [
@@ -135,6 +152,20 @@ export async function GET(req: Request) {
       title: p.name,
       sub: `${p.status} · ${p.units} units · ${p.ownerName}`,
       href: `/admin/enterprise?tab=portfolio&prop=${p.id}`,
+    })),
+    ...nsearches.map((x) => ({
+      kind: "search" as const,
+      id: x.id,
+      title: `${x.name} · ${x.city}, ${x.state}`,
+      sub: `${x.status} · up to $${x.budgetMax.toLocaleString("en-US")}/mo`,
+      href: `/admin/referrals?open=${x.id}`,
+    })),
+    ...npartners.map((x) => ({
+      kind: "partner" as const,
+      id: x.id,
+      title: x.name,
+      sub: `${x.status} · ${x.brokerage} · ${x.licenseState}`,
+      href: `/admin/referrals?tab=partners&partner=${x.id}`,
     })),
   ];
   return Response.json({ hits });

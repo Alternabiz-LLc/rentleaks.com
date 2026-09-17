@@ -257,8 +257,10 @@ export async function markInvoicePaid(id: string, method: string, date: string, 
   if (!inv || inv.status === "void") return false;
   await prisma.invoice.update({ where: { id }, data: { status: "paid", paidAt: new Date(`${date}T12:00:00Z`), paidMethod: method } });
   /* Enterprise invoices land in their own income line: commissions, management fees or marketing services. */
+  const referral = await prisma.networkDeal.findFirst({ where: { invoiceId: inv.id }, select: { id: true } }).catch(() => null);
+  if (referral) await prisma.networkDeal.update({ where: { id: referral.id }, data: { status: "paid", paidAt: new Date(`${date}T12:00:00Z`) } }).catch(() => undefined);
   const eng = inv.engagementId ? await prisma.engagement.findUnique({ where: { id: inv.engagementId }, select: { track: true, feeModel: true } }).catch(() => null) : null;
-  const category = !eng ? "invoices" : eng.feeModel === "commission" || eng.track === "brokerage" ? "commissions" : eng.track === "marketing" ? "marketing_services" : "management_fees";
+  const category = referral ? "referral_fees" : !eng ? "invoices" : eng.feeModel === "commission" || eng.track === "brokerage" ? "commissions" : eng.track === "marketing" ? "marketing_services" : "management_fees";
   await prisma.ledgerEntry
     .upsert({
       where: { sourceKey: `inv:${inv.id}` },

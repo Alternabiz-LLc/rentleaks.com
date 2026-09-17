@@ -750,7 +750,7 @@
 
   function assetBase() {
     const path = window.location.pathname || '';
-    if (/\/(listings|cities|operators|enterprise)\//.test(path)) return '../';
+    if (/\/(listings|cities|operators|enterprise|hire-a-broker)\//.test(path)) return '../';
     return '';
   }
 
@@ -802,6 +802,7 @@
                 ${navLink(base + 'cities.html', 'Cities', 'cities')}
                 ${navLink(base + 'operators.html', 'Operators', 'operators')}
                 ${navLink(base + 'match.html', 'Stay DNA', 'match')}
+                ${navLink(base + 'hire-a-broker/', 'Hire a broker', 'hire-a-broker')}
                 ${navLink(base + 'enterprise/', 'Enterprise', 'enterprise')}
               </ul>
             </nav>
@@ -810,6 +811,7 @@
                 <span class="js-cmd__label">Search everything</span><kbd>⌘K</kbd>
               </button>
               <a href="${base}saved.html" class="header__link">Saved${saved ? ' <span class="rl-count">' + saved + '</span>' : ''}</a>
+              <a href="${base}hire-a-broker/" class="header__link header__link--hire${pageName() === 'hire-a-broker' ? ' is-on' : ''}">Hire a broker</a>
               <a href="${base}enterprise/" class="header__link header__link--ent${pageName() === 'enterprise' ? ' is-on' : ''}">For owners</a>
               <a href="${appHref('/list', base + 'list.html')}" class="header__link">List a place</a>
               <label class="cur-select" title="Display currency">
@@ -871,6 +873,12 @@
                   <li><a href="${base}enterprise/marketing.html">Marketing &amp; virtual tours</a></li>
                   <li><a href="${base}enterprise/management.html">Property management</a></li>
                   <li><a href="${base}enterprise/owners.html">Out-of-state owners</a></li>
+                </ul></div>
+                <div class="footer__col"><h4>Broker network</h4><ul>
+                  <li><a href="${base}hire-a-broker/">Hire a broker</a></li>
+                  <li><a href="${base}hire-a-broker/#how">How it works</a></li>
+                  <li><a href="${base}hire-a-broker/agents.html">Tenant leads for agents</a></li>
+                  <li><a href="${base}hire-a-broker/agents.html#portal">Partner portal</a></li>
                 </ul></div>
                 <div class="footer__col"><h4>Company</h4><ul>
                   <li><a href="${base}faq.html">FAQ</a></li>

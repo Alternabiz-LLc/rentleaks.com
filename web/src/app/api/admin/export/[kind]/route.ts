@@ -14,6 +14,15 @@ export const dynamic = "force-dynamic";
 
 const MAX = 50_000;
 
+function jsonList(j: string) {
+  try {
+    const v = JSON.parse(j) as unknown;
+    return Array.isArray(v) ? v.map(String).join("; ") : "";
+  } catch {
+    return "";
+  }
+}
+
 async function build(kind: string, url: URL): Promise<{ headers: string[]; rows: unknown[][] } | null> {
   const p = url.searchParams;
   switch (kind) {
@@ -100,6 +109,35 @@ async function build(kind: string, url: URL): Promise<{ headers: string[]; rows:
           const v = engagementValue(e);
           return [e.createdAt, e.status, e.title, e.clientName, e.clientEmail, e.clientCompany, e.track, e.packageId, e.feeModel, e.amountCents / 100, e.pctBp / 100, e.units, e.rentRollCents / 100, v.monthly / 100, v.once / 100, e.currency, e.agreementSignedOn, e.agreementRef, e.startDate, e.endDate, e.tasks.filter((x) => x.doneAt).length, e.tasks.length];
         }),
+      };
+    }
+    case "network-searches": {
+      const rows = await prisma.networkSearch.findMany({ orderBy: { createdAt: "desc" }, take: MAX, include: { offers: { select: { status: true } } } });
+      return {
+        headers: ["created", "status", "score", "name", "email", "phone", "city", "state", "neighborhoods", "home", "building", "bedrooms", "budget_min", "budget_max", "move_in", "term", "term_months", "must_haves", "language", "fee_cap_type", "fee_cap_value", "offers", "proposals", "chosen_partner", "agreement", "leased_at", "lost_reason", "rating", "source", "campaign"],
+        rows: rows.map((s) => [s.createdAt, s.status, s.score, s.name, s.email, s.phone, s.city, s.state, jsonList(s.neighborhoods), s.homeType, s.buildingAge, s.bedrooms, s.budgetMin, s.budgetMax, s.moveIn, s.term, s.termMonths, jsonList(s.mustHaves), s.language, s.feeCapType, s.feeCapValue, s.offers.length, s.offers.filter((o) => ["proposed", "chosen", "not_chosen"].includes(o.status)).length, s.chosenPartnerId, s.agreementId, s.leasedAt, s.lostReason, s.rating, s.source, s.campaign]),
+      };
+    }
+    case "network-partners": {
+      const rows = await prisma.networkPartner.findMany({ orderBy: { createdAt: "desc" }, take: MAX, include: { offers: { select: { status: true } } } });
+      return {
+        headers: ["created", "status", "name", "email", "phone", "brokerage", "licence_type", "licence_number", "licence_state", "licence_expires", "supervising_broker", "supervisor_email", "markets", "specialties", "languages", "capacity", "referral_pct", "leads", "accepted", "rating", "rating_count", "verified_at", "verify_note", "source"],
+        rows: rows.map((x) => [x.createdAt, x.status, x.name, x.email, x.phone, x.brokerage, x.licenseType, x.licenseNumber, x.licenseState, x.licenseExpires, x.supervisorName, x.supervisorEmail, jsonList(x.markets), jsonList(x.specialties), jsonList(x.languages), x.capacity, x.referralPctBp / 100, x.offers.length, x.offers.filter((o) => ["proposed", "chosen", "not_chosen"].includes(o.status)).length, x.ratingCount ? (x.ratingSum / x.ratingCount).toFixed(1) : "", x.ratingCount, x.verifiedAt, x.verifyNote, x.source]),
+      };
+    }
+    case "network-agreements": {
+      const rows = await prisma.agreement.findMany({ orderBy: { createdAt: "desc" }, take: MAX, include: { signers: { orderBy: { order: "asc" } } } });
+      return {
+        headers: ["created", "kind", "version", "title", "status", "sha256", "signers", "signed", "expires", "completed", "voided", "void_reason", "search_id", "partner_id"],
+        rows: rows.map((e) => [e.createdAt, e.kind, e.version, e.title, e.status, e.docHash, e.signers.map((s) => `${s.role}:${s.name} <${s.email}> ${s.status}${s.signedAt ? ` ${s.signedAt.toISOString()}` : ""}`).join("; "), e.signers.filter((s) => s.status === "signed").length, e.expiresAt, e.completedAt, e.voidedAt, e.voidReason, e.searchId, e.partnerId]),
+      };
+    }
+    case "network-deals": {
+      const rows = await prisma.networkDeal.findMany({ orderBy: { createdAt: "desc" }, take: MAX });
+      const partners = new Map((await prisma.networkPartner.findMany({ where: { id: { in: [...new Set(rows.map((d) => d.partnerId))] } }, select: { id: true, name: true, brokerage: true } })).map((x) => [x.id, x]));
+      return {
+        headers: ["reported", "status", "lease_signed", "partner", "brokerage", "address", "monthly_rent", "fee_collected", "referral_pct", "referral_due", "invoice_id", "paid_at", "search_id", "note"],
+        rows: rows.map((d) => [d.createdAt, d.status, d.leaseSignedOn, partners.get(d.partnerId)?.name, partners.get(d.partnerId)?.brokerage, d.address, d.monthlyRentCents / 100, d.grossFeeCents / 100, d.referralPctBp / 100, d.referralDueCents / 100, d.invoiceId, d.paidAt, d.searchId, d.note]),
       };
     }
     case "properties": {

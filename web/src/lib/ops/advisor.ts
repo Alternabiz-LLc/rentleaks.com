@@ -11,6 +11,7 @@ import { prisma } from "@/lib/prisma";
 import { getSettings, SETTING_KEYS } from "@/lib/settings";
 import { mailStatus } from "@/lib/v1/mail";
 import { enterpriseFacts } from "@/lib/enterprise/data";
+import { networkFacts } from "@/lib/network/engine";
 import { loadDemand } from "./demand";
 import { loadScorecards } from "./hosts";
 import { median } from "./sla";
@@ -43,6 +44,11 @@ export type AdvisorFacts = Partial<{
   statementsDue: number;
   statementMonth: string;
   engagementStepsLate: number;
+  networkToVerify: number;
+  networkNoMatch: number;
+  networkToInvoice: number;
+  networkFeesDueCents: number;
+  networkWaitingSign: number;
 }>;
 
 export function advise(f: AdvisorFacts): Advice[] {
@@ -70,6 +76,18 @@ export function advise(f: AdvisorFacts): Advice[] {
   }
   if (f.engagementStepsLate) {
     out.push({ id: "steps", key: "enterprise", impact: 48, tone: "info", title: `${f.engagementStepsLate} engagement step${f.engagementStepsLate === 1 ? "" : "s"} past due`, body: "Tick them off or move the date — the client sees the pace.", href: "/admin/enterprise?tab=engagements", cta: "Review" });
+  }
+  if (f.networkNoMatch) {
+    out.push({ id: "net-nomatch", key: "network", impact: 94, tone: "bad", title: `${f.networkNoMatch} tenant search${f.networkNoMatch === 1 ? "" : "es"} with no broker`, body: "These renters asked to hire a broker and nobody in the network covers them. Offer the lead by hand or recruit a partner there today.", href: "/admin/referrals?status=matching", cta: "Match" });
+  }
+  if (f.networkToVerify) {
+    out.push({ id: "net-verify", key: "network", impact: 84, tone: "warn", title: `${f.networkToVerify} broker${f.networkToVerify === 1 ? "" : "s"} waiting to be verified`, body: "They've signed the referral agreement. Check the licence with the state and countersign so they start getting leads.", href: "/admin/referrals?tab=partners&status=verifying", cta: "Verify" });
+  }
+  if (f.networkToInvoice) {
+    out.push({ id: "net-fees", key: "network", impact: 76, tone: "warn", title: `${f.networkToInvoice} referral fee${f.networkToInvoice === 1 ? "" : "s"} to invoice`, body: `Leases are signed — ${(f.networkFeesDueCents ?? 0) > 0 ? `$${Math.round((f.networkFeesDueCents ?? 0) / 100).toLocaleString("en-US")} is owed across open referral fees. ` : ""}Invoice the brokerage while the deal is fresh.`, href: "/admin/referrals?tab=fees", cta: "Invoice" });
+  }
+  if (f.networkWaitingSign) {
+    out.push({ id: "net-sign", key: "network", impact: 46, tone: "info", title: `${f.networkWaitingSign} agreement${f.networkWaitingSign === 1 ? "" : "s"} unsigned after 3 days`, body: "Reminders go out automatically; a personal nudge usually closes it.", href: "/admin/referrals?tab=agreements", cta: "Nudge" });
   }
   if (f.overdueInvoices) {
     out.push({ id: "overdue", key: "books", impact: 90, tone: "bad", title: `${f.overdueInvoices} invoice${f.overdueInvoices === 1 ? "" : "s"} overdue`, body: "Money you've earned and not collected.", href: "/admin/books?tab=invoices&state=overdue", cta: "Chase" });
@@ -133,7 +151,7 @@ export async function loadAdvice(me: AccessCarrier & { id: string; briefHour?: n
   const today = booksToday(now);
   const monthStart = `${today.slice(0, 7)}-01`;
   const settings = await safe(getSettings([SETTING_KEYS.autopilot, SETTING_KEYS.freshness]), {} as Record<string, string>);
-  const [answered, playbooksOn, shortlists, demand, cards, invoices, unsynced, adGap, expenses, lost, stale, trialsEnding, ent] = await Promise.all([
+  const [answered, playbooksOn, shortlists, demand, cards, invoices, unsynced, adGap, expenses, lost, stale, trialsEnding, ent, net] = await Promise.all([
     can("leads") ? safe(prisma.lead.findMany({ where: { createdAt: { gte: new Date(t - 30 * DAY) }, contactedAt: { not: null } }, select: { createdAt: true, contactedAt: true }, take: 500 }), []) : [],
     can("automation") || can("leads") ? safe(prisma.playbook.count({ where: { enabled: true } }), 0) : 0,
     can("leads") ? safe(prisma.lead.findMany({ where: { matchesSentAt: { gte: new Date(t - 30 * DAY) } }, select: { shortlistOpenedAt: true }, take: 1000 }), []) : [],
@@ -147,6 +165,7 @@ export async function loadAdvice(me: AccessCarrier & { id: string; briefHour?: n
     can("listings") ? safe(prisma.listing.count({ where: { status: "active", moderation: "approved", OR: [{ confirmedAt: null, postedAt: { lt: new Date(t - 30 * DAY) } }, { confirmedAt: { lt: new Date(t - 30 * DAY) } }] } }), 0) : 0,
     can("trials") ? safe(prisma.user.count({ where: { trialEndsAt: { gt: now, lte: new Date(t + 3 * DAY) } } }), 0) : 0,
     can("enterprise") ? safe(enterpriseFacts(now), null) : null,
+    can("network") ? safe(networkFacts(now), null) : null,
   ]);
   const replyMins = median(answered.map((l) => (l.contactedAt!.getTime() - l.createdAt.getTime()) / 60_000).filter((m) => m >= 0));
   const cities = demand ? new Map((await safe(prisma.city.findMany({ select: { id: true, name: true } }), [])).map((c) => [c.id, c.name])) : new Map<string, string>();
@@ -181,6 +200,11 @@ export async function loadAdvice(me: AccessCarrier & { id: string; briefHour?: n
     statementsDue: ent?.statementsDue,
     statementMonth: ent?.statementMonth,
     engagementStepsLate: ent?.overdueTasks,
+    networkToVerify: net?.toVerify,
+    networkNoMatch: net?.noMatch,
+    networkToInvoice: net?.toInvoice,
+    networkFeesDueCents: net?.feesDueCents,
+    networkWaitingSign: net?.waitingSign,
   };
   return advise(facts)
     .filter((a) => can(a.key) || a.key === "overview")

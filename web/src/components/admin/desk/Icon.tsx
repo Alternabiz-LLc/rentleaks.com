@@ -48,6 +48,7 @@ const PATHS: Record<DeskIcon, string> = {
   phone: "M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z",
   copy: "M9 9h11v11H9zM5 15H4V4h11v1",
   building: "M4 21V5l8-3v19M12 8h8v13M2 21h20M7 7h2M7 11h2M7 15h2M15 12h2M15 16h2",
+  handshake: "M2 11l4-4 4 2 3-2 3 1 6 3M2 11l3 3M22 11l-4 4-3 3a1.5 1.5 0 0 1-2.1 0L7 12.5M11 15l2 2M13.5 12.5l2.5 2.5M9 17.5l1.5 1.5",
 };
 
 export function Icon({ name, size = 18, className }: { name: DeskIcon; size?: number; className?: string }) {

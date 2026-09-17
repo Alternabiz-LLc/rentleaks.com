@@ -15,7 +15,7 @@ export function openPalette() {
 
 type Hit = { href: string; label: string; hint: string; icon: DeskIcon; group: string };
 
-type SearchHit = { kind: "lead" | "contact" | "listing" | "account" | "request" | "engagement" | "property"; id: string; title: string; sub: string; href: string };
+type SearchHit = { kind: "lead" | "contact" | "listing" | "account" | "request" | "engagement" | "property" | "search" | "partner"; id: string; title: string; sub: string; href: string };
 
 const KIND: Record<SearchHit["kind"], { label: string; icon: DeskIcon }> = {
   lead: { label: "Lead", icon: "leads" },
@@ -25,6 +25,8 @@ const KIND: Record<SearchHit["kind"], { label: string; icon: DeskIcon }> = {
   request: { label: "Enterprise request", icon: "building" },
   engagement: { label: "Engagement", icon: "building" },
   property: { label: "Managed property", icon: "listings" },
+  search: { label: "Tenant broker search", icon: "handshake" },
+  partner: { label: "Partner broker", icon: "handshake" },
 };
 
 /**
@@ -62,6 +64,7 @@ export function CommandPalette({ allowed }: { allowed: AccessKey[] }) {
       p: { href: "/admin/playbooks", key: "automation" },
       d: { href: "/admin/demand", key: "markets" },
       e: { href: "/admin/enterprise", key: "enterprise" },
+      n: { href: "/admin/referrals", key: "network" },
     };
     const typing = (el: EventTarget | null) => el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement || (el instanceof HTMLElement && el.isContentEditable);
     const onGo = (e: KeyboardEvent) => {

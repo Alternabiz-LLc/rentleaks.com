@@ -26,6 +26,7 @@ export const ACCESS_KEYS = [
   "trials",
   "hosts",
   "enterprise",
+  "network",
   "revenue",
   "books",
   "markets",
@@ -57,6 +58,7 @@ export const ACCESS_LABEL: Record<AccessKey, string> = {
   trials: "Free-trial invites",
   hosts: "Host scorecards",
   enterprise: "Enterprise & owner services",
+  network: "Broker referral network",
   revenue: "Revenue & analytics",
   books: "Books & accounting",
   markets: "Markets & demand",
@@ -76,7 +78,7 @@ export const PRESETS: Record<PresetKey, { label: string; brief: string; access: 
   sales: {
     label: "Sales & CRM",
     brief: "Answers leads, works the pipeline, sends outreach and trial invites.",
-    access: ["overview", "leads", "bookings", "crm", "outreach", "campaigns", "trials", "enterprise"],
+    access: ["overview", "leads", "bookings", "crm", "outreach", "campaigns", "trials", "enterprise", "network"],
   },
   moderator: {
     label: "Moderator",
@@ -154,6 +156,7 @@ export function accessKeyForPath(pathname: string): AccessKey | null {
     trials: "trials",
     hosts: "hosts",
     enterprise: "enterprise",
+    referrals: "network",
     revenue: "revenue",
     books: "books",
     markets: "markets",
@@ -185,4 +188,8 @@ export const EXPORT_ACCESS: Record<string, AccessKey> = {
   engagements: "enterprise",
   properties: "enterprise",
   statements: "enterprise",
+  "network-searches": "network",
+  "network-partners": "network",
+  "network-agreements": "network",
+  "network-deals": "network",
 };

@@ -18,6 +18,7 @@ export const CATEGORIES: Category[] = [
   { key: "invoices", label: "Invoiced services", kind: "income", hint: "Operators, partners, custom deals", line: "1" },
   { key: "commissions", label: "Brokerage commissions", kind: "income", hint: "Leasing commissions paid by owners", line: "1" },
   { key: "management_fees", label: "Management fees", kind: "income", hint: "Property-management fees (never the owners' rent)", line: "1" },
+  { key: "referral_fees", label: "Referral fees", kind: "income", hint: "Broker-network referral fees from partner brokerages", line: "1" },
   { key: "marketing_services", label: "Marketing & media services", kind: "income", hint: "Photos, tours, distribution, social packages", line: "1" },
   { key: "other_income", label: "Other income", kind: "income", hint: "Anything else that came in", line: "6" },
   { key: "advertising", label: "Advertising", kind: "expense", hint: "Meta, Google, TikTok, flyers", line: "8" },

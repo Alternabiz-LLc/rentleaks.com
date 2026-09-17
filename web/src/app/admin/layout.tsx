@@ -23,7 +23,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const now = new Date();
   const safe = <T,>(p: Promise<T>, fallback: T) => p.catch(() => fallback);
   const zero = Promise.resolve(0);
-  const [leads, review, reports, followups, waiting, trust, viewings, enterprise] = await Promise.all([
+  const [leads, review, reports, followups, waiting, trust, viewings, enterprise, network] = await Promise.all([
     can("leads") ? safe(prisma.lead.count({ where: { status: "new" } }), 0) : zero,
     can("listings") ? safe(prisma.listing.count({ where: { moderation: "pending" } }), 0) : zero,
     can("reports") ? safe(prisma.report.count({ where: { status: "open" } }), 0) : zero,
@@ -33,6 +33,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     can("trust") ? safe(prisma.message.count({ where: { createdAt: { gte: new Date(now.getTime() - 7 * 86_400_000) }, NOT: { flags: "[]" } } }), 0) : zero,
     can("bookings") ? safe(prisma.booking.count({ where: { stage: "viewing", viewingAt: { gte: now }, viewingConfirmedAt: null } }), 0) : zero,
     can("enterprise") ? safe(prisma.serviceRequest.count({ where: { status: "new" } }), 0) : zero,
+    can("network")
+      ? safe(Promise.all([prisma.networkPartner.count({ where: { status: "verifying" } }), prisma.networkSearch.count({ where: { status: "matching", noMatchAt: { not: null } } })]).then(([a, b]) => a + b), 0)
+      : zero,
   ]);
   const founder = isFounder(me);
   const preset = presetOf(me.staffAccess);
@@ -40,7 +43,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <div className={`dk ${display.variable}`}>
       <DeskSidebar
-        counts={{ leads, review, reports, followups, trust, viewings, enterprise, copilot: waiting + reports + followups }}
+        counts={{ leads, review, reports, followups, trust, viewings, enterprise, network, copilot: waiting + reports + followups }}
         user={{ name: me.name, email: me.email, title, founder }}
         groups={groupsFor(allowed)}
       />

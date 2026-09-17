@@ -1078,3 +1078,231 @@ model OwnerStatement {
   @@unique([propertyId, month])
   @@index([month])
 }
+
+/* ------------------------------------------------------------------------
+ * Broker network: tenants who hire a broker, licensed partners who receive
+ * them as referrals, and the in-app e-signed agreements between them.
+ * The rules and templates live in src/lib/network/core.ts.
+ * ------------------------------------------------------------------------
+ */
+
+/// A licensed broker or agent in the referral program.
+model NetworkPartner {
+  id              String    @id @default(cuid())
+  name            String
+  email           String    @unique
+  phone           String
+  brokerage       String
+  // salesperson | associate_broker | broker
+  licenseType     String
+  licenseNumber   String
+  licenseState    String
+  licenseExpires  String?
+  supervisorName  String?
+  supervisorEmail String?
+  // JSON string[]
+  markets         String    @default("[]")
+  specialties     String    @default("[]")
+  languages       String    @default("[]")
+  bio             String    @default("")
+  website         String?
+  capacity        Int       @default(5)
+  referralPctBp   Int       @default(2500)
+  // applied | verifying | active | paused | rejected
+  status          String    @default("applied")
+  portalTokenHash String?   @unique
+  agreementId     String?
+  verifiedAt      DateTime?
+  verifiedById    String?
+  verifyNote      String?
+  lastOfferedAt   DateTime?
+  ratingSum       Int       @default(0)
+  ratingCount     Int       @default(0)
+  source          String    @default("web")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  offers NetworkOffer[]
+
+  @@index([status])
+  @@index([licenseState, status])
+}
+
+/// A tenant's brief: they want to hire a broker.
+model NetworkSearch {
+  id              String    @id @default(cuid())
+  // new | matching | proposals | chosen | signed | touring | applied | leased | closed | lost | spam
+  status          String    @default("new")
+  name            String
+  email           String
+  phone           String?
+  city            String
+  state           String
+  // JSON string[]
+  neighborhoods   String    @default("[]")
+  homeType        String    @default("apartment")
+  buildingAge     String    @default("any")
+  bedrooms        Int?
+  budgetMin       Int?
+  budgetMax       Int
+  moveIn          String?
+  // long | mid | flexible
+  term            String    @default("long")
+  termMonths      Int?
+  mustHaves       String    @default("[]")
+  language        String?
+  // none | pct | months | flat
+  feeCapType      String    @default("none")
+  feeCapValue     Int       @default(0)
+  notes           String    @default("")
+  consent         Boolean   @default(false)
+  source          String    @default("web")
+  campaign        String?
+  referrer        String?
+  score           Int       @default(0)
+  roomTokenHash   String    @unique
+  chosenPartnerId String?
+  agreementId     String?
+  stageAt         DateTime?
+  leasedAt        DateTime?
+  lostReason      String?
+  rating          Int?
+  note            String?
+  noMatchAt       DateTime?
+  nudgedAt        DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  offers NetworkOffer[]
+
+  @@index([status, createdAt])
+  @@index([email])
+  @@index([chosenPartnerId])
+}
+
+/// One partner's chance at one search.
+model NetworkOffer {
+  id          String         @id @default(cuid())
+  searchId    String
+  search      NetworkSearch  @relation(fields: [searchId], references: [id], onDelete: Cascade)
+  partnerId   String
+  partner     NetworkPartner @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  // offered | proposed | declined | expired | chosen | not_chosen | withdrawn
+  status      String         @default("offered")
+  matchScore  Int            @default(0)
+  // JSON string[]
+  reasons     String         @default("[]")
+  feeType     String?
+  feeValue    Int?
+  pitch       String         @default("")
+  declineWhy  String?
+  offeredAt   DateTime       @default(now())
+  expiresAt   DateTime
+  respondedAt DateTime?
+  chosenAt    DateTime?
+
+  @@unique([searchId, partnerId])
+  @@index([partnerId, status])
+  @@index([status, expiresAt])
+}
+
+/// An envelope: one frozen document, its signers and its audit trail.
+model Agreement {
+  id          String    @id @default(cuid())
+  // tenant_rep | partner_referral
+  kind        String
+  version     String
+  title       String
+  // JSON Section[] and terms, frozen at creation; docHash = sha256(canonical text)
+  sections    String
+  terms       String    @default("{}")
+  docHash     String
+  // sent | partial | completed | declined | expired | voided
+  status      String    @default("sent")
+  searchId    String?
+  partnerId   String?
+  expiresAt   DateTime
+  completedAt DateTime?
+  voidedAt    DateTime?
+  voidReason  String?
+  createdById String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  signers AgreementSigner[]
+  events  AgreementEvent[]
+
+  @@index([kind, status])
+  @@index([searchId])
+  @@index([partnerId])
+}
+
+model AgreementSigner {
+  id             String    @id @default(cuid())
+  agreementId    String
+  agreement      Agreement @relation(fields: [agreementId], references: [id], onDelete: Cascade)
+  // tenant | partner | supervisor | rentleaks
+  role           String
+  name           String
+  email          String
+  order          Int       @default(0)
+  tokenHash      String    @unique
+  // pending | viewed | signed | declined
+  status         String    @default("pending")
+  consentAt      DateTime?
+  viewedAt       DateTime?
+  signedAt       DateTime?
+  // typed | drawn
+  signatureKind  String?
+  signedName     String?
+  signatureImage String?
+  ip             String?
+  userAgent      String?
+  declinedAt     DateTime?
+  declineReason  String?
+  remindedAt     DateTime?
+  reminders      Int       @default(0)
+  signedById     String?
+  createdAt      DateTime  @default(now())
+
+  @@index([agreementId, order])
+  @@index([email])
+}
+
+model AgreementEvent {
+  id          String    @id @default(cuid())
+  agreementId String
+  agreement   Agreement @relation(fields: [agreementId], references: [id], onDelete: Cascade)
+  signerId    String?
+  // created | sent | viewed | consented | signed | declined | completed | reminded | voided | expired | downloaded
+  type        String
+  detail      String    @default("")
+  ip          String?
+  userAgent   String?
+  createdAt   DateTime  @default(now())
+
+  @@index([agreementId, createdAt])
+}
+
+/// A lease a partner closed for a referred tenant, and the referral fee on it.
+model NetworkDeal {
+  id               String    @id @default(cuid())
+  searchId         String    @unique
+  partnerId        String
+  leaseSignedOn    String
+  monthlyRentCents Int
+  grossFeeCents    Int
+  referralPctBp    Int
+  referralDueCents Int
+  // reported | invoiced | paid | waived | disputed
+  status           String    @default("reported")
+  invoiceId        String?
+  address          String    @default("")
+  note             String    @default("")
+  paidAt           DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([partnerId])
+  @@index([status])
+}

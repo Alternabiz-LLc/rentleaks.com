@@ -3,6 +3,7 @@
  * Every step is independent: one failing never stops the others.
  */
 import { canAccess } from "@/lib/access";
+import { runNetwork } from "@/lib/network/engine";
 import { prisma } from "@/lib/prisma";
 import { setSetting, SETTING_KEYS } from "@/lib/settings";
 import { appUrl } from "@/lib/site";
@@ -63,6 +64,7 @@ export async function runOps(now = new Date()) {
   out.briefs = await step("briefs", () => sendDueBriefs(now));
   out.playbooks = await step("playbooks", () => runPlaybooks(now));
   out.books = await step("books", () => runBooks(now));
+  out.network = await step("network", () => runNetwork(now));
   out.weekly = await step("weekly", () => sendWeeklyReport(now));
   await setSetting(SETTING_KEYS.opsHeartbeat, now.toISOString()).catch(() => undefined);
   return out;

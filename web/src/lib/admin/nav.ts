@@ -55,7 +55,8 @@ export type DeskIcon =
   | "flag"
   | "phone"
   | "copy"
-  | "building";
+  | "building"
+  | "handshake";
 
 export type DeskModule = {
   href: string;
@@ -70,7 +71,7 @@ export type DeskModule = {
   /** The live badge on the header. */
   live: string;
   /** Key into the layout's counts for the sidebar badge. */
-  badge?: "leads" | "review" | "reports" | "followups" | "copilot" | "trust" | "viewings" | "enterprise";
+  badge?: "leads" | "review" | "reports" | "followups" | "copilot" | "trust" | "viewings" | "enterprise" | "network";
   /** Extra words the palette should match. */
   keywords?: string;
 };
@@ -264,6 +265,17 @@ export const DESK_GROUPS: DeskGroup[] = [
         badge: "enterprise",
         keywords: "enterprise brokerage broker property management owner statement landlord corporate out of state marketing photography virtual tour syndication proposal engagement portfolio",
       },
+      {
+        href: "/admin/referrals",
+        key: "network",
+        label: "Broker network",
+        icon: "handshake",
+        code: "BN-01",
+        brief: "Tenants who hire a broker, the partner brokers who answer them, the signed agreements and the referral fees.",
+        live: "Network live",
+        badge: "network",
+        keywords: "broker network referral partner agent tenant representation hire a broker fee agreement e-sign signature commission lead",
+      },
     ],
   },
   {
@@ -389,6 +401,9 @@ export const DESK_ACTIONS: Array<{ href: string; label: string; hint: string; ic
   { href: "/admin/enterprise?status=new", label: "Answer enterprise requests", hint: "Enterprise", icon: "building", key: "enterprise" },
   { href: "/admin/enterprise?tab=engagements&new=1", label: "New engagement or proposal", hint: "Enterprise", icon: "plus", key: "enterprise" },
   { href: "/admin/enterprise?tab=portfolio", label: "Owner statements", hint: "Enterprise", icon: "invoice", key: "enterprise" },
+  { href: "/admin/referrals?tab=partners&status=verifying", label: "Verify & countersign brokers", hint: "Broker network", icon: "handshake", key: "network" },
+  { href: "/admin/referrals?status=matching", label: "Tenant searches without a broker", hint: "Broker network", icon: "search", key: "network" },
+  { href: "/admin/referrals?tab=fees", label: "Invoice referral fees", hint: "Broker network", icon: "invoice", key: "network" },
   { href: "/admin/listings?moderation=pending&view=board", label: "Review pending listings", hint: "Listings", icon: "check", key: "listings" },
   { href: "/admin/crm?due=1", label: "Follow-ups due", hint: "CRM", icon: "clock", key: "crm" },
   { href: "/admin/crm?view=board", label: "CRM board", hint: "CRM", icon: "board", key: "crm" },
