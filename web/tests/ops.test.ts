@@ -257,7 +257,7 @@ test("playbooks: merge fills known fields and blanks unknown ones; recipes are v
   assert.equal(new Set(RECIPES.map((r) => r.id)).size, RECIPES.length);
   assert.ok(!isTrigger("__proto__"));
   assert.ok(!isTrigger("toString"));
-  assert.equal(Object.keys(TRIGGERS).length, 10);
+  assert.equal(Object.keys(TRIGGERS).length, 12);
   assert.equal(waitLabel(45), "45 min");
   assert.equal(waitLabel(120), "2 h");
   assert.equal(waitLabel(1440), "1 day");

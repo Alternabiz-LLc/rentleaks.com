@@ -12,6 +12,7 @@ const LINKS = [
   { href: "/stays?view=map", label: "Map", view: "map" },
   { href: "/stays", label: "Stays" },
   { href: "/list", label: "List a place" },
+  { href: "https://rentleaks.com/enterprise/", label: "Enterprise" },
 ] as const;
 
 function linkActive(
@@ -37,6 +38,8 @@ function linkActive(
       return pathname.startsWith("/stays") && view === "map";
     case "/stays":
       return pathname.startsWith("/stays") && !type && view !== "map";
+    case "https://rentleaks.com/enterprise/":
+      return false;
     default: {
       const _never: never = href;
       return _never;

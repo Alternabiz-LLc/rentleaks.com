@@ -31,6 +31,9 @@ const FIND = [
 const HOST_PAGES = [
   { href: "/list", label: "List a place" },
   { href: "/account", label: "Your listings" },
+  { href: "https://rentleaks.com/enterprise/", label: "Enterprise & building owners" },
+  { href: "https://rentleaks.com/enterprise/management.html", label: "Property management" },
+  { href: "https://rentleaks.com/enterprise/owners.html", label: "Out-of-state owners" },
 ];
 
 type InfoId = "verify" | "operators" | "agents" | "leasebreak" | "contact" | "works" | "markets" | "privacy" | "terms";
@@ -452,8 +455,10 @@ export function SiteFooter() {
 
       <div className="rl-foot__legal">
         <p>
-          © {year} {COMPANY.legalName}. {COMPANY.product} is a listing platform, not a broker, landlord or agent in any
-          transaction listed on it.
+          © {year} {COMPANY.legalName}. {COMPANY.product} is a listing platform, not a broker, landlord or agent in the
+          transactions listed on it. Brokerage and property-management services are separate: they are provided only under
+          a signed agreement, by the licensed brokerage named on the{" "}
+          <a href="https://rentleaks.com/enterprise/">enterprise pages</a>.
         </p>
         <p>
           <b>Equal housing opportunity.</b> Listings and messages here are subject to the Fair Housing Act and to local

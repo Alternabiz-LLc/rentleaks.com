@@ -15,13 +15,16 @@ export function openPalette() {
 
 type Hit = { href: string; label: string; hint: string; icon: DeskIcon; group: string };
 
-type SearchHit = { kind: "lead" | "contact" | "listing" | "account"; id: string; title: string; sub: string; href: string };
+type SearchHit = { kind: "lead" | "contact" | "listing" | "account" | "request" | "engagement" | "property"; id: string; title: string; sub: string; href: string };
 
 const KIND: Record<SearchHit["kind"], { label: string; icon: DeskIcon }> = {
   lead: { label: "Lead", icon: "leads" },
   contact: { label: "Contact", icon: "crm" },
   listing: { label: "Listing", icon: "listings" },
   account: { label: "Account", icon: "accounts" },
+  request: { label: "Enterprise request", icon: "building" },
+  engagement: { label: "Engagement", icon: "building" },
+  property: { label: "Managed property", icon: "listings" },
 };
 
 /**
@@ -58,6 +61,7 @@ export function CommandPalette({ allowed }: { allowed: AccessKey[] }) {
       t: { href: "/admin/trust", key: "trust" },
       p: { href: "/admin/playbooks", key: "automation" },
       d: { href: "/admin/demand", key: "markets" },
+      e: { href: "/admin/enterprise", key: "enterprise" },
     };
     const typing = (el: EventTarget | null) => el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement || (el instanceof HTMLElement && el.isContentEditable);
     const onGo = (e: KeyboardEvent) => {

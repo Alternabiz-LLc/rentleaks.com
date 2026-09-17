@@ -12,6 +12,8 @@ import { requireAdminPage } from "@/lib/admin/guard";
 import { nowMs } from "@/lib/admin/metrics";
 import { CATEGORY, fmtCents } from "@/lib/books/core";
 import { loadClient } from "@/lib/clients/account";
+import { ENGAGEMENT_STAGE, PACKAGE, type EngagementStatus } from "@/lib/enterprise/catalog";
+import { clientEnterprise } from "@/lib/enterprise/data";
 import type { DeskIcon } from "@/lib/admin/nav";
 
 export const metadata = { title: "Client account — RentLeaks desk" };
@@ -58,6 +60,8 @@ export default async function ClientPage({ params, searchParams }: { params: Pro
   const desk = user.role === "admin" || user.role === "staff";
   const suggestions = c.suggestions.filter((s) => !s.key || canAccess(me, s.key as Parameters<typeof canAccess>[1]));
   const tone = health.score >= 70 ? "live" : health.score >= 45 ? "warn" : "critical";
+  const ent = canAccess(me, "enterprise") ? await clientEnterprise(user.email, user.id) : null;
+  const entAny = ent && ent.requests.length + ent.engagements.length + ent.properties.length > 0;
   const first = user.name.trim().split(/\s+/)[0] || "there";
 
   return (
@@ -294,6 +298,60 @@ export default async function ClientPage({ params, searchParams }: { params: Pro
                   </p>
                 )}
               </Panel>
+              {ent && entAny ? (
+                <Panel kicker="Enterprise" title="Services with us" actions={<Link prefetch={false} className="dk-btn dk-btn--ghost dk-btn--sm" href="/admin/enterprise">Open</Link>}>
+                  <ul className="dk-feed">
+                    {ent.engagements.map((e) => (
+                      <li key={e.id}>
+                        <span className="dk-feed__icon dk-feed__icon--good">
+                          <Icon name="building" size={15} />
+                        </span>
+                        <div>
+                          <Link prefetch={false} href={`/admin/enterprise?tab=engagements&eng=${e.id}`}>
+                            <b>{e.packageId ? (PACKAGE.get(e.packageId)?.name ?? e.title) : e.title}</b>
+                          </Link>
+                          <p>
+                            {ENGAGEMENT_STAGE[e.status as EngagementStatus]?.label ?? e.status} · {e.tasks.filter((x) => x.doneAt).length}/{e.tasks.length} steps
+                          </p>
+                        </div>
+                      </li>
+                    ))}
+                    {ent.properties.map((x) => (
+                      <li key={x.id}>
+                        <span className="dk-feed__icon">
+                          <Icon name="listings" size={15} />
+                        </span>
+                        <div>
+                          <Link prefetch={false} href={`/admin/enterprise?tab=portfolio&prop=${x.id}`}>
+                            <b>{x.name}</b>
+                          </Link>
+                          <p>
+                            {x.occupied}/{x.units} occupied · last statement {x.statements[0]?.month ?? "none"}
+                          </p>
+                        </div>
+                      </li>
+                    ))}
+                    {ent.requests
+                      .filter((r) => !r.engagementId)
+                      .map((r) => (
+                        <li key={r.id}>
+                          <span className="dk-feed__icon dk-feed__icon--value">
+                            <Icon name="leads" size={15} />
+                          </span>
+                          <div>
+                            <Link prefetch={false} href={`/admin/enterprise?open=${r.id}`}>
+                              <b>Request · {r.status}</b>
+                            </Link>
+                            <p>
+                              {r.units ? `${r.units} units · ` : ""}
+                              {r.market ?? r.address ?? ""} · {when(r.createdAt, false)}
+                            </p>
+                          </div>
+                        </li>
+                      ))}
+                  </ul>
+                </Panel>
+              ) : null}
               <Panel title="Pinned notes" actions={<Link prefetch={false} className="dk-btn dk-btn--ghost dk-btn--sm" href={self({ tab: "notes" })}>All notes</Link>}>
                 {c.notes.filter((n) => n.pinned).length ? (
                   <ul className="dk-notes">

@@ -256,6 +256,9 @@ export async function markInvoicePaid(id: string, method: string, date: string, 
   const inv = await prisma.invoice.findUnique({ where: { id } });
   if (!inv || inv.status === "void") return false;
   await prisma.invoice.update({ where: { id }, data: { status: "paid", paidAt: new Date(`${date}T12:00:00Z`), paidMethod: method } });
+  /* Enterprise invoices land in their own income line: commissions, management fees or marketing services. */
+  const eng = inv.engagementId ? await prisma.engagement.findUnique({ where: { id: inv.engagementId }, select: { track: true, feeModel: true } }).catch(() => null) : null;
+  const category = !eng ? "invoices" : eng.feeModel === "commission" || eng.track === "brokerage" ? "commissions" : eng.track === "marketing" ? "marketing_services" : "management_fees";
   await prisma.ledgerEntry
     .upsert({
       where: { sourceKey: `inv:${inv.id}` },
@@ -263,7 +266,7 @@ export async function markInvoicePaid(id: string, method: string, date: string, 
       create: {
         date,
         kind: "income",
-        category: "invoices",
+        category,
         amountCents: inv.totalCents,
         currency: inv.currency,
         description: `Invoice ${inv.number}`,

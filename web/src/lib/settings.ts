@@ -22,6 +22,16 @@ export const SETTING_KEYS = {
   // "off" stops the Monday owner report (default on); the last week it went out.
   weeklyReport: "ops.weeklyReport",
   weeklyReportAt: "ops.weeklyReportAt",
+  // Enterprise: the licensed broker shown on every enterprise page, and optional "from" prices (JSON { packageId: "from $…" }).
+  brokerName: "ent.brokerName",
+  brokerLicence: "ent.brokerLicence",
+  brokerStates: "ent.brokerStates",
+  brokerPhone: "ent.brokerPhone",
+  brokerAddress: "ent.brokerAddress",
+  brokerEmail: "ent.brokerEmail",
+  enterprisePrices: "ent.prices",
+  // "off" pauses the public request form (default on).
+  enterpriseForm: "ent.form",
 } as const;
 
 export type SettingKey = (typeof SETTING_KEYS)[keyof typeof SETTING_KEYS];

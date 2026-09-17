@@ -863,12 +863,15 @@ model Invoice {
   paidAt         DateTime?
   paidMethod     String?
   createdById    String?
+  // The enterprise engagement this invoice bills, when there is one.
+  engagementId   String?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
   @@index([status])
   @@index([userId])
   @@index([dueDate])
+  @@index([engagementId])
 }
 
 /// A private note on a client account, visible to the desk only.
@@ -899,4 +902,179 @@ model Receipt {
 
   @@index([entryId])
   @@index([createdAt])
+}
+
+/**
+ * ------------------------------------------------------------------------
+ * Enterprise: services for landlords, corporations, developers and
+ * out-of-state owners — brokerage, marketing, media and management.
+ * The catalogue lives in src/lib/enterprise/catalog.ts.
+ * ------------------------------------------------------------------------
+ */
+
+/// A request from rentleaks.com/enterprise/. Asks about the property, never about people.
+model ServiceRequest {
+  id            String    @id @default(cuid())
+  // new | contacted | proposal | won | lost | spam
+  status        String    @default("new")
+  name          String
+  email         String
+  phone         String?
+  company       String?
+  // landlord | company | developer | operator | investor | other
+  role          String    @default("landlord")
+  // building | complex | portfolio | multi_room | furnished | single | development
+  propertyKind  String    @default("building")
+  units         Int?
+  buildings     Int?
+  market        String?
+  address       String?
+  ownerLocation String?
+  outOfState    Boolean   @default(false)
+  // JSON ServiceId[] and add-on ids
+  services      String    @default("[]")
+  addOns        String    @default("[]")
+  packageId     String?
+  // now | 30d | 90d | exploring
+  timeline      String    @default("exploring")
+  message       String    @default("")
+  consent       Boolean   @default(false)
+  source        String    @default("web")
+  campaign      String?
+  referrer      String?
+  score         Int       @default(0)
+  note          String?
+  lostReason    String?
+  assignedToId  String?
+  contactedAt   DateTime?
+  ackSentAt     DateTime?
+  engagementId  String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([status, createdAt])
+  @@index([email])
+}
+
+/// What a client signed up for: one package (or a custom scope) and its fee.
+model Engagement {
+  id                String    @id @default(cuid())
+  title             String
+  clientName        String
+  clientEmail       String
+  clientCompany     String?
+  clientPhone       String?
+  userId            String?
+  requestId         String?
+  // marketing | brokerage | management | owners
+  track             String
+  packageId         String?
+  // JSON ServiceId[]
+  services          String    @default("[]")
+  // proposal | signed | active | paused | completed | cancelled
+  status            String    @default("proposal")
+  // flat | monthly | per_unit | percent | commission
+  feeModel          String    @default("monthly")
+  amountCents       Int       @default(0)
+  // basis points: 800 = 8%
+  pctBp             Int       @default(0)
+  units             Int       @default(0)
+  // Monthly rent the percent or commission applies to.
+  rentRollCents     Int       @default(0)
+  currency          String    @default("USD")
+  market            String?
+  address           String?
+  ownerLocation     String?
+  // Where the signed agreement is kept (e-sign envelope, drive link, file name).
+  agreementRef      String?
+  agreementSignedOn String?
+  proposalSentAt    DateTime?
+  startDate         String?
+  endDate           String?
+  note              String?
+  ownerId           String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  tasks      EngagementTask[]
+  properties ManagedProperty[]
+
+  @@index([status])
+  @@index([clientEmail])
+  @@index([userId])
+}
+
+/// A deliverable on an engagement's checklist.
+model EngagementTask {
+  id           String     @id @default(cuid())
+  engagementId String
+  engagement   Engagement @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  title        String
+  dueDate      String?
+  position     Int        @default(0)
+  doneAt       DateTime?
+  doneById     String?
+  createdAt    DateTime   @default(now())
+
+  @@index([engagementId, position])
+  @@index([doneAt, dueDate])
+}
+
+/// A property RentLeaks manages or leases for an owner.
+model ManagedProperty {
+  id            String      @id @default(cuid())
+  engagementId  String?
+  engagement    Engagement? @relation(fields: [engagementId], references: [id], onDelete: SetNull)
+  name          String
+  address       String      @default("")
+  market        String?
+  // building | complex | multi_room | furnished | single | portfolio | development
+  kind          String      @default("building")
+  units         Int         @default(1)
+  occupied      Int         @default(0)
+  rentRollCents Int         @default(0)
+  pctBp         Int         @default(0)
+  flatFeeCents  Int         @default(0)
+  currency      String      @default("USD")
+  ownerName     String
+  ownerEmail    String
+  ownerLocation String?
+  // onboarding | active | paused | ended
+  status        String      @default("onboarding")
+  // JSON listing ids on RentLeaks for these units
+  listingIds    String      @default("[]")
+  note          String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  statements OwnerStatement[]
+
+  @@index([status])
+  @@index([ownerEmail])
+}
+
+/// The monthly statement an owner gets: rent collected (client money, held in
+/// trust — never RentLeaks income), expenses paid for them, our fee, net.
+model OwnerStatement {
+  id             String          @id @default(cuid())
+  propertyId     String
+  property       ManagedProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  // YYYY-MM
+  month          String
+  collectedCents Int             @default(0)
+  expensesCents  Int             @default(0)
+  feeCents       Int             @default(0)
+  netCents       Int             @default(0)
+  occupied       Int             @default(0)
+  // JSON [{ label, amountCents }]
+  expenseLines   String          @default("[]")
+  note           String          @default("")
+  sentAt         DateTime?
+  invoiceId      String?
+  createdById    String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@unique([propertyId, month])
+  @@index([month])
 }

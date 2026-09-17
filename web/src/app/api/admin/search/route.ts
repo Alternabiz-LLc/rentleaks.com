@@ -4,7 +4,7 @@ import { staffForRoute } from "@/lib/admin/guard";
 
 export const dynamic = "force-dynamic";
 
-type Hit = { kind: "lead" | "contact" | "listing" | "account"; id: string; title: string; sub: string; href: string };
+type Hit = { kind: "lead" | "contact" | "listing" | "account" | "request" | "engagement" | "property"; id: string; title: string; sub: string; href: string };
 
 /**
  * Record search for the desk's ⌘K palette: leads, contacts, listings and
@@ -20,13 +20,14 @@ export async function GET(req: Request) {
     crm: canAccess(user, "crm"),
     listings: canAccess(user, "listings"),
     accounts: canAccess(user, "accounts"),
+    enterprise: canAccess(user, "enterprise"),
   };
   const none = Promise.resolve([] as never[]);
   const q = (new URL(req.url).searchParams.get("q") || "").trim().slice(0, 80);
   if (q.length < 2) return Response.json({ hits: [] });
   const has = { contains: q, mode: "insensitive" as const };
 
-  const [leads, contacts, listings, accounts] = await Promise.all([
+  const [leads, contacts, listings, accounts, requests, engagements, properties] = await Promise.all([
     !can.leads ? none : prisma.lead
       .findMany({
         where: { OR: [{ name: has }, { email: has }, { phone: { contains: q } }, { id: q }] },
@@ -59,6 +60,30 @@ export async function GET(req: Request) {
         take: 5,
       })
       .catch(() => []),
+    !can.enterprise ? none : prisma.serviceRequest
+      .findMany({
+        where: { status: { not: "spam" }, OR: [{ name: has }, { email: has }, { company: has }, { address: has }, { market: has }] },
+        select: { id: true, name: true, company: true, status: true, units: true, market: true },
+        orderBy: { createdAt: "desc" },
+        take: 4,
+      })
+      .catch(() => []),
+    !can.enterprise ? none : prisma.engagement
+      .findMany({
+        where: { OR: [{ title: has }, { clientName: has }, { clientEmail: has }, { clientCompany: has }, { address: has }] },
+        select: { id: true, title: true, status: true, clientEmail: true },
+        orderBy: { updatedAt: "desc" },
+        take: 4,
+      })
+      .catch(() => []),
+    !can.enterprise ? none : prisma.managedProperty
+      .findMany({
+        where: { OR: [{ name: has }, { address: has }, { ownerName: has }, { ownerEmail: has }] },
+        select: { id: true, name: true, units: true, status: true, ownerName: true },
+        orderBy: { updatedAt: "desc" },
+        take: 4,
+      })
+      .catch(() => []),
   ]);
 
   const hits: Hit[] = [
@@ -89,6 +114,27 @@ export async function GET(req: Request) {
       title: u.name || u.email,
       sub: `${u.role} · ${u.email}`,
       href: `/admin/accounts/${u.id}`,
+    })),
+    ...requests.map((r) => ({
+      kind: "request" as const,
+      id: r.id,
+      title: r.company || r.name,
+      sub: `${r.status}${r.units ? ` · ${r.units} units` : ""}${r.market ? ` · ${r.market}` : ""}`,
+      href: `/admin/enterprise?open=${r.id}`,
+    })),
+    ...engagements.map((e) => ({
+      kind: "engagement" as const,
+      id: e.id,
+      title: e.title,
+      sub: `${e.status} · ${e.clientEmail}`,
+      href: `/admin/enterprise?tab=engagements&eng=${e.id}`,
+    })),
+    ...properties.map((p) => ({
+      kind: "property" as const,
+      id: p.id,
+      title: p.name,
+      sub: `${p.status} · ${p.units} units · ${p.ownerName}`,
+      href: `/admin/enterprise?tab=portfolio&prop=${p.id}`,
     })),
   ];
   return Response.json({ hits });

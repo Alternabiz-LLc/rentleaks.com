@@ -54,7 +54,8 @@ export type DeskIcon =
   | "clock"
   | "flag"
   | "phone"
-  | "copy";
+  | "copy"
+  | "building";
 
 export type DeskModule = {
   href: string;
@@ -69,7 +70,7 @@ export type DeskModule = {
   /** The live badge on the header. */
   live: string;
   /** Key into the layout's counts for the sidebar badge. */
-  badge?: "leads" | "review" | "reports" | "followups" | "copilot" | "trust" | "viewings";
+  badge?: "leads" | "review" | "reports" | "followups" | "copilot" | "trust" | "viewings" | "enterprise";
   /** Extra words the palette should match. */
   keywords?: string;
 };
@@ -252,6 +253,17 @@ export const DESK_GROUPS: DeskGroup[] = [
         live: "Scores live",
         keywords: "host quality response rate coaching sponsor landlord",
       },
+      {
+        href: "/admin/enterprise",
+        key: "enterprise",
+        label: "Enterprise services",
+        icon: "building",
+        code: "EN-01",
+        brief: "Landlords, corporations and out-of-state owners — requests, proposals, engagements, managed buildings and owner statements.",
+        live: "Services live",
+        badge: "enterprise",
+        keywords: "enterprise brokerage broker property management owner statement landlord corporate out of state marketing photography virtual tour syndication proposal engagement portfolio",
+      },
     ],
   },
   {
@@ -374,6 +386,9 @@ export const DESK_ACTIONS: Array<{ href: string; label: string; hint: string; ic
   { href: "/admin/books?tab=ledger&add=expense", label: "Record an expense", hint: "Books", icon: "books", key: "books" },
   { href: "/admin/books?tab=invoices&new=1", label: "New invoice", hint: "Books", icon: "invoice", key: "books" },
   { href: "/admin/books?tab=reports", label: "Profit & loss report", hint: "Books", icon: "export", key: "books" },
+  { href: "/admin/enterprise?status=new", label: "Answer enterprise requests", hint: "Enterprise", icon: "building", key: "enterprise" },
+  { href: "/admin/enterprise?tab=engagements&new=1", label: "New engagement or proposal", hint: "Enterprise", icon: "plus", key: "enterprise" },
+  { href: "/admin/enterprise?tab=portfolio", label: "Owner statements", hint: "Enterprise", icon: "invoice", key: "enterprise" },
   { href: "/admin/listings?moderation=pending&view=board", label: "Review pending listings", hint: "Listings", icon: "check", key: "listings" },
   { href: "/admin/crm?due=1", label: "Follow-ups due", hint: "CRM", icon: "clock", key: "crm" },
   { href: "/admin/crm?view=board", label: "CRM board", hint: "CRM", icon: "board", key: "crm" },

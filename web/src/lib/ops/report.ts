@@ -28,6 +28,8 @@ export type WeekNumbers = {
   expenses: number;
   net: number;
   netBefore: number;
+  /** Enterprise requests and newly signed engagements, when the module is in use. */
+  enterprise?: { requests: number; signed: number };
 };
 
 const change = (a: number, b: number) => (b ? `${a >= b ? "▲" : "▼"} ${Math.abs(Math.round(((a - b) / b) * 100))}%` : a ? "new" : "—");
@@ -40,6 +42,7 @@ export function reportLines(n: WeekNumbers) {
     ["Shortlists sent", `${n.shortlists}${n.shortlists ? ` · ${n.opened} opened` : ""}`],
     ["Leases signed", String(n.bookingsSigned)],
     ["New hosts / new listings", `${n.newHosts} / ${n.newListings}`],
+    ...(n.enterprise ? [["Enterprise requests / signed", `${n.enterprise.requests} / ${n.enterprise.signed}`]] : []),
     ["Income", fmtCents(n.income, "USD", { whole: true })],
     ["Expenses", fmtCents(n.expenses, "USD", { whole: true })],
     ["Net", `${fmtCents(n.net, "USD", { whole: true })} (${change(n.net, n.netBefore)})`],
@@ -71,6 +74,10 @@ export async function weeklyNumbers(now = new Date()): Promise<WeekNumbers> {
     prisma.listing.count({ where: { createdAt: { gte: from } } }),
     prisma.ledgerEntry.findMany({ where: { date: { gte: d14 } }, select: { date: true, kind: true, category: true, amountCents: true, voidedAt: true } }).catch(() => []),
   ]);
+  const [entRequests, entSigned] = await Promise.all([
+    prisma.serviceRequest.count({ where: { createdAt: { gte: from }, status: { not: "spam" } } }).catch(() => null),
+    prisma.engagement.count({ where: { agreementSignedOn: { gte: d7 } } }).catch(() => null),
+  ]);
   const now7 = pnl(lines, { from: d7, to: today });
   const prev7 = pnl(lines, { from: d14, to: d8 });
   const mins = median(answered.map((l) => (l.contactedAt!.getTime() - l.createdAt.getTime()) / 60_000).filter((m) => m >= 0));
@@ -87,6 +94,7 @@ export async function weeklyNumbers(now = new Date()): Promise<WeekNumbers> {
     expenses: now7.expenses,
     net: now7.net,
     netBefore: prev7.net,
+    enterprise: entRequests === null || entSigned === null || entRequests + entSigned === 0 ? undefined : { requests: entRequests, signed: entSigned },
   };
 }
 

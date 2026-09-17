@@ -8,6 +8,7 @@ import { CATEGORY, ISO, LEDGER_HEADERS, ledgerRow, parseItems, pnl, invoiceState
 import { booksToday } from "@/lib/books/data";
 import { loadScorecards } from "@/lib/ops/hosts";
 import { loadDemand } from "@/lib/ops/demand";
+import { engagementValue, occupancy } from "@/lib/enterprise/catalog";
 
 export const dynamic = "force-dynamic";
 
@@ -75,6 +76,44 @@ async function build(kind: string, url: URL): Promise<{ headers: string[]; rows:
       return {
         headers: ["when", "playbook", "trigger", "action", "status", "target_type", "target_id", "detail"],
         rows: rows.map((r) => [r.createdAt, r.playbook.name, r.playbook.trigger, r.playbook.action, r.status, r.targetType, r.targetId, r.detail]),
+      };
+    }
+    case "requests": {
+      const rows = await prisma.serviceRequest.findMany({ orderBy: { createdAt: "desc" }, take: MAX });
+      const list = (j: string) => {
+        try {
+          return (JSON.parse(j) as string[]).join(";");
+        } catch {
+          return "";
+        }
+      };
+      return {
+        headers: ["created", "status", "score", "name", "email", "phone", "company", "role", "property", "units", "buildings", "market", "address", "owner_based_in", "out_of_state", "services", "add_ons", "package", "timeline", "source", "campaign", "contacted", "lost_reason", "note", "message"],
+        rows: rows.map((r) => [r.createdAt, r.status, r.score, r.name, r.email, r.phone, r.company, r.role, r.propertyKind, r.units, r.buildings, r.market, r.address, r.ownerLocation, r.outOfState, list(r.services), list(r.addOns), r.packageId, r.timeline, r.source, r.campaign, r.contactedAt, r.lostReason, r.note, r.message]),
+      };
+    }
+    case "engagements": {
+      const rows = await prisma.engagement.findMany({ orderBy: { createdAt: "desc" }, take: MAX, include: { tasks: { select: { doneAt: true } } } });
+      return {
+        headers: ["created", "status", "title", "client", "email", "company", "track", "package", "fee_model", "amount", "percent", "units", "rent_roll", "monthly_value", "one_time_value", "currency", "signed_on", "agreement", "start", "end", "steps_done", "steps"],
+        rows: rows.map((e) => {
+          const v = engagementValue(e);
+          return [e.createdAt, e.status, e.title, e.clientName, e.clientEmail, e.clientCompany, e.track, e.packageId, e.feeModel, e.amountCents / 100, e.pctBp / 100, e.units, e.rentRollCents / 100, v.monthly / 100, v.once / 100, e.currency, e.agreementSignedOn, e.agreementRef, e.startDate, e.endDate, e.tasks.filter((x) => x.doneAt).length, e.tasks.length];
+        }),
+      };
+    }
+    case "properties": {
+      const rows = await prisma.managedProperty.findMany({ orderBy: { name: "asc" }, take: MAX });
+      return {
+        headers: ["name", "status", "kind", "address", "market", "units", "occupied", "occupancy_pct", "rent_roll", "fee_pct", "flat_fee", "currency", "owner", "owner_email", "owner_based_in"],
+        rows: rows.map((x) => [x.name, x.status, x.kind, x.address, x.market, x.units, x.occupied, occupancy(x.units, x.occupied), x.rentRollCents / 100, x.pctBp / 100, x.flatFeeCents / 100, x.currency, x.ownerName, x.ownerEmail, x.ownerLocation]),
+      };
+    }
+    case "statements": {
+      const rows = await prisma.ownerStatement.findMany({ orderBy: [{ month: "desc" }], take: MAX, include: { property: { select: { name: true, ownerName: true, ownerEmail: true, currency: true } } } });
+      return {
+        headers: ["month", "property", "owner", "owner_email", "collected", "paid_for_owner", "fee", "net_to_owner", "occupied", "currency", "sent", "invoice_id", "note"],
+        rows: rows.map((s) => [s.month, s.property.name, s.property.ownerName, s.property.ownerEmail, s.collectedCents / 100, s.expensesCents / 100, s.feeCents / 100, s.netCents / 100, s.occupied, s.property.currency, s.sentAt, s.invoiceId, s.note]),
       };
     }
     case "bookings": {

@@ -4,12 +4,13 @@
  * (Next best actions handles individual records). Pure `advise` for the tests;
  * `loadAdvice` gathers the numbers, only for the pages the viewer can open.
  */
-import { canAccess, type AccessCarrier, type AccessKey } from "@/lib/access";
+import { canAccess, isFounder, type AccessCarrier, type AccessKey } from "@/lib/access";
 import { adSpendGap, booksToday, unsyncedPayments } from "@/lib/books/data";
 import { invoiceState } from "@/lib/books/core";
 import { prisma } from "@/lib/prisma";
 import { getSettings, SETTING_KEYS } from "@/lib/settings";
 import { mailStatus } from "@/lib/v1/mail";
+import { enterpriseFacts } from "@/lib/enterprise/data";
 import { loadDemand } from "./demand";
 import { loadScorecards } from "./hosts";
 import { median } from "./sla";
@@ -37,12 +38,38 @@ export type AdvisorFacts = Partial<{
   staleListings: number;
   briefOff: boolean;
   trialsEnding: number;
+  enterpriseWaiting: number;
+  brokerMissing: boolean;
+  statementsDue: number;
+  statementMonth: string;
+  engagementStepsLate: number;
 }>;
 
 export function advise(f: AdvisorFacts): Advice[] {
   const out: Advice[] = [];
   if (f.emailReady === false) {
     out.push({ id: "email", key: "system", impact: 100, tone: "bad", title: "Email isn't connected", body: "Instant replies, shortlists, invoices and reminders are only logged until email is set up.", href: "/admin/system", cta: "Connect email" });
+  }
+  if (f.enterpriseWaiting) {
+    out.push({
+      id: "enterprise",
+      key: "enterprise",
+      impact: 92,
+      tone: "bad",
+      title: `${f.enterpriseWaiting} enterprise request${f.enterpriseWaiting === 1 ? "" : "s"} waiting over a day`,
+      body: "Building owners compare firms fast — a same-day call wins the walk-through.",
+      href: "/admin/enterprise?status=new",
+      cta: "Reply",
+    });
+  }
+  if (f.brokerMissing) {
+    out.push({ id: "licence", key: "enterprise", impact: 80, tone: "warn", title: "Licence details missing on the enterprise pages", body: "Broker ads must name the licensed broker and show an address or phone. Add them before you promote the pages.", href: "/admin/enterprise?tab=catalogue", cta: "Add" });
+  }
+  if (f.statementsDue) {
+    out.push({ id: "statements", key: "enterprise", impact: 62, tone: "warn", title: `${f.statementsDue} owner statement${f.statementsDue === 1 ? "" : "s"} due for ${f.statementMonth ?? "last month"}`, body: "Out-of-state owners judge you by the statement. Send it by the 10th.", href: "/admin/enterprise?tab=portfolio", cta: "Send" });
+  }
+  if (f.engagementStepsLate) {
+    out.push({ id: "steps", key: "enterprise", impact: 48, tone: "info", title: `${f.engagementStepsLate} engagement step${f.engagementStepsLate === 1 ? "" : "s"} past due`, body: "Tick them off or move the date — the client sees the pace.", href: "/admin/enterprise?tab=engagements", cta: "Review" });
   }
   if (f.overdueInvoices) {
     out.push({ id: "overdue", key: "books", impact: 90, tone: "bad", title: `${f.overdueInvoices} invoice${f.overdueInvoices === 1 ? "" : "s"} overdue`, body: "Money you've earned and not collected.", href: "/admin/books?tab=invoices&state=overdue", cta: "Chase" });
@@ -106,7 +133,7 @@ export async function loadAdvice(me: AccessCarrier & { id: string; briefHour?: n
   const today = booksToday(now);
   const monthStart = `${today.slice(0, 7)}-01`;
   const settings = await safe(getSettings([SETTING_KEYS.autopilot, SETTING_KEYS.freshness]), {} as Record<string, string>);
-  const [answered, playbooksOn, shortlists, demand, cards, invoices, unsynced, adGap, expenses, lost, stale, trialsEnding] = await Promise.all([
+  const [answered, playbooksOn, shortlists, demand, cards, invoices, unsynced, adGap, expenses, lost, stale, trialsEnding, ent] = await Promise.all([
     can("leads") ? safe(prisma.lead.findMany({ where: { createdAt: { gte: new Date(t - 30 * DAY) }, contactedAt: { not: null } }, select: { createdAt: true, contactedAt: true }, take: 500 }), []) : [],
     can("automation") || can("leads") ? safe(prisma.playbook.count({ where: { enabled: true } }), 0) : 0,
     can("leads") ? safe(prisma.lead.findMany({ where: { matchesSentAt: { gte: new Date(t - 30 * DAY) } }, select: { shortlistOpenedAt: true }, take: 1000 }), []) : [],
@@ -119,6 +146,7 @@ export async function loadAdvice(me: AccessCarrier & { id: string; briefHour?: n
     can("bookings") ? safe(prisma.booking.findMany({ where: { stage: "lost", updatedAt: { gte: new Date(t - 90 * DAY) } }, select: { lostReason: true } }), []) : [],
     can("listings") ? safe(prisma.listing.count({ where: { status: "active", moderation: "approved", OR: [{ confirmedAt: null, postedAt: { lt: new Date(t - 30 * DAY) } }, { confirmedAt: { lt: new Date(t - 30 * DAY) } }] } }), 0) : 0,
     can("trials") ? safe(prisma.user.count({ where: { trialEndsAt: { gt: now, lte: new Date(t + 3 * DAY) } } }), 0) : 0,
+    can("enterprise") ? safe(enterpriseFacts(now), null) : null,
   ]);
   const replyMins = median(answered.map((l) => (l.contactedAt!.getTime() - l.createdAt.getTime()) / 60_000).filter((m) => m >= 0));
   const cities = demand ? new Map((await safe(prisma.city.findMany({ select: { id: true, name: true } }), [])).map((c) => [c.id, c.name])) : new Map<string, string>();
@@ -148,6 +176,11 @@ export async function loadAdvice(me: AccessCarrier & { id: string; briefHour?: n
     staleListings: stale,
     briefOff: me.briefHour === null || me.briefHour === undefined,
     trialsEnding,
+    enterpriseWaiting: ent?.requestsWaiting,
+    brokerMissing: ent && isFounder(me) ? ent.brokerMissing : undefined,
+    statementsDue: ent?.statementsDue,
+    statementMonth: ent?.statementMonth,
+    engagementStepsLate: ent?.overdueTasks,
   };
   return advise(facts)
     .filter((a) => can(a.key) || a.key === "overview")

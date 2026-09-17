@@ -750,7 +750,7 @@
 
   function assetBase() {
     const path = window.location.pathname || '';
-    if (/\/(listings|cities|operators)\//.test(path)) return '../';
+    if (/\/(listings|cities|operators|enterprise)\//.test(path)) return '../';
     return '';
   }
 
@@ -802,6 +802,7 @@
                 ${navLink(base + 'cities.html', 'Cities', 'cities')}
                 ${navLink(base + 'operators.html', 'Operators', 'operators')}
                 ${navLink(base + 'match.html', 'Stay DNA', 'match')}
+                ${navLink(base + 'enterprise/', 'Enterprise', 'enterprise')}
               </ul>
             </nav>
             <div class="header__actions">
@@ -809,6 +810,7 @@
                 <span class="js-cmd__label">Search everything</span><kbd>⌘K</kbd>
               </button>
               <a href="${base}saved.html" class="header__link">Saved${saved ? ' <span class="rl-count">' + saved + '</span>' : ''}</a>
+              <a href="${base}enterprise/" class="header__link header__link--ent${pageName() === 'enterprise' ? ' is-on' : ''}">For owners</a>
               <a href="${appHref('/list', base + 'list.html')}" class="header__link">List a place</a>
               <label class="cur-select" title="Display currency">
                 <span class="sr-only">Display currency</span>
@@ -862,6 +864,13 @@
                   <li><a href="${base}list.html?kind=coliving">Co-living operators</a></li>
                   <li><a href="${base}operators.html">Operator boutiques</a></li>
                   <li><a href="${base}professionals.html">Plans &amp; tools</a></li>
+                </ul></div>
+                <div class="footer__col"><h4>Enterprise</h4><ul>
+                  <li><a href="${base}enterprise/">For building owners</a></li>
+                  <li><a href="${base}enterprise/brokerage.html">Brokerage &amp; leasing</a></li>
+                  <li><a href="${base}enterprise/marketing.html">Marketing &amp; virtual tours</a></li>
+                  <li><a href="${base}enterprise/management.html">Property management</a></li>
+                  <li><a href="${base}enterprise/owners.html">Out-of-state owners</a></li>
                 </ul></div>
                 <div class="footer__col"><h4>Company</h4><ul>
                   <li><a href="${base}faq.html">FAQ</a></li>

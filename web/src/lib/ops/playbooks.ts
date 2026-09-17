@@ -91,6 +91,22 @@ export const TRIGGERS = {
     key: "books" as AccessKey,
     defaultWait: 60,
   },
+  owner_request_waiting: {
+    label: "An enterprise request has no reply",
+    when: "after",
+    unit: "after the request arrived",
+    who: "owner",
+    key: "enterprise" as AccessKey,
+    defaultWait: 240,
+  },
+  proposal_quiet: {
+    label: "A proposal went out and nothing moved",
+    when: "after",
+    unit: "after the proposal was emailed",
+    who: "owner",
+    key: "enterprise" as AccessKey,
+    defaultWait: 5 * 1440,
+  },
   contact_quiet: {
     label: "A contacted lead in the CRM went quiet",
     when: "after",
@@ -211,6 +227,26 @@ export const RECIPES: Array<{ id: string; name: string; trigger: TriggerKey; wai
     pitch: "Saves listings that would quietly lapse.",
   },
   {
+    id: "owner-alarm",
+    name: "Enterprise four-hour alarm",
+    trigger: "owner_request_waiting",
+    waitMinutes: 240,
+    action: "notify_team",
+    subject: "Unanswered: {{name}} ({{home}})",
+    body: "{{name}} asked about {{home}} in {{city}} four hours ago and nobody has replied yet.",
+    pitch: "Building owners don't wait for a second firm.",
+  },
+  {
+    id: "proposal-nudge",
+    name: "Proposal follow-up",
+    trigger: "proposal_quiet",
+    waitMinutes: 5 * 1440,
+    action: "send_email",
+    subject: "Any questions on the proposal, {{first_name}}?",
+    body: "Hi {{first_name}},\n\nI wanted to check whether the proposal for {{home}} answered everything. Happy to walk through the scope or the fee on a quick call — just reply with a time.\n\nRentLeaks Enterprise",
+    pitch: "Revives proposals that stalled in someone's inbox.",
+  },
+  {
     id: "quiet-contact",
     name: "Quiet-contact follow-up",
     trigger: "contact_quiet",
@@ -234,7 +270,7 @@ export function merge(text: string, vars: Record<string, string>) {
   return text.replace(/\{\{\s*([a-z_]+)\s*\}\}/g, (_, k: string) => vars[k] ?? "");
 }
 
-type Target = { id: string; type: "lead" | "user" | "listing" | "booking" | "contact" | "invoice" | "payment"; email: string; name: string; vars: Record<string, string>; desk: string };
+type Target = { id: string; type: "lead" | "user" | "listing" | "booking" | "contact" | "invoice" | "payment" | "request" | "engagement"; email: string; name: string; vars: Record<string, string>; desk: string };
 
 const first = (n: string) => n.trim().split(/\s+/)[0] || "there";
 const day = (d: Date | string) => (typeof d === "string" ? new Date(`${d}T12:00:00Z`) : d).toLocaleDateString("en-US", { month: "long", day: "numeric", timeZone: "UTC" });
@@ -392,6 +428,36 @@ export async function candidates(pb: { trigger: string; waitMinutes: number; cre
           desk: `${base}/admin/accounts/${x.userId}`,
           vars: vars(x.user.name, { home: x.listing?.title ?? "your listing", link: `${base}/account` }),
         }));
+    }
+    case "owner_request_waiting": {
+      const rows = await prisma.serviceRequest.findMany({
+        where: { status: "new", contactedAt: null, createdAt: { lte: new Date(t - wait), gte: floor } },
+        orderBy: { createdAt: "asc" },
+        take: BATCH,
+      });
+      return rows.map((r) => ({
+        id: r.id,
+        type: "request" as const,
+        email: r.email,
+        name: r.company ? `${r.name} (${r.company})` : r.name,
+        desk: `${base}/admin/enterprise?open=${r.id}`,
+        vars: vars(r.name, { city: r.market ?? "", home: r.units ? `${r.units} units` : "their property", date: day(r.createdAt), link: `${base}/admin/enterprise?open=${r.id}` }),
+      }));
+    }
+    case "proposal_quiet": {
+      const rows = await prisma.engagement.findMany({
+        where: { status: "proposal", proposalSentAt: { lte: new Date(t - wait), gte: floor } },
+        orderBy: { proposalSentAt: "asc" },
+        take: BATCH,
+      });
+      return rows.map((e) => ({
+        id: e.id,
+        type: "engagement" as const,
+        email: e.clientEmail,
+        name: e.clientName,
+        desk: `${base}/admin/enterprise?tab=engagements&eng=${e.id}`,
+        vars: vars(e.clientName, { city: e.market ?? "", home: e.address || e.market || "your property", date: day(e.proposalSentAt!), link: "https://rentleaks.com/enterprise/" }),
+      }));
     }
     case "contact_quiet": {
       const rows = await prisma.contact.findMany({
