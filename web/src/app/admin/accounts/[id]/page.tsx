@@ -398,7 +398,17 @@ export default async function ClientPage({ params, searchParams }: { params: Pro
                       <tr key={l.id} className={l.voidedAt ? "is-void" : undefined}>
                         <td className="dk-nowrap">{l.date}</td>
                         <td>{CATEGORY.get(l.category)?.label ?? l.category}</td>
-                        <td className="dk-dim">{l.description}</td>
+                        <td className="dk-dim">
+                          {l.description}
+                          {c.receiptCounts.get(l.id) ? (
+                            <>
+                              {" · "}
+                              <Link prefetch={false} href={`/admin/books?tab=ledger&edit=${l.id}`}>
+                                {c.receiptCounts.get(l.id)} receipt{c.receiptCounts.get(l.id) === 1 ? "" : "s"}
+                              </Link>
+                            </>
+                          ) : null}
+                        </td>
                         <td className="dk-right">
                           <b>{fmtCents(l.kind === "expense" ? -l.amountCents : l.amountCents, l.currency)}</b>
                           {l.voidedAt ? <div className="dk-dim">void</div> : null}

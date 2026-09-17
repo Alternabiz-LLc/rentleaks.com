@@ -9,6 +9,7 @@ import { getSettings, SETTING_KEYS } from "@/lib/settings";
 import { appUrl } from "@/lib/site";
 import { sendMail } from "@/lib/v1/mail";
 import { mailingAddress } from "@/lib/outbox";
+import { ORPHAN_HOURS } from "./receipts";
 import { daysLate, fmtCents, invoiceNumber, parseItems, reminderDue, repeatDates } from "./core";
 
 const PAID = ["paid", "succeeded", "complete"];
@@ -296,5 +297,9 @@ export async function remindOverdue(now = new Date()) {
 export async function runBooks(now = new Date()) {
   const today = booksToday(now);
   const [payments, repeats, reminders] = [await syncPayments(null), await runRepeats(today), await remindOverdue(now)];
-  return { payments, repeats, reminders };
+  const orphans = await prisma.receipt
+    .deleteMany({ where: { entryId: null, createdAt: { lt: new Date(now.getTime() - ORPHAN_HOURS * 3_600_000) } } })
+    .then((r) => r.count)
+    .catch(() => 0);
+  return { payments, repeats, reminders, orphans };
 }

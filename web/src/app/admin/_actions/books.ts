@@ -6,6 +6,7 @@ import { back, field, fields, returnTo } from "@/lib/admin/flash";
 import { prisma } from "@/lib/prisma";
 import { setSetting, SETTING_KEYS } from "@/lib/settings";
 import { CATEGORY, invoiceTotals, ISO, isCategory, METHODS, parseMoney, type InvoiceItem, type Kind } from "@/lib/books/core";
+import { RECEIPTS_PER_LINE } from "@/lib/books/receipts";
 import { bookAdSpend, booksSettings, booksToday, markInvoicePaid, nextInvoiceNumber, runRepeats, sendInvoice, syncPayments } from "@/lib/books/data";
 
 const PATH = "/admin/books";
@@ -54,13 +55,21 @@ export async function saveEntry(fd: FormData) {
     repeatMonthly: field(fd, "repeat", 3) === "yes",
     userId,
   };
+  let entryId = id;
   if (id) {
     const cur = await prisma.ledgerEntry.findUnique({ where: { id } });
     if (!cur) back(path, "err", "That line no longer exists.");
     if (cur.sourceKey && (cur.amountCents !== amount || cur.kind !== kind)) back(path, "err", "Synced lines keep their amount — void it and add a manual line instead.");
     await prisma.ledgerEntry.update({ where: { id }, data: { ...data, repeatMonthly: cur.repeatedFromId ? false : data.repeatMonthly } });
   } else {
-    await prisma.ledgerEntry.create({ data: { ...data, createdById: guard.user.id } });
+    entryId = (await prisma.ledgerEntry.create({ data: { ...data, createdById: guard.user.id }, select: { id: true } })).id;
+  }
+  /* Receipts uploaded while the form was open wait unattached; claim them now. */
+  const receiptIds = fields(fd, "receiptIds").slice(0, RECEIPTS_PER_LINE);
+  if (receiptIds.length) {
+    const room = RECEIPTS_PER_LINE - (await prisma.receipt.count({ where: { entryId } }));
+    const mine = await prisma.receipt.findMany({ where: { id: { in: receiptIds }, entryId: null, uploadedById: guard.user.id }, select: { id: true }, take: Math.max(0, room) });
+    if (mine.length) await prisma.receipt.updateMany({ where: { id: { in: mine.map((r) => r.id) } }, data: { entryId } });
   }
   if (data.repeatMonthly) await runRepeats(booksToday());
   await audit(guard.user.id, id ? "books.edit" : "books.add", "ledger", id || category, { kind, amount, date });

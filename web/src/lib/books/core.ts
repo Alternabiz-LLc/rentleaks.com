@@ -309,6 +309,7 @@ export function bookInsights(f: {
   overdue: { count: number; cents: number };
   drafts: number;
   uncategorised: number;
+  missingReceipts?: number;
   unsyncedPayments: number;
   adSpendUnbooked: number;
   leadsNow: number;
@@ -330,6 +331,9 @@ export function bookInsights(f: {
   }
   if (f.uncategorised) {
     out.push({ id: "uncat", tone: "warn", title: `${f.uncategorised} line${f.uncategorised === 1 ? "" : "s"} in “Other expense”`, body: "Give them a real category so the year-end summary is clean for your accountant.", href: "?tab=ledger&category=other_expense", cta: "Tidy up" });
+  }
+  if (f.missingReceipts) {
+    out.push({ id: "receipts", tone: "info", title: `${f.missingReceipts} expense${f.missingReceipts === 1 ? "" : "s"} without a receipt`, body: "Snap or upload them while you remember — your accountant will ask.", href: "?tab=ledger&kind=expense", cta: "Add receipts" });
   }
   if (f.drafts) {
     out.push({ id: "drafts", tone: "info", title: `${f.drafts} draft invoice${f.drafts === 1 ? "" : "s"} not sent`, body: "Drafts don't get paid.", href: "?tab=invoices&state=draft", cta: "Open drafts" });
@@ -372,8 +376,8 @@ export function bookInsights(f: {
 
 /* ---- CSV-safe ledger rows ------------------------------------------------ */
 
-export function ledgerRow(l: Line & { description?: string; counterparty?: string; method?: string; reference?: string | null; currency?: string }) {
+export function ledgerRow(l: Line & { description?: string; counterparty?: string; method?: string; reference?: string | null; currency?: string; receiptUrl?: string | null }, receipts = 0) {
   const c = CATEGORY.get(l.category);
-  return [l.date, l.kind, c?.label ?? l.category, c?.line ?? "", (l.kind === "expense" ? -l.amountCents : l.amountCents) / 100, l.currency ?? "USD", l.counterparty ?? "", l.description ?? "", l.method ?? "", l.reference ?? "", l.deductible === false ? "no" : "yes", l.voidedAt ? "void" : ""];
+  return [l.date, l.kind, c?.label ?? l.category, c?.line ?? "", (l.kind === "expense" ? -l.amountCents : l.amountCents) / 100, l.currency ?? "USD", l.counterparty ?? "", l.description ?? "", l.method ?? "", l.reference ?? "", l.deductible === false ? "no" : "yes", l.voidedAt ? "void" : "", receipts, l.receiptUrl ?? ""];
 }
-export const LEDGER_HEADERS = ["date", "kind", "category", "schedule_c_line", "amount", "currency", "counterparty", "description", "method", "reference", "deductible", "void"];
+export const LEDGER_HEADERS = ["date", "kind", "category", "schedule_c_line", "amount", "currency", "counterparty", "description", "method", "reference", "deductible", "void", "receipt_files", "receipt_link"];

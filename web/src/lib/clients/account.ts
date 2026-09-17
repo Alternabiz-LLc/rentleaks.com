@@ -163,6 +163,11 @@ export async function loadClient(id: string, now = new Date()) {
     user.role === "host" ? loadScorecards(now.getTime(), [id]).then((r) => r.cards[0] ?? null).catch(() => null) : Promise.resolve(null as Scorecard | null),
   ]);
 
+  const receiptCounts = new Map(
+    ledger.length
+      ? (await prisma.receipt.groupBy({ by: ["entryId"], where: { entryId: { in: ledger.map((l) => l.id) } }, _count: { _all: true } }).catch(() => [])).map((x) => [x.entryId ?? "", x._count._all])
+      : [],
+  );
   const invoiceStates = invoices.map((i) => ({ ...i, state: invoiceState(i, today) as InvoiceState }));
   const paidPayments = payments.filter((p) => PAID.includes(p.status));
   const lifetimeCents = paidPayments.reduce((n, p) => n + p.amount, 0) + invoiceStates.filter((i) => i.state === "paid").reduce((n, i) => n + i.totalCents, 0);
@@ -226,6 +231,7 @@ export async function loadClient(id: string, now = new Date()) {
     payments,
     invoices: invoiceStates,
     ledger,
+    receiptCounts,
     leads,
     bookings,
     notes,

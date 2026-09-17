@@ -25,6 +25,7 @@ import {
   setAside,
   type Line,
 } from "../src/lib/books/core";
+import { cleanFileName, contentDisposition, receiptHeaders, sameOrigin, sniffReceipt } from "../src/lib/books/receipts";
 
 const TODAY = "2026-09-20";
 const L = (date: string, kind: "income" | "expense", category: string, dollars: number, extra: Partial<Line> = {}): Line => ({ date, kind, category, amountCents: Math.round(dollars * 100), ...extra });
@@ -175,4 +176,46 @@ test("books: CSV rows sign expenses negative and mark voids", () => {
   assert.equal(row[4], -12.5);
   assert.equal(row[3], "8");
   assert.equal(row[11], "void");
+});
+
+
+test("receipts: the type comes from the bytes, not the name", () => {
+  const pad = (head: number[] | string) => {
+    const a = new Uint8Array(32);
+    const bytes = typeof head === "string" ? [...head].map((c) => c.charCodeAt(0)) : head;
+    a.set(bytes);
+    return a;
+  };
+  assert.equal(sniffReceipt(pad([0xff, 0xd8, 0xff, 0xe0])), "image/jpeg");
+  assert.equal(sniffReceipt(pad([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])), "image/png");
+  assert.equal(sniffReceipt(pad("RIFF\0\0\0\0WEBPVP8 ")), "image/webp");
+  assert.equal(sniffReceipt(pad("\0\0\0\x18ftypheic")), "image/heic");
+  assert.equal(sniffReceipt(pad("%PDF-1.7\n")), "application/pdf");
+  assert.equal(sniffReceipt(pad("<svg xmlns=")), null, "SVG can carry scripts");
+  assert.equal(sniffReceipt(pad("<!doctype html>")), null);
+  assert.equal(sniffReceipt(pad("GIF89a")), null);
+  assert.equal(sniffReceipt(new Uint8Array(4)), null);
+});
+
+test("receipts: names are cleaned and served safely", () => {
+  assert.equal(cleanFileName("../../etc/passwd", "application/pdf"), "passwd.pdf");
+  assert.equal(cleanFileName('C:\\Users\\me\\Uber "Sept".HEIC', "image/heic"), "Uber Sept.heic");
+  assert.equal(cleanFileName("", "image/jpeg"), "receipt.jpg");
+  assert.equal(cleanFileName("invoice.pdf.exe", "application/pdf"), "invoice.pdf.pdf");
+  assert.equal(contentDisposition("Café reçu.pdf", false), `inline; filename="Caf_ re_u.pdf"; filename*=UTF-8''Caf%C3%A9%20re%C3%A7u.pdf`);
+  const img = receiptHeaders({ contentType: "image/png", fileName: "a.png", size: 10 }, true);
+  assert.equal(img["X-Content-Type-Options"], "nosniff");
+  assert.equal(img["Cache-Control"], "private, no-store");
+  assert.match(img["Content-Disposition"], /^attachment;/);
+  assert.match(img["Content-Security-Policy"], /default-src 'none'/);
+  assert.equal(receiptHeaders({ contentType: "application/pdf", fileName: "a.pdf", size: 10 }, false)["Content-Security-Policy"], undefined);
+});
+
+test("receipts: uploads must come from the desk's own origin", () => {
+  const req = (h: Record<string, string>) => new Request("https://app.rentleaks.com/api/admin/receipts", { method: "POST", headers: h });
+  assert.ok(sameOrigin(req({ origin: "https://app.rentleaks.com", host: "app.rentleaks.com" })));
+  assert.ok(!sameOrigin(req({ origin: "https://evil.example", host: "app.rentleaks.com" })));
+  assert.ok(!sameOrigin(req({ origin: "null", host: "app.rentleaks.com" })));
+  assert.ok(!sameOrigin(req({ host: "app.rentleaks.com" })));
+  assert.ok(sameOrigin(req({ host: "app.rentleaks.com", "sec-fetch-site": "same-origin" })));
 });

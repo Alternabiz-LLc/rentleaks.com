@@ -882,3 +882,21 @@ model ClientNote {
 
   @@index([userId, createdAt])
 }
+
+/// A receipt file (photo or PDF) kept privately in the database — never on
+/// the public media domain. Uploaded before its ledger line exists, then
+/// attached on save; unattached uploads are removed after a day.
+model Receipt {
+  id           String   @id @default(cuid())
+  entryId      String?
+  fileName     String
+  contentType  String
+  size         Int
+  sha256       String
+  data         Bytes
+  uploadedById String
+  createdAt    DateTime @default(now())
+
+  @@index([entryId])
+  @@index([createdAt])
+}

@@ -7,6 +7,7 @@ import { CashChart } from "@/components/admin/desk/finance";
 import { Icon } from "@/components/admin/desk/Icon";
 import { PrintButton } from "@/components/admin/desk/PrintButton";
 import { RangeBar } from "@/components/admin/desk/RangeBar";
+import { ReceiptDrop, type ReceiptFile } from "@/components/admin/desk/ReceiptDrop";
 import { RouteDrawer } from "@/components/admin/desk/RouteDrawer";
 import { Chip, Empty, Panel, ViewSwitch, type ChipTone } from "@/components/admin/desk/parts";
 import { flashOf, qs, readParams, when, type SP } from "@/components/admin/ui";
@@ -95,6 +96,16 @@ export default async function BooksPage({ searchParams }: { searchParams: SP }) 
   const open = states.filter((x) => x.s === "sent" || x.s === "due_soon" || x.s === "overdue");
   const outstanding = open.reduce((n, x) => n + x.i.totalCents, 0);
   const uncategorised = lines.filter((l) => !l.voidedAt && l.category === "other_expense").length;
+  const periodExpenses = lines.filter((l) => l.kind === "expense" && !l.voidedAt && l.date >= range.from && l.date <= range.to);
+  const withReceipt = periodExpenses.length
+    ? new Set(
+        (
+          await prisma.receipt.findMany({ where: { entryId: { in: periodExpenses.map((l) => l.id) } }, select: { entryId: true }, distinct: ["entryId"] })
+        ).map((r) => r.entryId),
+      )
+    : new Set<string | null>();
+  const linked = periodExpenses.length ? new Set((await prisma.ledgerEntry.findMany({ where: { id: { in: periodExpenses.map((l) => l.id) }, OR: [{ receiptUrl: { not: null } }, { sourceKey: { not: null } }] }, select: { id: true } })).map((x) => x.id)) : new Set<string>();
+  const missingReceipts = periodExpenses.filter((l) => !withReceipt.has(l.id) && !linked.has(l.id)).length;
   const insights = bookInsights({
     now,
     before,
@@ -102,6 +113,7 @@ export default async function BooksPage({ searchParams }: { searchParams: SP }) 
     overdue: { count: overdue.length, cents: overdue.reduce((n, x) => n + x.i.totalCents, 0) },
     drafts: states.filter((x) => x.s === "draft").length,
     uncategorised,
+    missingReceipts,
     unsyncedPayments: unsynced,
     adSpendUnbooked: adGap,
     leadsNow,
@@ -369,7 +381,9 @@ function EntryForm({
   compact = false,
   entry,
   clients,
+  receipts = [],
 }: {
+  receipts?: ReceiptFile[];
   kind: "income" | "expense";
   today: string;
   returnTo: string;
@@ -423,6 +437,11 @@ function EntryForm({
         <span>{k === "income" ? "From" : "Paid to"}</span>
         <input name="counterparty" placeholder={k === "income" ? "Client or source" : "Vendor, e.g. Cloudflare"} defaultValue={entry?.counterparty ?? ""} />
       </label>
+      {compact ? (
+        <div className="dk-field--wide">
+          <ReceiptDrop key="quick" />
+        </div>
+      ) : null}
       {compact ? null : (
         <>
           <label className="dk-field dk-field--wide">
@@ -443,10 +462,15 @@ function EntryForm({
             <span>Reference (optional)</span>
             <input name="reference" placeholder="Receipt or order number" defaultValue={entry?.reference ?? ""} />
           </label>
-          <label className="dk-field dk-field--wide">
-            <span>Receipt link (optional)</span>
-            <input name="receiptUrl" type="url" placeholder="https://drive.google.com/…" defaultValue={entry?.receiptUrl ?? ""} />
-          </label>
+          <fieldset className="dk-fieldset dk-field--wide">
+            <legend>Receipts</legend>
+            <ReceiptDrop key={entry?.id ?? "new"} entryId={entry?.id} existing={receipts} />
+            <label className="dk-field" style={{ marginTop: 10 }}>
+              <span>…or a link to it (optional)</span>
+              <input name="receiptUrl" type="url" placeholder="https://drive.google.com/…" defaultValue={entry?.receiptUrl ?? ""} />
+            </label>
+            {entry ? <p className="dk-hint">Files attach to this line as soon as they finish uploading. Only you can open them.</p> : <p className="dk-hint">Stored privately — only you can open them.</p>}
+          </fieldset>
           <label className="dk-field">
             <span>Client account (optional)</span>
             <input name="client" type="email" list="bk-clients" placeholder="client@email.com" defaultValue={client} />
@@ -511,6 +535,11 @@ async function Ledger({
     take: 400,
   });
   const editing = p.edit ? await prisma.ledgerEntry.findUnique({ where: { id: p.edit } }) : null;
+  const [editingReceipts, receiptCounts] = await Promise.all([
+    editing ? prisma.receipt.findMany({ where: { entryId: editing.id }, select: { id: true, fileName: true, contentType: true, size: true }, orderBy: { createdAt: "asc" } }) : Promise.resolve([]),
+    rows.length ? prisma.receipt.groupBy({ by: ["entryId"], where: { entryId: { in: rows.map((r) => r.id) } }, _count: { _all: true } }) : Promise.resolve([]),
+  ]);
+  const receiptsOf = new Map(receiptCounts.map((x) => [x.entryId, x._count._all]));
   const adding = p.add === "income" || p.add === "expense" ? p.add : null;
   const totalIn = rows.filter((r) => r.kind === "income" && !r.voidedAt).reduce((n, r) => n + r.amountCents, 0);
   const totalOut = rows.filter((r) => r.kind === "expense" && !r.voidedAt).reduce((n, r) => n + r.amountCents, 0);
@@ -613,10 +642,20 @@ async function Ledger({
                           {r.repeatedFromId ? <Chip>monthly copy</Chip> : null}
                           {!r.deductible ? <Chip tone="warn">not deductible</Chip> : null}
                           {r.voidedAt ? <Chip tone="bad">void</Chip> : null}
+                          {receiptsOf.get(r.id) ? (
+                            <Link prefetch={false} className="dk-chip dk-chip--good" href={self({ edit: r.id, add: undefined })} scroll={false}>
+                              <Icon name="invoice" size={11} /> {receiptsOf.get(r.id)} receipt{receiptsOf.get(r.id) === 1 ? "" : "s"}
+                            </Link>
+                          ) : null}
                           {r.receiptUrl ? (
                             <a className="dk-chip" href={r.receiptUrl} target="_blank" rel="noopener noreferrer">
-                              receipt ↗
+                              receipt link ↗
                             </a>
+                          ) : null}
+                          {r.kind === "expense" && !r.sourceKey && !r.receiptUrl && !receiptsOf.get(r.id) && !r.voidedAt ? (
+                            <Link prefetch={false} className="dk-chip dk-chip--warn" href={self({ edit: r.id, add: undefined })} scroll={false}>
+                              no receipt
+                            </Link>
                           ) : null}
                         </div>
                       </td>
@@ -643,7 +682,7 @@ async function Ledger({
           width={620}
         >
           {editing?.sourceKey ? <p className="dk-flash dk-flash--warn">This line came from a sync — the amount is locked. You can still fix its category, date and notes.</p> : null}
-          <EntryForm kind={adding ?? "expense"} today={today} returnTo={self({ add: undefined, edit: undefined })} entry={editing ?? undefined} clients={clients} />
+          <EntryForm kind={adding ?? "expense"} today={today} returnTo={self({ add: undefined, edit: undefined })} entry={editing ?? undefined} clients={clients} receipts={editingReceipts} />
           {editing ? (
             <form action={entryAction} className="dk-inline" style={{ marginTop: 16 }}>
               <input type="hidden" name="id" value={editing.id} />

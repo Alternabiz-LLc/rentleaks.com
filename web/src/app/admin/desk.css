@@ -1581,3 +1581,26 @@ a.dk-rank__row:hover { background: var(--dk-paper-2); }
 }
 
 .dk-grid--top { align-items: start; }
+
+/* receipts */
+.dk-receipts { display: grid; gap: 10px; }
+.dk-receipts__zone { display: grid; justify-items: center; gap: 6px; padding: 18px 14px; border: 1.5px dashed var(--dk-line-2); border-radius: 14px; background: var(--dk-card-2); color: var(--dk-ink-2); text-align: center; transition: border-color 0.15s, background 0.15s, transform 0.15s; }
+.dk-receipts__zone > svg { color: var(--dk-teal-deep); }
+.dk-receipts__zone small { color: var(--dk-muted); font-size: 12px; }
+.dk-receipts__zone.is-over { border-color: var(--dk-teal); background: var(--dk-teal-soft); transform: scale(1.01); }
+.dk-receipts__btns { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 4px; }
+.dk-receipts__cam { display: none !important; }
+@media (pointer: coarse) { .dk-receipts__cam { display: inline-flex !important; } }
+.dk-receipts__list { display: grid; gap: 6px; }
+.dk-receipts__list li { display: grid; grid-template-columns: 48px minmax(0, 1fr) auto auto; align-items: center; gap: 10px; padding: 6px 8px 6px 6px; border: 1px solid var(--dk-line); border-radius: 12px; background: var(--dk-card); animation: dk-rise 0.3s ease both; }
+.dk-receipts__list li.is-error { border-color: color-mix(in srgb, var(--dk-alert) 45%, var(--dk-line)); background: var(--dk-alert-soft); }
+.dk-receipts__list li > div { display: grid; gap: 3px; min-width: 0; }
+.dk-receipts__list b { overflow: hidden; font-size: 13.5px; text-overflow: ellipsis; white-space: nowrap; }
+.dk-receipts__list small { color: var(--dk-muted); font-size: 12px; }
+.dk-receipts__list progress { width: 100%; height: 6px; accent-color: var(--dk-teal-deep); }
+.dk-receipts__thumb { display: grid; place-items: center; width: 48px; height: 48px; overflow: hidden; border-radius: 9px; background: var(--dk-paper-2); color: var(--dk-teal-deep) !important; font: 800 10px/1 var(--dk-sans); letter-spacing: 0.06em; text-decoration: none; }
+.dk-receipts__thumb img { width: 100%; height: 100%; object-fit: cover; }
+.dk-receipts .dk-bad { color: var(--dk-alert); }
+@media (prefers-reduced-motion: reduce) {
+  .dk-receipts__zone, .dk-receipts__list li { transition: none; animation: none; }
+}

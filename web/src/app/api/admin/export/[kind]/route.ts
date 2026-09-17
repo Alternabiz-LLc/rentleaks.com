@@ -27,7 +27,10 @@ async function build(kind: string, url: URL): Promise<{ headers: string[]; rows:
       const from = ISO.test(p.get("from") || "") ? p.get("from")! : "0000-01-01";
       const to = ISO.test(p.get("to") || "") ? p.get("to")! : "9999-12-31";
       const rows = await prisma.ledgerEntry.findMany({ where: { date: { gte: from, lte: to } }, orderBy: [{ date: "asc" }, { createdAt: "asc" }], take: MAX });
-      return { headers: LEDGER_HEADERS, rows: rows.map((l) => ledgerRow(l)) };
+      const counts = new Map(
+        (rows.length ? await prisma.receipt.groupBy({ by: ["entryId"], where: { entryId: { in: rows.map((l) => l.id) } }, _count: { _all: true } }) : []).map((x) => [x.entryId, x._count._all]),
+      );
+      return { headers: LEDGER_HEADERS, rows: rows.map((l) => ledgerRow(l, counts.get(l.id) ?? 0)) };
     }
     case "pnl": {
       const from = ISO.test(p.get("from") || "") ? p.get("from")! : `${booksToday().slice(0, 4)}-01-01`;
