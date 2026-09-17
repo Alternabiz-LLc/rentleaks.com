@@ -703,11 +703,11 @@ export default async function AdsPage({ searchParams }: { searchParams: SP }) {
                     <div className="dk-form" style={{ marginTop: 12 }}>
                       <label className="dk-field dk-field--wide">
                         <span>Campaign name</span>
-                        <input name="name" required minLength={3} placeholder="Brooklyn rooms — lead form — Oct" />
+                        <input name="name" required minLength={3} placeholder="Brooklyn rooms — lead form — Oct" defaultValue={(p.name ?? "").slice(0, 120)} />
                       </label>
                       <label className="dk-field">
                         <span>Goal</span>
-                        <select name="objective" defaultValue="leads">
+                        <select name="objective" defaultValue={["leads", "hosts", "traffic", "awareness"].includes(p.objective ?? "") ? p.objective : "leads"}>
                           <option value="leads">Renter leads</option>
                           <option value="hosts">Host sign-ups</option>
                           <option value="traffic">Traffic</option>

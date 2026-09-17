@@ -250,3 +250,12 @@ export function ago(ms: number) {
   const d = Math.round(h / 24);
   return d < 60 ? `${d}d ago` : `${Math.round(d / 30)}mo ago`;
 }
+
+/** A coloured tile for command-rail quick items (the rail paints text white). */
+export function MarkTile({ children, bg = "var(--dk-teal-deep)" }: { children: React.ReactNode; bg?: string }) {
+  return (
+    <span className="dk-railcard__mark" style={{ background: bg }}>
+      {children}
+    </span>
+  );
+}

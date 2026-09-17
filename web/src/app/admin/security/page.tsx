@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { revokeSessionAction } from "@/app/actions/security";
+import { briefSettingAction } from "@/app/admin/_actions/ops";
 import { Kpi } from "@/components/admin/desk/charts";
 import { DeskHeader } from "@/components/admin/desk/DeskHeader";
 import { Icon } from "@/components/admin/desk/Icon";
@@ -142,6 +143,27 @@ export default async function SecurityPage({ searchParams }: { searchParams: SP 
             </tbody>
           </table>
         </div>
+      </Panel>
+
+      <Panel id="brief" kicker="Every morning" title="Morning brief" sub="One email with the day's numbers and your top five moves — only the pages you can open. New York time.">
+        <form action={briefSettingAction} className="dk-inline-form">
+          <label className="dk-field">
+            <span>Send it at</span>
+            <select name="hour" defaultValue={me.briefHour === null || me.briefHour === undefined ? "off" : String(me.briefHour)}>
+              <option value="off">Off</option>
+              {[5, 6, 7, 8, 9, 10, 11].map((h) => (
+                <option key={h} value={h}>
+                  {h}:00 am
+                </option>
+              ))}
+            </select>
+          </label>
+          <button className="dk-btn dk-btn--primary">Save</button>
+          <button className="dk-btn" name="preview" value="1">
+            <Icon name="mail" size={14} /> Save & send me one now
+          </button>
+          {me.briefLastSentAt ? <span className="dk-dim">Last sent {when(me.briefLastSentAt)}</span> : null}
+        </form>
       </Panel>
 
       <div className="dk-grid dk-grid--2">

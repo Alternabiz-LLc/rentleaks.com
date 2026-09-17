@@ -12,12 +12,14 @@ import { ago, Chip, Field, FilterCard, GradeChip, initials, Panel, ViewSwitch } 
 import { RecordCards, type RecordCard } from "@/components/admin/desk/RecordCards";
 import { RouteDrawer } from "@/components/admin/desk/RouteDrawer";
 import { flashOf, qs, readParams, type SP } from "@/components/admin/ui";
+import { canAccess } from "@/lib/access";
 import { requireAdminPage } from "@/lib/admin/guard";
 import { nowMs } from "@/lib/admin/metrics";
 import { leadReplyDraft, scoreLead } from "@/lib/admin/score";
 import { KIND_LABEL, leadSummary, type LeadKind, type ViewingSlot } from "@/lib/leads";
 import { prisma } from "@/lib/prisma";
 import { appUrl, typeLabel } from "@/lib/site";
+import { slaOf } from "@/lib/ops/sla";
 
 export const metadata = { title: "Leads — RentLeaks desk" };
 
@@ -51,7 +53,7 @@ function slotsOf(json: string): ViewingSlot[] {
 }
 
 export default async function LeadsPage({ searchParams }: { searchParams: SP }) {
-  await requireAdminPage("/admin/leads");
+  const me = await requireAdminPage("/admin/leads");
   const p = await readParams(searchParams);
   const t = nowMs();
   const view = p.view === "board" || p.view === "sheet" ? p.view : "cards";
@@ -140,7 +142,12 @@ export default async function LeadsPage({ searchParams }: { searchParams: SP }) 
     status: STATUS[l.status] ?? { label: l.status, tone: "ink" },
     score: s.score,
     scoreWhy: s.reasons.join(" · "),
-    chips: [{ label: SOURCE_LABEL[l.source] ?? l.source }, ...(l.campaign ? [{ label: l.campaign, tone: "value" }] : [])],
+    chips: [
+      ...(l.status === "new" ? [{ label: slaOf(l, t).label.replace(" · on time", " · on time ✓"), tone: slaOf(l, t).tone }] : []),
+      ...(l.matchesSentAt ? [{ label: l.shortlistOpenedAt ? "shortlist opened" : "shortlist sent", tone: l.shortlistOpenedAt ? "good" : "brand" }] : []),
+      { label: SOURCE_LABEL[l.source] ?? l.source },
+      ...(l.campaign ? [{ label: l.campaign, tone: "value" }] : []),
+    ],
     lines: [
       { k: "Email", v: l.email },
       ...(l.phone ? [{ k: "Mobile", v: l.phone }] : []),
@@ -165,7 +172,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: SP }) 
     initials: initials(l.name, l.email),
     score: s.score,
     lines: [l.listing?.title ?? (l.cityId ? cityName.get(l.cityId) ?? l.cityId : ""), l.moveIn ? `Moves ${l.moveIn}` : ""].filter(Boolean),
-    alert: waitH !== null && waitH >= 24 ? `Waiting ${Math.floor(waitH / 24)}d ${Math.round(waitH % 24)}h` : undefined,
+    alert: waitH !== null && waitH >= 24 ? `Waiting ${Math.floor(waitH / 24)}d ${Math.round(waitH % 24)}h` : l.status === "new" && slaOf(l, t).stage !== "fresh" ? slaOf(l, t).label : undefined,
     href: self({ open: l.id }),
     phone: l.phone,
     draft: draftFor(l),
@@ -479,6 +486,20 @@ export default async function LeadsPage({ searchParams }: { searchParams: SP }) 
                 ))}
               </ul>
             ) : null}
+            <div className="dk-inline">
+              {open.status !== "spam" ? (
+                <Link prefetch={false} className="dk-btn dk-btn--primary dk-btn--sm" href={`/admin/match?lead=${open.id}`}>
+                  <Icon name="match" size={13} /> {open.matchesSentAt ? "Send more homes" : "Send a shortlist"}
+                </Link>
+              ) : null}
+              {canAccess(me, "bookings") && open.status !== "spam" ? (
+                <Link prefetch={false} className="dk-btn dk-btn--sm" href={`/admin/bookings?view=new&lead=${open.id}`}>
+                  <Icon name="calendar" size={13} /> Start a booking
+                </Link>
+              ) : null}
+              {open.status === "new" ? <Chip tone={slaOf(open, t).tone}>{slaOf(open, t).label}</Chip> : null}
+              {open.matchesSentAt ? <Chip tone={open.shortlistOpenedAt ? "good" : "brand"}>{open.shortlistOpenedAt ? `shortlist opened ${ago(t - open.shortlistOpenedAt.getTime())}` : `shortlist sent ${ago(t - open.matchesSentAt.getTime())}`}</Chip> : null}
+            </div>
             <LeadControls key={open.id} id={open.id} status={open.status} note={open.note ?? ""} />
             {open.status !== "spam" ? (
               <>

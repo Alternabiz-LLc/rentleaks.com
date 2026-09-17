@@ -161,8 +161,8 @@ test("every admin path maps to the right access key", () => {
 test("the rail shows only granted modules and drops empty groups", () => {
   const groups = groupsFor(["overview", "leads"]);
   assert.deepEqual(
-    groups.flatMap((g) => g.modules.map((m) => m.key)),
-    ["overview", "leads"],
+    groups.flatMap((g) => g.modules.map((m) => m.href)),
+    ["/admin", "/admin/leads", "/admin/match"],
   );
   assert.equal(groups.length, 1);
   assert.equal(groupsFor(ACCESS_KEYS).flatMap((g) => g.modules).length, DESK_MODULES.length);

@@ -46,6 +46,9 @@ model User {
   mfaFailures       Int       @default(0)
   mfaLockedUntil    DateTime?
   lastSignInAt      DateTime?
+  // Morning brief: hour of day in New York (null = off) and the last send.
+  briefHour         Int?
+  briefLastSentAt   DateTime?
 
   identity            IdentityVerification?
   listings            Listing[]
@@ -225,6 +228,12 @@ model Listing {
   //     is only ever promoted where the search resolves to that city. ---
   sponsored       Boolean  @default(false)
   plan            String   @default("week")
+
+  // --- Catalogue health. `confirmedAt` is the host's last "still available"
+  //     answer; `freshnessAskedAt` the last time we asked. ---
+  confirmedAt       DateTime?
+  freshnessAskedAt  DateTime?
+  fixRequestedAt    DateTime?
 
   // --- Presentational detail. One JSON column rather than ~15 sparse
   //     columns nothing ever filters on: fees, housemates, furniture,
@@ -477,6 +486,13 @@ model Lead {
   // The founder's private note; never shown to the renter or the host.
   note         String?
   contactedAt  DateTime?
+  // Speed-to-lead: the instant reply, the one-hour escalation, the shortlist.
+  ackSentAt         DateTime?
+  escalatedAt       DateTime?
+  assignedToId      String?
+  matchesSentAt     DateTime?
+  matchIds          String    @default("[]")
+  shortlistOpenedAt DateTime?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
@@ -703,3 +719,81 @@ model AppSetting {
   value     String
   updatedAt DateTime @updatedAt
 }
+
+/// A renter's way from viewing to move-out, run by the team. Separate from
+/// Lease (signed in the app): most bookings start from a lead without an
+/// account.
+model Booking {
+  id                 String    @id @default(cuid())
+  leadId             String?
+  listingId          String?
+  contactId          String?
+  renterName         String
+  renterEmail        String
+  renterPhone        String?
+  // viewing | application | approved | signed | moved_in | moved_out | lost
+  stage              String    @default("viewing")
+  viewingAt          DateTime?
+  viewingMode        String?
+  viewingConfirmedAt DateTime?
+  moveIn             String?
+  moveOut            String?
+  monthlyAllIn       Int?
+  currency           String    @default("USD")
+  note               String?
+  lostReason         String?
+  renewalRemindedAt  DateTime?
+  ownerId            String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([stage])
+  @@index([listingId])
+  @@index([leadId])
+  @@index([viewingAt])
+}
+
+/// A Trust Radar signal someone reviewed and cleared, so it stays quiet.
+model TrustDismissal {
+  id        String   @id @default(cuid())
+  signal    String   @unique
+  note      String   @default("")
+  byId      String
+  createdAt DateTime @default(now())
+}
+
+/// "When this happens, do that." Recipes the team switches on.
+model Playbook {
+  id        String   @id @default(cuid())
+  name      String
+  trigger   String
+  // minutes to wait after the trigger moment
+  waitMinutes Int    @default(60)
+  action    String
+  subject   String   @default("")
+  body      String   @default("")
+  enabled   Boolean  @default(true)
+  runs      Int      @default(0)
+  lastRunAt DateTime?
+  createdById String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  logs PlaybookRun[]
+}
+
+/// One playbook firing on one target — at most once per target.
+model PlaybookRun {
+  id         String   @id @default(cuid())
+  playbookId String
+  playbook   Playbook @relation(fields: [playbookId], references: [id], onDelete: Cascade)
+  targetType String
+  targetId   String
+  status     String   @default("done")
+  detail     String   @default("")
+  createdAt  DateTime @default(now())
+
+  @@unique([playbookId, targetType, targetId])
+  @@index([createdAt])
+}
+

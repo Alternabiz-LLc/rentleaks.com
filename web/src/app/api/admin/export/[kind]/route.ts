@@ -19,6 +19,16 @@ async function build(kind: string, url: URL): Promise<{ headers: string[]; rows:
         rows: rows.map((l) => [l.createdAt, l.status, l.kind, l.name, l.email, l.phone, l.cityId, l.housingType, l.budgetMax, l.currency, l.moveIn, l.moveOut, l.stayMonths, l.listing?.title, l.source, l.campaign, l.note]),
       };
     }
+    case "bookings": {
+      const rows = await prisma.booking.findMany({ orderBy: { createdAt: "desc" }, take: MAX });
+      const titles = new Map(
+        (await prisma.listing.findMany({ where: { id: { in: [...new Set(rows.map((b) => b.listingId).filter((x): x is string => !!x))] } }, select: { id: true, title: true } })).map((l) => [l.id, l.title]),
+      );
+      return {
+        headers: ["created", "stage", "renter", "email", "phone", "listing", "viewing_at", "viewing_mode", "viewing_confirmed", "move_in", "move_out", "monthly_all_in", "currency", "lost_reason", "renewal_offered", "note"],
+        rows: rows.map((b) => [b.createdAt, b.stage, b.renterName, b.renterEmail, b.renterPhone, b.listingId ? titles.get(b.listingId) ?? b.listingId : "", b.viewingAt?.toISOString().slice(0, 16).replace("T", " "), b.viewingMode, b.viewingConfirmedAt, b.moveIn, b.moveOut, b.monthlyAllIn, b.currency, b.lostReason, b.renewalRemindedAt, b.note]),
+      };
+    }
     case "contacts": {
       const rows = await prisma.contact.findMany({ orderBy: { createdAt: "desc" }, take: MAX });
       return {

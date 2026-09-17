@@ -13,8 +13,10 @@
 export const ACCESS_KEYS = [
   "overview",
   "leads",
+  "bookings",
   "listings",
   "accounts",
+  "trust",
   "reports",
   "crm",
   "outreach",
@@ -22,8 +24,10 @@ export const ACCESS_KEYS = [
   "social",
   "ads",
   "trials",
+  "hosts",
   "revenue",
   "markets",
+  "automation",
   "system",
   "team",
 ] as const;
@@ -37,9 +41,11 @@ export const GRANTABLE: readonly AccessKey[] = ACCESS_KEYS.filter((k) => !FOUNDE
 
 export const ACCESS_LABEL: Record<AccessKey, string> = {
   overview: "Overview",
-  leads: "Leads",
-  listings: "Listings",
+  leads: "Leads & Match",
+  bookings: "Bookings & leases",
+  listings: "Listings & compliance",
   accounts: "Accounts",
+  trust: "Trust radar",
   reports: "Reports & safety",
   crm: "CRM",
   outreach: "Outreach",
@@ -47,8 +53,10 @@ export const ACCESS_LABEL: Record<AccessKey, string> = {
   social: "Social posts",
   ads: "Paid ads",
   trials: "Free-trial invites",
+  hosts: "Host scorecards",
   revenue: "Revenue & analytics",
-  markets: "Markets & operators",
+  markets: "Markets & demand",
+  automation: "Playbooks & autopilot",
   system: "System & settings",
   team: "Team & access",
 };
@@ -64,17 +72,17 @@ export const PRESETS: Record<PresetKey, { label: string; brief: string; access: 
   sales: {
     label: "Sales & CRM",
     brief: "Answers leads, works the pipeline, sends outreach and trial invites.",
-    access: ["overview", "leads", "crm", "outreach", "campaigns", "trials"],
+    access: ["overview", "leads", "bookings", "crm", "outreach", "campaigns", "trials"],
   },
   moderator: {
     label: "Moderator",
-    brief: "Reviews listings, handles reports and verifies accounts.",
-    access: ["overview", "listings", "accounts", "reports", "markets"],
+    brief: "Reviews listings, works the trust radar and reports, verifies accounts.",
+    access: ["overview", "listings", "accounts", "trust", "reports", "markets", "hosts"],
   },
   marketing: {
     label: "Marketing",
-    brief: "Social posts, paid ads, newsletters and outreach.",
-    access: ["overview", "social", "ads", "campaigns", "outreach", "crm"],
+    brief: "Social posts, paid ads, newsletters, outreach and the demand map.",
+    access: ["overview", "social", "ads", "campaigns", "outreach", "crm", "markets", "hosts"],
   },
 };
 
@@ -127,8 +135,12 @@ export function accessKeyForPath(pathname: string): AccessKey | null {
   if (!m) return null;
   const map: Record<string, AccessKey> = {
     leads: "leads",
+    match: "leads",
+    bookings: "bookings",
     listings: "listings",
+    compliance: "listings",
     accounts: "accounts",
+    trust: "trust",
     reports: "reports",
     crm: "crm",
     outreach: "outreach",
@@ -136,8 +148,11 @@ export function accessKeyForPath(pathname: string): AccessKey | null {
     social: "social",
     ads: "ads",
     trials: "trials",
+    hosts: "hosts",
     revenue: "revenue",
     markets: "markets",
+    demand: "markets",
+    playbooks: "automation",
     system: "system",
     team: "team",
   };
@@ -153,4 +168,5 @@ export const EXPORT_ACCESS: Record<string, AccessKey> = {
   payments: "revenue",
   campaign: "campaigns",
   invites: "trials",
+  bookings: "bookings",
 };

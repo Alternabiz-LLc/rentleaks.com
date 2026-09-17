@@ -36,7 +36,9 @@ export function AccessPicker({ initial = PRESETS.sales.access }: { initial?: rea
         {DESK_GROUPS.map((g) => (
           <fieldset key={g.title} className="dk-access__group">
             <legend>{g.title}</legend>
-            {g.modules.map((m) => {
+            {g.modules
+              .filter((m, i, all) => all.findIndex((x) => x.key === m.key) === i)
+              .map((m) => {
               const locked = FOUNDER_ONLY.includes(m.key);
               const always = m.key === "overview";
               const on = !locked && (always || picked.includes(m.key));

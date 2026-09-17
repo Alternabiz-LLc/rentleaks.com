@@ -7,6 +7,13 @@ import type { DeskIcon } from "@/lib/admin/nav";
 const PATHS: Record<DeskIcon, string> = {
   team: "M8 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM2 20v-.5A5.5 5.5 0 0 1 7.5 14h1a5.5 5.5 0 0 1 5.5 5.5v.5M16 4.2a3.5 3.5 0 0 1 0 6.6M17.5 14a5.5 5.5 0 0 1 4.5 5.4v.6",
   lock: "M6 11h12v10H6zM8.5 11V7.5a3.5 3.5 0 0 1 7 0V11M12 15v2",
+  match: "M9 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 20v-.5A5.5 5.5 0 0 1 7.5 14H9M14 13l3 3 5-6M14 19h8",
+  calendar: "M4 6h16v15H4zM4 10h16M9 3v4M15 3v4M8 14h3v3H8z",
+  radar: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM12 12l6.5-6.5M12 12h.01",
+  health: "M3 12h4l2-5 4 10 2-5h6M12 21s-8-4.5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10",
+  map: "M9 4 3 6v14l6-2 6 2 6-2V4l-6 2zM9 4v14M15 6v14",
+  star: "M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z",
+  bolt: "M13 2 4 14h7l-1 8 9-12h-7z",
   overview: "M3 13h8V3H3zM13 21h8V11h-8zM3 21h8v-6H3zM13 3v6h8V3z",
   leads: "M4 4h16v12H5.5L4 17.5zM8 9h8M8 12h5",
   listings: "M3 11l9-7 9 7M5 10v10h14V10M10 20v-6h4v6",

@@ -14,6 +14,13 @@ import type { AccessKey } from "@/lib/access";
 
 export type DeskIcon =
   | "team"
+  | "match"
+  | "calendar"
+  | "radar"
+  | "health"
+  | "map"
+  | "star"
+  | "bolt"
   | "lock"
   | "overview"
   | "leads"
@@ -58,7 +65,7 @@ export type DeskModule = {
   /** The live badge on the header. */
   live: string;
   /** Key into the layout's counts for the sidebar badge. */
-  badge?: "leads" | "review" | "reports" | "followups" | "copilot";
+  badge?: "leads" | "review" | "reports" | "followups" | "copilot" | "trust" | "viewings";
   /** Extra words the palette should match. */
   keywords?: string;
 };
@@ -92,6 +99,27 @@ export const DESK_GROUPS: DeskGroup[] = [
         keywords: "inbox requests bookings viewings pipeline",
       },
       {
+        href: "/admin/match",
+        key: "leads",
+        label: "Match & send",
+        icon: "match",
+        code: "MT-01",
+        brief: "Three live homes for every request, picked for you — confirm and send in one click.",
+        live: "Autopilot live",
+        keywords: "shortlist match recommend homes speed to lead reply",
+      },
+      {
+        href: "/admin/bookings",
+        key: "bookings",
+        label: "Bookings & leases",
+        icon: "calendar",
+        code: "BK-01",
+        brief: "Viewing → application → lease → move-in, with the viewing calendar and renewals.",
+        live: "Bookings live",
+        badge: "viewings",
+        keywords: "viewing calendar lease application move in renewal occupancy",
+      },
+      {
         href: "/admin/listings",
         key: "listings",
         label: "Listings",
@@ -103,6 +131,16 @@ export const DESK_GROUPS: DeskGroup[] = [
         keywords: "review moderation approve decline catalogue homes",
       },
       {
+        href: "/admin/compliance",
+        key: "listings",
+        label: "Compliance & freshness",
+        icon: "health",
+        code: "CP-01",
+        brief: "Every listing checked against its market's rules — and still available.",
+        live: "Health live",
+        keywords: "fare act fees broker all-in fair housing stale freshness still available",
+      },
+      {
         href: "/admin/accounts",
         key: "accounts",
         label: "Accounts",
@@ -111,6 +149,17 @@ export const DESK_GROUPS: DeskGroup[] = [
         brief: "Hosts, renters and founders — roles, verification status, trials and suspensions.",
         live: "Accounts live",
         keywords: "users hosts renters suspend verify",
+      },
+      {
+        href: "/admin/trust",
+        key: "trust",
+        label: "Trust radar",
+        icon: "radar",
+        code: "TR-02",
+        brief: "Copied photos and ads, too-good-to-be-true rent, fast new accounts, flagged messages.",
+        live: "Radar live",
+        badge: "trust",
+        keywords: "scam fraud duplicate copied fake listing price anomaly",
       },
       {
         href: "/admin/reports",
@@ -189,6 +238,16 @@ export const DESK_GROUPS: DeskGroup[] = [
         live: "Invites live",
         keywords: "trial invite one week free hosts",
       },
+      {
+        href: "/admin/hosts",
+        key: "hosts",
+        label: "Host scorecards",
+        icon: "star",
+        code: "HS-01",
+        brief: "Reply time, freshness, quality and bookings per host — coach, promote, sponsor.",
+        live: "Scores live",
+        keywords: "host quality response rate coaching sponsor landlord",
+      },
     ],
   },
   {
@@ -213,6 +272,26 @@ export const DESK_GROUPS: DeskGroup[] = [
         brief: "City ranking, featured markets and the medians behind the Leak Score.",
         live: "Markets live",
         keywords: "cities medians operators brands",
+      },
+      {
+        href: "/admin/demand",
+        key: "markets",
+        label: "Demand map",
+        icon: "map",
+        code: "DM-01",
+        brief: "What renters want against what's live — recruit hosts exactly where the gap is.",
+        live: "Demand live",
+        keywords: "supply gap saved searches budget heatmap recruit",
+      },
+      {
+        href: "/admin/playbooks",
+        key: "automation",
+        label: "Playbooks & autopilot",
+        icon: "bolt",
+        code: "PB-01",
+        brief: "When this happens, do that — follow-ups, reminders and the instant reply, on their own.",
+        live: "Automations live",
+        keywords: "automation workflow rules trigger follow up reminder autopilot",
       },
       {
         href: "/admin/team",
@@ -272,6 +351,12 @@ export function moduleByHref(href: string): DeskModule {
 /** Quick actions the palette offers alongside the modules. */
 export const DESK_ACTIONS: Array<{ href: string; label: string; hint: string; icon: DeskIcon; key: AccessKey | "any" }> = [
   { href: "/admin/leads?status=new", label: "Reply to new leads", hint: "Leads", icon: "leads", key: "leads" },
+  { href: "/admin/match", label: "Send a shortlist", hint: "Match", icon: "match", key: "leads" },
+  { href: "/admin/bookings?view=calendar", label: "Viewing calendar", hint: "Bookings", icon: "calendar", key: "bookings" },
+  { href: "/admin/trust", label: "Check the trust radar", hint: "Trust", icon: "radar", key: "trust" },
+  { href: "/admin/compliance?tab=freshness", label: "Ask hosts: still available?", hint: "Freshness", icon: "health", key: "listings" },
+  { href: "/admin/demand", label: "Where renters want homes", hint: "Demand", icon: "map", key: "markets" },
+  { href: "/admin/playbooks", label: "Automations", hint: "Playbooks", icon: "bolt", key: "automation" },
   { href: "/admin/listings?moderation=pending&view=board", label: "Review pending listings", hint: "Listings", icon: "check", key: "listings" },
   { href: "/admin/crm?due=1", label: "Follow-ups due", hint: "CRM", icon: "clock", key: "crm" },
   { href: "/admin/crm?view=board", label: "CRM board", hint: "CRM", icon: "board", key: "crm" },

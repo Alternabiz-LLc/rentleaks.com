@@ -10,6 +10,11 @@ export const SETTING_KEYS = {
   outboxHeartbeat: "cron.outboxAt",
   alertsHeartbeat: "cron.alertsAt",
   socialDefaultTime: "social.defaultTime",
+  // "off" turns the instant reply to new leads off (default on).
+  autopilot: "ops.autopilot",
+  // "off" stops weekly "still available?" emails and auto-pause (default on).
+  freshness: "ops.freshness",
+  opsHeartbeat: "cron.opsAt",
 } as const;
 
 export type SettingKey = (typeof SETTING_KEYS)[keyof typeof SETTING_KEYS];

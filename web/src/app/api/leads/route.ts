@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { contactFromLead } from "@/lib/crm";
 import { sampleCatalogIds } from "@/lib/sample-catalog";
 import { appUrl } from "@/lib/site";
+import { alertTeam, instantReply } from "@/lib/ops/autopilot";
 import { sendMail } from "@/lib/v1/mail";
 import { clientKey, HttpError, rateLimit, readJson } from "@/lib/v1/http";
 
@@ -106,12 +107,11 @@ export async function POST(req: NextRequest) {
       summary,
     });
 
-    const admins = await prisma.user.findMany({ where: { role: "admin" }, select: { email: true } });
-    const founders = new Set(admins.map((a) => a.email));
-    const mails = [...founders].map((to) =>
-      sendMail({ to, subject: `New lead: ${subject}`, text: `${summary}${contact}\n\nManage it: ${appUrl()}/admin#leads` }),
-    );
-    if (listing && !founders.has(listing.host.email)) {
+    /* Everyone on the team whose access includes Leads hears about it. */
+    const team = await alertTeam(`New lead: ${subject}`, `${summary}${contact}\n\nReply fast — open it: ${appUrl()}/admin/leads?open=${created.id}\nOr send a shortlist: ${appUrl()}/admin/match?lead=${created.id}`).catch(() => [] as string[]);
+    const founders = new Set(team.map((e) => e.toLowerCase()));
+    const mails: Array<Promise<unknown>> = [];
+    if (listing && !founders.has(listing.host.email.toLowerCase())) {
       mails.push(
         sendMail({
           to: listing.host.email,
@@ -123,7 +123,17 @@ export async function POST(req: NextRequest) {
         }),
       );
     }
-    mails.push(
+    /* Speed-to-lead: the instant reply with matching homes (autopilot), or
+       the plain confirmation when the autopilot is off or nothing matched. */
+    const replied = await instantReply(
+      { id: created.id, kind: lead.kind, name: lead.name, email: lead.email, listingId: listing?.id ?? null, cityId: lead.cityId ?? listing?.cityId ?? null, housingType: lead.housingType ?? listing?.housingType ?? null, budgetMax: lead.budgetMax ?? null, currency: listing?.currency ?? lead.currency, moveIn: lead.moveIn ?? null, moveOut: lead.moveOut ?? null, stayMonths: lead.stayMonths ?? null },
+      subject,
+      renterCopy,
+    ).catch((err) => {
+      console.error("[api/leads] instant reply", err);
+      return false;
+    });
+    if (!replied) mails.push(
       sendMail({
         to: lead.email,
         subject: `We got your request — ${subject}`,

@@ -36,7 +36,7 @@ export default async function SystemAdmin({ searchParams }: { searchParams: SP }
   }
   const dbMs = nowMs() - t0;
   const [settings, actions, suppressed, queued] = await Promise.all([
-    getSettings([SETTING_KEYS.mailingAddress, SETTING_KEYS.senderName, SETTING_KEYS.outboxHeartbeat, SETTING_KEYS.alertsHeartbeat]),
+    getSettings([SETTING_KEYS.mailingAddress, SETTING_KEYS.senderName, SETTING_KEYS.outboxHeartbeat, SETTING_KEYS.alertsHeartbeat, SETTING_KEYS.opsHeartbeat]),
     prisma.adminAction.findMany({ where: p.action ? { action: { startsWith: p.action } } : {}, orderBy: { createdAt: "desc" }, take: 80 }).catch(() => []),
     prisma.emailSuppression.count().catch(() => 0),
     prisma.campaignSend.count({ where: { status: "queued" } }).catch(() => 0),
@@ -49,6 +49,7 @@ export default async function SystemAdmin({ searchParams }: { searchParams: SP }
   const storage = storageMode();
   const outboxAge = age(settings[SETTING_KEYS.outboxHeartbeat]);
   const alertsAge = age(settings[SETTING_KEYS.alertsHeartbeat]);
+  const opsAge = age(settings[SETTING_KEYS.opsHeartbeat]);
   const env = process.env;
   const checks: Array<{ name: string; ok: boolean; detail: string; fix?: string }> = [
     { name: "Database", ok: dbOk, detail: dbOk ? `${dbMs} ms · latest migration ${migrations[0]?.migration_name ?? "?"}` : "not reachable", fix: "Check the Hyperdrive binding (DEPLOY.md §2)." },
@@ -66,6 +67,7 @@ export default async function SystemAdmin({ searchParams }: { searchParams: SP }
     },
     { name: "Photo uploads", ok: storage === "r2-binding" || storage === "s3" || storage === "local-disk", detail: storage, fix: "Bind MEDIA_BUCKET (wrangler.jsonc) and redeploy." },
     { name: "Outbox job (5 min)", ok: outboxAge !== null && outboxAge < 15, detail: outboxAge === null ? "never ran" : `last ran ${outboxAge} min ago · ${queued} emails queued`, fix: "Needs CRON_SECRET and the */5 cron trigger." },
+    { name: "Automation clock (5 min)", ok: opsAge !== null && opsAge < 20, detail: opsAge === null ? "never ran" : `last ran ${opsAge} min ago · escalations, freshness, briefs, playbooks`, fix: "Runs with the outbox job — see Playbooks & autopilot." },
     { name: "Alerts job (hourly)", ok: alertsAge !== null && alertsAge < 90, detail: alertsAge === null ? "never ran" : `last ran ${alertsAge} min ago` },
     { name: "Facebook Page publishing", ok: Boolean(facebookConfig()), detail: facebookConfig() ? `page ${facebookConfig()!.pageId}` : "manual posting only", fix: "Set FB_PAGE_ID and FB_PAGE_TOKEN." },
     { name: "Shared rate limits", ok: Boolean(env.UPSTASH_REDIS_REST_URL), detail: env.UPSTASH_REDIS_REST_URL ? "Upstash" : "per-instance memory (fine at launch)" },

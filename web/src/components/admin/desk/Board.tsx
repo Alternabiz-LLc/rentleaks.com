@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { moveContact, moveLead, reviewFromBoard, type DeskResult } from "@/app/admin/_actions/desk";
+import { moveBooking } from "@/app/admin/_actions/bookings";
 import type { Draft } from "@/lib/admin/score";
 import { Composer, Drawer } from "./Drawer";
 import { Icon } from "./Icon";
@@ -27,7 +28,7 @@ export type BoardCard = {
   image?: string | null;
 };
 
-type Mode = "lead" | "contact" | "listing";
+type Mode = "lead" | "contact" | "listing" | "booking";
 
 const DRAG = "text/rl-card";
 
@@ -38,6 +39,7 @@ function grade(score: number) {
 async function move(mode: Mode, id: string, to: string, note: string): Promise<DeskResult> {
   if (mode === "lead") return moveLead(id, to);
   if (mode === "contact") return moveContact(id, to);
+  if (mode === "booking") return moveBooking(id, to);
   return reviewFromBoard(id, to, note);
 }
 
