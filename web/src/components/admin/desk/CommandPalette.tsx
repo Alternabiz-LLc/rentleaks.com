@@ -45,6 +45,38 @@ export function CommandPalette({ allowed }: { allowed: AccessKey[] }) {
     setCursor(0);
   }, []);
 
+  const goPending = useRef(0);
+  useEffect(() => {
+    const GO: Record<string, { href: string; key: AccessKey }> = {
+      o: { href: "/admin", key: "overview" },
+      l: { href: "/admin/leads", key: "leads" },
+      m: { href: "/admin/match", key: "leads" },
+      b: { href: "/admin/bookings", key: "bookings" },
+      a: { href: "/admin/accounts", key: "accounts" },
+      f: { href: "/admin/books", key: "books" },
+      h: { href: "/admin/hosts", key: "hosts" },
+      t: { href: "/admin/trust", key: "trust" },
+      p: { href: "/admin/playbooks", key: "automation" },
+      d: { href: "/admin/demand", key: "markets" },
+    };
+    const typing = (el: EventTarget | null) => el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement || (el instanceof HTMLElement && el.isContentEditable);
+    const onGo = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey || typing(e.target)) return;
+      const k = e.key.toLowerCase();
+      if (Date.now() - goPending.current < 900 && GO[k]) {
+        goPending.current = 0;
+        if (allowed.includes(GO[k].key)) {
+          e.preventDefault();
+          router.push(GO[k].href);
+        }
+      } else if (k === "g") {
+        goPending.current = Date.now();
+      }
+    };
+    window.addEventListener("keydown", onGo);
+    return () => window.removeEventListener("keydown", onGo);
+  }, [allowed, router]);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
@@ -186,7 +218,7 @@ export function CommandPalette({ allowed }: { allowed: AccessKey[] }) {
           })}
         </ul>
         <p className="dk-palette__foot">
-          <kbd>↑</kbd> <kbd>↓</kbd> to move · <kbd>↵</kbd> to open · <kbd>/</kbd> or <kbd>⌘K</kbd> from anywhere
+          <kbd>↑</kbd> <kbd>↓</kbd> to move · <kbd>↵</kbd> to open · <kbd>/</kbd> or <kbd>⌘K</kbd> from anywhere · <kbd>g</kbd> then <kbd>l</kbd> leads, <kbd>m</kbd> match, <kbd>b</kbd> bookings, <kbd>a</kbd> accounts, <kbd>f</kbd> books
         </p>
       </div>
     </div>

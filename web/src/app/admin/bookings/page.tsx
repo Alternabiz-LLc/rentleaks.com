@@ -7,6 +7,7 @@ import { Icon } from "@/components/admin/desk/Icon";
 import { RouteDrawer } from "@/components/admin/desk/RouteDrawer";
 import { Chip, CommandRail, Empty, MarkTile, Panel, Steps, ago, initials } from "@/components/admin/desk/parts";
 import { flashOf, qs, readParams, when, type SP } from "@/components/admin/ui";
+import { canAccess } from "@/lib/access";
 import { requireAdminPage } from "@/lib/admin/guard";
 import { nowMs } from "@/lib/admin/metrics";
 import { LEAD_WINDOW_LABEL } from "@/lib/leads";
@@ -26,7 +27,7 @@ type View = (typeof VIEWS)[number];
  * renewal list comes up 90 days before a stay ends.
  */
 export default async function BookingsPage({ searchParams }: { searchParams: SP }) {
-  await requireAdminPage("/admin/bookings");
+  const me = await requireAdminPage("/admin/bookings");
   const p = await readParams(searchParams);
   const t = nowMs();
   const view: View = (VIEWS as readonly string[]).includes(p.view) ? (p.view as View) : "board";
@@ -124,6 +125,7 @@ export default async function BookingsPage({ searchParams }: { searchParams: SP 
 
   const days = Array.from({ length: 14 }, (_, i) => new Date(today.getTime() + i * DAY));
   const open = p.open ? bookings.find((b) => b.id === p.open) : undefined;
+  const openAccount = open && canAccess(me, "accounts") ? await prisma.user.findUnique({ where: { email: open.renterEmail.toLowerCase() }, select: { id: true } }).catch(() => null) : null;
   const fromLead = p.lead ? await prisma.lead.findUnique({ where: { id: p.lead } }) : null;
 
   const form = (b?: (typeof bookings)[number]) => (
@@ -537,6 +539,11 @@ export default async function BookingsPage({ searchParams }: { searchParams: SP 
               <Chip tone={STAGE_META[open.stage as BookingStage]?.tone ?? "ink"}>{STAGE_META[open.stage as BookingStage]?.label ?? open.stage}</Chip>
               {open.viewingAt ? (
                 <Chip tone={open.viewingConfirmedAt ? "good" : "warn"}>{`${wallLabel(open.viewingAt)}${open.viewingConfirmedAt ? " · confirmed" : " · not confirmed"}`}</Chip>
+              ) : null}
+              {openAccount ? (
+                <Link prefetch={false} className="dk-chip dk-chip--value" href={`/admin/accounts/${openAccount.id}`}>
+                  renter account →
+                </Link>
               ) : null}
               {open.leadId ? (
                 <Link prefetch={false} className="dk-chip dk-chip--brand" href={`/admin/leads?open=${open.leadId}`}>

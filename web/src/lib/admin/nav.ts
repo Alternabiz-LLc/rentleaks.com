@@ -14,6 +14,10 @@ import type { AccessKey } from "@/lib/access";
 
 export type DeskIcon =
   | "team"
+  | "books"
+  | "invoice"
+  | "user"
+  | "idea"
   | "match"
   | "calendar"
   | "radar"
@@ -264,6 +268,16 @@ export const DESK_GROUPS: DeskGroup[] = [
         keywords: "payments mrr funnel growth analytics",
       },
       {
+        href: "/admin/books",
+        key: "books",
+        label: "Books & accounting",
+        icon: "books",
+        code: "BO-01",
+        brief: "Income, expenses, invoices and profit — synced from Stripe and Paid ads, ready for your accountant.",
+        live: "Books live",
+        keywords: "accounting bookkeeping ledger expenses income profit loss p&l invoice tax schedule c receipts",
+      },
+      {
         href: "/admin/markets",
         key: "markets",
         label: "Markets & operators",
@@ -357,6 +371,9 @@ export const DESK_ACTIONS: Array<{ href: string; label: string; hint: string; ic
   { href: "/admin/compliance?tab=freshness", label: "Ask hosts: still available?", hint: "Freshness", icon: "health", key: "listings" },
   { href: "/admin/demand", label: "Where renters want homes", hint: "Demand", icon: "map", key: "markets" },
   { href: "/admin/playbooks", label: "Automations", hint: "Playbooks", icon: "bolt", key: "automation" },
+  { href: "/admin/books?tab=ledger&add=expense", label: "Record an expense", hint: "Books", icon: "books", key: "books" },
+  { href: "/admin/books?tab=invoices&new=1", label: "New invoice", hint: "Books", icon: "invoice", key: "books" },
+  { href: "/admin/books?tab=reports", label: "Profit & loss report", hint: "Books", icon: "export", key: "books" },
   { href: "/admin/listings?moderation=pending&view=board", label: "Review pending listings", hint: "Listings", icon: "check", key: "listings" },
   { href: "/admin/crm?due=1", label: "Follow-ups due", hint: "CRM", icon: "clock", key: "crm" },
   { href: "/admin/crm?view=board", label: "CRM board", hint: "CRM", icon: "board", key: "crm" },

@@ -8,6 +8,7 @@ import { ago, Chip, GradeChip, Panel } from "@/components/admin/desk/parts";
 import { flashOf, readParams, type SP } from "@/components/admin/ui";
 import { accessKeyForPath, canAccess, isFounder, type AccessKey } from "@/lib/access";
 import { loadNextActions } from "@/lib/admin/copilot";
+import { loadAdvice } from "@/lib/ops/advisor";
 import { requireAdminPage } from "@/lib/admin/guard";
 import { bucketWeeks, lastWeeks, nowMs, recurringMonthly } from "@/lib/admin/metrics";
 import { scoreLead } from "@/lib/admin/score";
@@ -76,7 +77,7 @@ export default async function AdminPage({ searchParams }: { searchParams: SP }) 
   const safe = <T,>(p: Promise<T>, fallback: T) => p.catch(() => fallback);
 
   const seesCatalogue = can("listings") || can("markets") || can("revenue");
-  const [listings, users, cities, allActions] = await Promise.all([
+  const [listings, users, cities, allActions, advice] = await Promise.all([
     seesCatalogue
       ? prisma.listing.findMany({
           include: { city: true, host: { select: { name: true, identity: true } } },
@@ -86,6 +87,7 @@ export default async function AdminPage({ searchParams }: { searchParams: SP }) 
     can("accounts") ? prisma.user.findMany({ include: { identity: true }, orderBy: { createdAt: "desc" } }) : Promise.resolve([]),
     can("markets") ? prisma.city.findMany({ orderBy: { rank: "asc" } }) : Promise.resolve([]),
     loadNextActions(now),
+    loadAdvice(me, now).catch(() => []),
   ]);
   const actions = allActions.filter((a) => allowedHref(a.href));
   const none = <T,>(v: T) => Promise.resolve(v);
@@ -324,6 +326,25 @@ export default async function AdminPage({ searchParams }: { searchParams: SP }) 
           ))}
         </ul>
       </Panel>
+
+      {advice.length ? (
+        <Panel kicker="Advisor" title="Moves that change this week" sub="Recommendations read across leads, hosts, demand, money and automation — biggest impact first.">
+          <ul className="dk-advice">
+            {advice.map((a, i) => (
+              <li key={a.id} className={`is-${a.tone}`} style={{ ["--i" as string]: String(i) }}>
+                <span className="dk-advice__icon">
+                  <Icon name={a.tone === "good" ? "star" : a.tone === "info" ? "idea" : "flag"} size={16} />
+                </span>
+                <b>{a.title}</b>
+                <p>{a.body}</p>
+                <Link prefetch={false} className="dk-btn dk-btn--sm" href={a.href}>
+                  {a.cta} →
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      ) : null}
 
       <Panel id="next-best" kicker="Next best actions" title="Today's best moves" sub="Ranked from the book: who is waiting, what is due, and where the money is. Drafts open ready to edit and send." actions={<Chip tone="brand">{actions.length} ranked</Chip>}>
         <NextBest actions={actions} />

@@ -88,7 +88,7 @@ export async function GET(req: Request) {
       id: u.id,
       title: u.name || u.email,
       sub: `${u.role} · ${u.email}`,
-      href: `/admin/accounts?q=${encodeURIComponent(u.email)}`,
+      href: `/admin/accounts/${u.id}`,
     })),
   ];
   return Response.json({ hits });

@@ -40,7 +40,7 @@ export function formatValue(n: number, fmt: Fmt = "int") {
   if (!Number.isFinite(n)) return "—";
   switch (fmt) {
     case "usd":
-      return `$${Math.round(n).toLocaleString("en-US")}`;
+      return `${n < 0 ? "−" : ""}$${Math.abs(Math.round(n)).toLocaleString("en-US")}`;
     case "pct":
       return `${n >= 10 || n === 0 ? Math.round(n) : n.toFixed(1)}%`;
     case "hours":

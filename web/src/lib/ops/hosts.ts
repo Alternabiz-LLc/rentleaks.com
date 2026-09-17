@@ -86,7 +86,7 @@ export function replyStats(threads: Array<{ hostId: string; messages: Array<{ se
   return { threads: asked, replyRate: Math.round((waits.length / asked) * 100), replyMins: median === null ? null : Math.round(median) };
 }
 
-export async function loadScorecards(now = Date.now()) {
+export async function loadScorecards(now = Date.now(), only?: string[]) {
   let sample: Set<string>;
   try {
     sample = await sampleCatalogIds();
@@ -95,7 +95,7 @@ export async function loadScorecards(now = Date.now()) {
   }
   const since = new Date(now - WINDOW_DAYS * DAY);
   const listings = await prisma.listing.findMany({
-    where: { moderation: { not: "declined" }, host: { role: { notIn: ["admin", "staff"] } } },
+    where: { moderation: { not: "declined" }, host: { role: { notIn: ["admin", "staff"] } }, ...(only ? { hostId: { in: only } } : {}) },
     select: {
       id: true, hostId: true, listedBy: true, housingType: true, cityId: true, title: true, neighborhood: true, address: true, description: true, price: true, deposit: true,
       feesJson: true, availableFrom: true, availableUntil: true, minStayMonths: true, maxStayMonths: true, leaseEnd: true, consentStatus: true, registrationNumber: true,

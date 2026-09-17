@@ -11,7 +11,9 @@ import { escalateWaiting } from "./autopilot";
 import { renewalDue } from "./bookings";
 import { nyClock, sendDueBriefs } from "./brief";
 import { askFreshness, freshnessOn, pauseSilent } from "./freshness";
+import { runBooks } from "@/lib/books/data";
 import { runPlaybooks } from "./playbooks";
+import { sendWeeklyReport } from "./report";
 
 /** Daily jobs run in the first tick of this New York hour. */
 export const DAILY_HOUR = { freshness: 10, renewals: 9 } as const;
@@ -60,6 +62,8 @@ export async function runOps(now = new Date()) {
   if (firstTickOf(DAILY_HOUR.renewals, now)) out.renewals = await step("renewals", () => renewalNotice(now));
   out.briefs = await step("briefs", () => sendDueBriefs(now));
   out.playbooks = await step("playbooks", () => runPlaybooks(now));
+  out.books = await step("books", () => runBooks(now));
+  out.weekly = await step("weekly", () => sendWeeklyReport(now));
   await setSetting(SETTING_KEYS.opsHeartbeat, now.toISOString()).catch(() => undefined);
   return out;
 }

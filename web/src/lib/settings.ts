@@ -15,6 +15,13 @@ export const SETTING_KEYS = {
   // "off" stops weekly "still available?" emails and auto-pause (default on).
   freshness: "ops.freshness",
   opsHeartbeat: "cron.opsAt",
+  // Books: the owner's tax set-aside rate (percent) and invoice payment terms (days).
+  taxRate: "books.taxRate",
+  invoiceTerms: "books.terms",
+  payInstructions: "books.payInstructions",
+  // "off" stops the Monday owner report (default on); the last week it went out.
+  weeklyReport: "ops.weeklyReport",
+  weeklyReportAt: "ops.weeklyReportAt",
 } as const;
 
 export type SettingKey = (typeof SETTING_KEYS)[keyof typeof SETTING_KEYS];

@@ -193,7 +193,7 @@ export default async function AccountsAdmin({ searchParams }: { searchParams: SP
                           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
                             <Avatar name={u.name} email={u.email} />
                             <div>
-                              <Link prefetch={false} href={self({ manage: u.id })} scroll={false}>
+                              <Link prefetch={false} href={`/admin/accounts/${u.id}`}>
                                 <b>{u.name}</b>
                               </Link>
                               <div className="dk-dim">{u.email}</div>

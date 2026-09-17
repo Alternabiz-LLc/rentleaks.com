@@ -4,6 +4,10 @@ import { parseTags } from "@/lib/marketing";
 import { prisma } from "@/lib/prisma";
 import { EXPORT_ACCESS } from "@/lib/access";
 import { audit, staffForRoute } from "@/lib/admin/guard";
+import { CATEGORY, ISO, LEDGER_HEADERS, ledgerRow, parseItems, pnl, invoiceState } from "@/lib/books/core";
+import { booksToday } from "@/lib/books/data";
+import { loadScorecards } from "@/lib/ops/hosts";
+import { loadDemand } from "@/lib/ops/demand";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +21,57 @@ async function build(kind: string, url: URL): Promise<{ headers: string[]; rows:
       return {
         headers: ["created", "status", "kind", "name", "email", "phone", "city", "type", "budget", "currency", "move_in", "move_out", "months", "listing", "source", "campaign", "note"],
         rows: rows.map((l) => [l.createdAt, l.status, l.kind, l.name, l.email, l.phone, l.cityId, l.housingType, l.budgetMax, l.currency, l.moveIn, l.moveOut, l.stayMonths, l.listing?.title, l.source, l.campaign, l.note]),
+      };
+    }
+    case "ledger": {
+      const from = ISO.test(p.get("from") || "") ? p.get("from")! : "0000-01-01";
+      const to = ISO.test(p.get("to") || "") ? p.get("to")! : "9999-12-31";
+      const rows = await prisma.ledgerEntry.findMany({ where: { date: { gte: from, lte: to } }, orderBy: [{ date: "asc" }, { createdAt: "asc" }], take: MAX });
+      return { headers: LEDGER_HEADERS, rows: rows.map((l) => ledgerRow(l)) };
+    }
+    case "pnl": {
+      const from = ISO.test(p.get("from") || "") ? p.get("from")! : `${booksToday().slice(0, 4)}-01-01`;
+      const to = ISO.test(p.get("to") || "") ? p.get("to")! : booksToday();
+      const lines = await prisma.ledgerEntry.findMany({ where: { date: { gte: from, lte: to }, voidedAt: null }, take: MAX });
+      const r = pnl(lines, { from, to });
+      return {
+        headers: ["section", "category", "schedule_c_line", "amount", "share"],
+        rows: [
+          ...r.byCategory.map((c) => [c.kind === "income" ? "Income" : "Expenses", c.label, CATEGORY.get(c.key)?.line ?? "", c.cents / 100, `${Math.round(c.share * 100)}%`]),
+          ["Total", "Income", "", r.income / 100, ""],
+          ["Total", "Expenses", "", r.expenses / 100, ""],
+          ["Total", `Net (${from} to ${to})`, "", r.net / 100, r.margin === null ? "" : `${Math.round(r.margin * 100)}% margin`],
+        ],
+      };
+    }
+    case "invoices": {
+      const rows = await prisma.invoice.findMany({ orderBy: { createdAt: "desc" }, take: MAX });
+      const today = booksToday();
+      return {
+        headers: ["number", "state", "bill_to", "email", "issued", "due", "items", "subtotal", "tax", "total", "currency", "sent", "reminders", "paid", "paid_method"],
+        rows: rows.map((i) => [i.number, invoiceState(i, today), i.billToName, i.billToEmail, i.issueDate, i.dueDate, parseItems(i.itemsJson).map((x) => `${x.quantity}× ${x.description}`).join("; "), i.subtotalCents / 100, i.taxCents / 100, i.totalCents / 100, i.currency, i.sentAt, i.reminders, i.paidAt, i.paidMethod]),
+      };
+    }
+    case "hosts": {
+      const { cards } = await loadScorecards();
+      return {
+        headers: ["host", "email", "grade", "score", "live", "listings", "quality_pct", "fresh_pct", "reply_rate_pct", "median_reply_min", "leads_90d", "booked_90d", "sponsored", "fix_first"],
+        rows: cards.map((c) => [c.name, c.email, c.grade, c.score, c.live, c.listings, c.quality, c.freshPct, c.replyRate, c.replyMins, c.leads, c.booked, c.sponsored, c.weakest ?? ""]),
+      };
+    }
+    case "demand": {
+      const { cells } = await loadDemand(90);
+      const cities = new Map((await prisma.city.findMany({ select: { id: true, name: true } })).map((c) => [c.id, c.name]));
+      return {
+        headers: ["market", "type", "renters_asking", "median_budget_usd", "live_homes", "affordable_homes", "gap"],
+        rows: cells.map((c) => [cities.get(c.cityId) ?? c.cityId, c.type, c.demand, c.budget, c.supply, c.affordable, c.gap]),
+      };
+    }
+    case "playbooks": {
+      const rows = await prisma.playbookRun.findMany({ orderBy: { createdAt: "desc" }, take: MAX, include: { playbook: { select: { name: true, trigger: true, action: true } } } });
+      return {
+        headers: ["when", "playbook", "trigger", "action", "status", "target_type", "target_id", "detail"],
+        rows: rows.map((r) => [r.createdAt, r.playbook.name, r.playbook.trigger, r.playbook.action, r.status, r.targetType, r.targetId, r.detail]),
       };
     }
     case "bookings": {

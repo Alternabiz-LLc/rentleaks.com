@@ -185,7 +185,19 @@ export async function opsSettingAction(fd: FormData) {
   if (!guard.ok) back(path, "err", guard.error);
   const key = field(fd, "key", 20);
   const value = field(fd, "value", 5) === "off" ? "off" : "on";
-  if (key !== "autopilot" && key !== "freshness") back(path, "err", "Unknown setting.");
+  if (key !== "autopilot" && key !== "freshness" && key !== "weekly") back(path, "err", "Unknown setting.");
+  if (key === "weekly") {
+    if (field(fd, "now", 1) === "1") {
+      if (!guard.founder) back(path, "err", "The owner report goes to founders only.");
+      const { sendWeeklyReport } = await import("@/lib/ops/report");
+      const n = await sendWeeklyReport(new Date(), true);
+      back(path, n ? "ok" : "err", n ? "Owner report sent (or logged if email isn't set up)." : "Couldn't send the report.");
+    }
+    await setSetting(SETTING_KEYS.weeklyReport, value);
+    await audit(guard.user.id, "settings.weekly", "setting", key, { value });
+    revalidatePath(path.split("?")[0]);
+    back(path, "ok", value === "on" ? "The Monday owner report is on." : "The Monday owner report is off.");
+  }
   await setSetting(key === "autopilot" ? SETTING_KEYS.autopilot : SETTING_KEYS.freshness, value);
   await audit(guard.user.id, `settings.${key}`, "setting", key, { value });
   revalidatePath(path.split("?")[0]);

@@ -51,6 +51,11 @@ export default async function DemandPage({ searchParams }: { searchParams: SP })
           { label: "Biggest gap", value: gaps[0] ? `${typeName(gaps[0].type)} in ${name(gaps[0].cityId)} · ${gaps[0].gap} unmet` : "none", tone: gaps[0] ? "critical" : "ok" },
           { label: "Live supply", value: `${haves.length} real homes${examplesHidden ? ` · ${examplesHidden} examples left out` : ""}`, tone: "ok" },
         ]}
+        actions={
+          <Link prefetch={false} className="dk-btn dk-btn--light" href="/api/admin/export/demand">
+            <Icon name="export" size={15} /> Export CSV
+          </Link>
+        }
       />
 
       <div className="dk-kpis">

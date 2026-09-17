@@ -797,3 +797,88 @@ model PlaybookRun {
   @@index([createdAt])
 }
 
+
+/* ------------------------------------------------------------------------
+   Books: RentLeaks' own accounting — income, expenses, invoices.
+   RentLeaks never holds renter money; these are the company's books.
+   ------------------------------------------------------------------------ */
+
+/// One line in the books. Amounts in cents. Voided lines stay for the audit trail.
+model LedgerEntry {
+  id             String    @id @default(cuid())
+  // YYYY-MM-DD, the day it counts in the books
+  date           String
+  // income | expense
+  kind           String
+  category       String
+  amountCents    Int
+  currency       String    @default("USD")
+  description    String    @default("")
+  counterparty   String    @default("")
+  // card | bank | stripe | cash | other
+  method         String    @default("")
+  reference      String?
+  receiptUrl     String?
+  deductible     Boolean   @default(true)
+  // The client this line belongs to, when there is one.
+  userId         String?
+  invoiceId      String?
+  // Where an automatic line came from ("pay:<id>", "refund:<id>", "ad:<id>:<total>"); unique so a sync never doubles.
+  sourceKey      String?   @unique
+  // Monthly repeat: the cron copies the line into each new month.
+  repeatMonthly  Boolean   @default(false)
+  repeatedFromId String?
+  voidedAt       DateTime?
+  createdById    String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@unique([repeatedFromId, date])
+  @@index([date])
+  @@index([kind, date])
+  @@index([userId])
+}
+
+/// An invoice RentLeaks sends (sponsorship deals, operators, manual plans).
+model Invoice {
+  id             String    @id @default(cuid())
+  number         String    @unique
+  userId         String?
+  billToName     String
+  billToEmail    String
+  // draft | sent | paid | void
+  status         String    @default("draft")
+  issueDate      String
+  dueDate        String
+  currency       String    @default("USD")
+  // JSON [{ description, quantity, unitCents }]
+  itemsJson      String    @default("[]")
+  subtotalCents  Int       @default(0)
+  taxCents       Int       @default(0)
+  totalCents     Int       @default(0)
+  note           String    @default("")
+  sentAt         DateTime?
+  lastReminderAt DateTime?
+  reminders      Int       @default(0)
+  paidAt         DateTime?
+  paidMethod     String?
+  createdById    String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([status])
+  @@index([userId])
+  @@index([dueDate])
+}
+
+/// A private note on a client account, visible to the desk only.
+model ClientNote {
+  id        String   @id @default(cuid())
+  userId    String
+  body      String
+  pinned    Boolean  @default(false)
+  byId      String
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+}

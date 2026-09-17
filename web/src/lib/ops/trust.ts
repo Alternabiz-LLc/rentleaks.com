@@ -312,7 +312,7 @@ export async function loadTrustSignals(now = new Date()): Promise<{ signals: Tru
       detail: "Real hosts do this too — check identity status and whether the homes look alike.",
       listingIds: list.map((r) => r.id),
       userIds: [hostId],
-      evidence: [{ label: "Account created", value: host.createdAt.toISOString().slice(0, 10), href: `/admin/accounts?q=${encodeURIComponent(host.email)}` }, ...list.slice(0, 4).map((r) => ({ label: r.city.name, value: r.title, href: href(r.id) }))],
+      evidence: [{ label: "Account created", value: host.createdAt.toISOString().slice(0, 10), href: `/admin/accounts/${host.id}` }, ...list.slice(0, 4).map((r) => ({ label: r.city.name, value: r.title, href: href(r.id) }))],
       at: list[list.length - 1].createdAt,
     });
   }

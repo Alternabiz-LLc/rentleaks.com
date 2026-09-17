@@ -63,6 +63,11 @@ export default async function HostsPage({ searchParams }: { searchParams: SP }) 
           { label: "Grade A", value: `${count("A")} ready for a sponsored spot`, tone: count("A") ? "ok" : "warn", href: self({ grade: "A", weak: undefined }) },
           { label: "Need a nudge", value: `${count("C") + count("D")} graded C or D`, tone: count("D") ? "critical" : "ok", href: self({ grade: "D", weak: undefined }) },
         ]}
+        actions={
+          <Link prefetch={false} className="dk-btn dk-btn--light" href="/api/admin/export/hosts">
+            <Icon name="export" size={15} /> Export CSV
+          </Link>
+        }
       />
 
       <div className="dk-kpis">
@@ -184,7 +189,7 @@ export default async function HostsPage({ searchParams }: { searchParams: SP }) 
                   </span>
                   <Chip tone="brand">{`${open.live} live of ${open.listings}`}</Chip>
                   {open.sponsored ? <Chip tone="value">{`${open.sponsored} sponsored`}</Chip> : null}
-                  <Link prefetch={false} className="dk-chip" href={`/admin/accounts?q=${encodeURIComponent(open.email)}`}>
+                  <Link prefetch={false} className="dk-chip dk-chip--brand" href={`/admin/accounts/${open.id}`}>
                     account
                   </Link>
                   <Link prefetch={false} className="dk-chip" href={`/admin/listings?q=${encodeURIComponent(open.email)}`}>

@@ -181,6 +181,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: SP }) 
   /* Dossier */
   const open = p.open ? await prisma.lead.findUnique({ where: { id: p.open }, include: { listing: { select: { id: true, title: true } } } }).catch(() => null) : null;
   const openContact = open ? await prisma.contact.findUnique({ where: { email: open.email }, select: { id: true, stage: true } }).catch(() => null) : null;
+  const openAccount = open && canAccess(me, "accounts") ? await prisma.user.findUnique({ where: { email: open.email.toLowerCase() }, select: { id: true, role: true } }).catch(() => null) : null;
   const openScore = open ? scoreLead(open, t) : null;
 
   /* Charts */
@@ -434,6 +435,11 @@ export default async function LeadsPage({ searchParams }: { searchParams: SP }) 
               {openScore ? <GradeChip score={openScore.score} /> : null}
               <Chip>received {ago(t - open.createdAt.getTime())}</Chip>
               {open.campaign ? <Chip tone="value">{open.campaign}</Chip> : null}
+              {openAccount ? (
+                <Link prefetch={false} className="dk-chip dk-chip--value" href={`/admin/accounts/${openAccount.id}`}>
+                  {openAccount.role} account →
+                </Link>
+              ) : null}
               {openContact ? (
                 <Link prefetch={false} className="dk-chip dk-chip--brand" href={`/admin/crm/${openContact.id}`}>
                   CRM · {openContact.stage} →

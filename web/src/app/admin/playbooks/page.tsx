@@ -53,10 +53,11 @@ export default async function PlaybooksPage({ searchParams }: { searchParams: SP
     prisma.playbook.findMany({ orderBy: [{ enabled: "desc" }, { createdAt: "asc" }] }),
     prisma.playbookRun.findMany({ orderBy: { createdAt: "desc" }, take: 40, include: { playbook: { select: { name: true } } } }),
     prisma.playbookRun.groupBy({ by: ["status"], where: { createdAt: { gte: new Date(t - 7 * DAY) } }, _count: { _all: true } }),
-    getSettings([SETTING_KEYS.autopilot, SETTING_KEYS.freshness, SETTING_KEYS.opsHeartbeat]),
+    getSettings([SETTING_KEYS.autopilot, SETTING_KEYS.freshness, SETTING_KEYS.opsHeartbeat, SETTING_KEYS.weeklyReport, SETTING_KEYS.weeklyReportAt]),
   ]);
   const autopilot = settings[SETTING_KEYS.autopilot] !== "off";
   const freshness = settings[SETTING_KEYS.freshness] !== "off";
+  const weekly = settings[SETTING_KEYS.weeklyReport] !== "off";
   const beat = settings[SETTING_KEYS.opsHeartbeat] ? new Date(settings[SETTING_KEYS.opsHeartbeat]) : null;
   const beatOk = beat && !Number.isNaN(beat.getTime()) && t - beat.getTime() < 20 * 60_000;
   const on = books.filter((b) => b.enabled);
@@ -161,7 +162,16 @@ export default async function PlaybooksPage({ searchParams }: { searchParams: SP
           )}
         </Panel>
 
-        <Panel kicker="3 · Watch" title="Run log" sub="Newest first.">
+        <Panel
+          kicker="3 · Watch"
+          title="Run log"
+          sub="Newest first."
+          actions={
+            <Link prefetch={false} className="dk-btn dk-btn--ghost dk-btn--sm" href="/api/admin/export/playbooks">
+              <Icon name="export" size={13} /> CSV
+            </Link>
+          }
+        >
           {runs.length === 0 ? (
             <Empty title="Nothing has run yet." />
           ) : (
@@ -186,7 +196,7 @@ export default async function PlaybooksPage({ searchParams }: { searchParams: SP
         </Panel>
       </div>
 
-      <Panel id="settings" kicker="Built in" title="Autopilot" sub="The two automations that come with the desk.">
+      <Panel id="settings" kicker="Built in" title="Autopilot" sub="The automations that come with the desk.">
         <ul className="dk-books">
           <li className={autopilot ? "is-on" : undefined}>
             <div>
@@ -221,6 +231,26 @@ export default async function PlaybooksPage({ searchParams }: { searchParams: SP
               <button className={`dk-switch${freshness ? " is-on" : ""}`} name="value" value={freshness ? "off" : "on"} aria-pressed={freshness}>
                 <i />
                 <span>{freshness ? "On" : "Off"}</span>
+              </button>
+            </form>
+          </li>
+          <li className={weekly ? "is-on" : undefined}>
+            <div>
+              <b>Monday owner report</b>
+              <small>
+                Every Monday at 8:00 (New York) the founders get last week in one email: requests, reply speed, leases, money and the advisor&apos;s top moves.
+                {settings[SETTING_KEYS.weeklyReportAt] ? ` Last sent the week of ${settings[SETTING_KEYS.weeklyReportAt]}.` : ""}
+              </small>
+            </div>
+            <form action={opsSettingAction} className="dk-inline">
+              <input type="hidden" name="key" value="weekly" />
+              <input type="hidden" name="returnTo" value={self()} />
+              <button className="dk-btn dk-btn--ghost dk-btn--sm" name="now" value="1">
+                Send now
+              </button>
+              <button className={`dk-switch${weekly ? " is-on" : ""}`} name="value" value={weekly ? "off" : "on"} aria-pressed={weekly}>
+                <i />
+                <span>{weekly ? "On" : "Off"}</span>
               </button>
             </form>
           </li>
@@ -271,7 +301,7 @@ export default async function PlaybooksPage({ searchParams }: { searchParams: SP
                         <option value="day">days</option>
                       </select>
                     </label>
-                    <p className="dk-hint">For free weeks and stays, the wait counts back from the end date.</p>
+                    <p className="dk-hint">For free weeks, stays and viewings, the wait counts back from that date.</p>
                   </div>
                 </fieldset>
                 <fieldset className="dk-fieldset">

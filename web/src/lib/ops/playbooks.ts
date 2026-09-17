@@ -59,6 +59,38 @@ export const TRIGGERS = {
     key: "bookings" as AccessKey,
     defaultWait: 45 * 1440,
   },
+  viewing_soon: {
+    label: "A confirmed viewing is coming up",
+    when: "before",
+    unit: "before the viewing",
+    who: "renter",
+    key: "bookings" as AccessKey,
+    defaultWait: 1440,
+  },
+  host_no_listing: {
+    label: "A new host hasn't listed yet",
+    when: "after",
+    unit: "after they signed up",
+    who: "host",
+    key: "accounts" as AccessKey,
+    defaultWait: 2 * 1440,
+  },
+  invoice_overdue: {
+    label: "An invoice is overdue",
+    when: "after",
+    unit: "after the due date",
+    who: "client",
+    key: "books" as AccessKey,
+    defaultWait: 3 * 1440,
+  },
+  payment_failed: {
+    label: "A card payment failed",
+    when: "after",
+    unit: "after it failed",
+    who: "host",
+    key: "books" as AccessKey,
+    defaultWait: 60,
+  },
   contact_quiet: {
     label: "A contacted lead in the CRM went quiet",
     when: "after",
@@ -139,6 +171,46 @@ export const RECIPES: Array<{ id: string; name: string; trigger: TriggerKey; wai
     pitch: "Keeps renters instead of re-finding them.",
   },
   {
+    id: "viewing-reminder",
+    name: "Viewing reminder",
+    trigger: "viewing_soon",
+    waitMinutes: 1440,
+    action: "send_email",
+    subject: "See you {{date}}",
+    body: "Hi {{first_name}},\n\nA reminder of your viewing of {{home}} on {{date}} (local time). Need another time? Just reply.\n\n" + SAFETY_NOTE + "\n\nRentLeaks",
+    pitch: "Fewer no-shows, no manual texts.",
+  },
+  {
+    id: "host-welcome",
+    name: "New-host nudge",
+    trigger: "host_no_listing",
+    waitMinutes: 2 * 1440,
+    action: "send_email",
+    subject: "Need a hand with your first listing, {{first_name}}?",
+    body: "Hi {{first_name}},\n\nThanks for joining RentLeaks. Most hosts list in under ten minutes: four photos, the all-in monthly price and the dates it's free.\n\nStart here: {{link}}\n\nStuck on anything? Reply and we'll help.\n\nRentLeaks",
+    pitch: "Turns sign-ups into live supply.",
+  },
+  {
+    id: "overdue-alert",
+    name: "Overdue invoice alert",
+    trigger: "invoice_overdue",
+    waitMinutes: 3 * 1440,
+    action: "notify_team",
+    subject: "Overdue: {{home}} from {{name}}",
+    body: "{{home}} from {{name}} was due {{date}} and is still unpaid. Reminders already went out — time for a call.",
+    pitch: "A human call after the automatic reminders.",
+  },
+  {
+    id: "payment-rescue",
+    name: "Failed-payment rescue",
+    trigger: "payment_failed",
+    waitMinutes: 60,
+    action: "send_email",
+    subject: "Your RentLeaks payment didn't go through",
+    body: "Hi {{first_name}},\n\nYour card payment for {{home}} didn't go through, so the listing may pause. You can try again from your account: {{link}}\n\nQuestions? Just reply.\n\nRentLeaks",
+    pitch: "Saves listings that would quietly lapse.",
+  },
+  {
     id: "quiet-contact",
     name: "Quiet-contact follow-up",
     trigger: "contact_quiet",
@@ -162,7 +234,7 @@ export function merge(text: string, vars: Record<string, string>) {
   return text.replace(/\{\{\s*([a-z_]+)\s*\}\}/g, (_, k: string) => vars[k] ?? "");
 }
 
-type Target = { id: string; type: "lead" | "user" | "listing" | "booking" | "contact"; email: string; name: string; vars: Record<string, string>; desk: string };
+type Target = { id: string; type: "lead" | "user" | "listing" | "booking" | "contact" | "invoice" | "payment"; email: string; name: string; vars: Record<string, string>; desk: string };
 
 const first = (n: string) => n.trim().split(/\s+/)[0] || "there";
 const day = (d: Date | string) => (typeof d === "string" ? new Date(`${d}T12:00:00Z`) : d).toLocaleDateString("en-US", { month: "long", day: "numeric", timeZone: "UTC" });
@@ -261,6 +333,65 @@ export async function candidates(pb: { trigger: string; waitMinutes: number; cre
         desk: `${base}/admin/bookings?open=${b.id}`,
         vars: vars(b.renterName, { home: (b.listingId && titles.get(b.listingId)) || "your home", date: day(b.moveOut!), link: base }),
       }));
+    }
+    case "viewing_soon": {
+      const rows = await prisma.booking.findMany({
+        where: { stage: "viewing", viewingConfirmedAt: { not: null }, viewingAt: { gt: now, lte: new Date(t + wait) } },
+        take: BATCH,
+      });
+      const titles = new Map(
+        (await prisma.listing.findMany({ where: { id: { in: rows.map((b) => b.listingId).filter((x): x is string => !!x) } }, select: { id: true, title: true } })).map((l) => [l.id, l.title]),
+      );
+      return rows
+        .filter((b) => b.viewingAt!.getTime() - wait >= floor.getTime())
+        .map((b) => ({
+          id: b.id,
+          type: "booking" as const,
+          email: b.renterEmail,
+          name: b.renterName,
+          desk: `${base}/admin/bookings?open=${b.id}`,
+          vars: vars(b.renterName, {
+            home: (b.listingId && titles.get(b.listingId)) || "the home",
+            date: b.viewingAt!.toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "UTC" }),
+          }),
+        }));
+    }
+    case "host_no_listing": {
+      const rows = await prisma.user.findMany({
+        where: { role: "host", suspendedAt: null, createdAt: { lte: new Date(t - wait), gte: floor }, listings: { none: {} } },
+        take: BATCH,
+        select: { id: true, name: true, email: true },
+      });
+      return rows.map((u) => ({ id: u.id, type: "user" as const, email: u.email, name: u.name, desk: `${base}/admin/accounts/${u.id}`, vars: vars(u.name, { link: `${base}/list` }) }));
+    }
+    case "invoice_overdue": {
+      const cutoff = new Date(t - wait).toISOString().slice(0, 10);
+      const rows = await prisma.invoice.findMany({ where: { status: "sent", dueDate: { lte: cutoff }, updatedAt: { gte: floor } }, take: BATCH });
+      return rows.map((i) => ({
+        id: i.id,
+        type: "invoice" as const,
+        email: i.billToEmail,
+        name: i.billToName,
+        desk: `${base}/admin/books?tab=invoices&open=${i.id}`,
+        vars: vars(i.billToName, { home: `invoice ${i.number} (${(i.totalCents / 100).toFixed(2)} ${i.currency})`, date: i.dueDate, link: base }),
+      }));
+    }
+    case "payment_failed": {
+      const rows = await prisma.payment.findMany({
+        where: { status: { in: ["failed", "canceled", "cancelled", "expired", "requires_payment_method"] }, updatedAt: { lte: new Date(t - wait), gte: floor } },
+        take: BATCH,
+        include: { user: { select: { name: true, email: true, suspendedAt: true } }, listing: { select: { title: true } } },
+      });
+      return rows
+        .filter((x) => !x.user.suspendedAt)
+        .map((x) => ({
+          id: x.id,
+          type: "payment" as const,
+          email: x.user.email,
+          name: x.user.name,
+          desk: `${base}/admin/accounts/${x.userId}`,
+          vars: vars(x.user.name, { home: x.listing?.title ?? "your listing", link: `${base}/account` }),
+        }));
     }
     case "contact_quiet": {
       const rows = await prisma.contact.findMany({

@@ -26,6 +26,7 @@ export const ACCESS_KEYS = [
   "trials",
   "hosts",
   "revenue",
+  "books",
   "markets",
   "automation",
   "system",
@@ -34,7 +35,7 @@ export const ACCESS_KEYS = [
 export type AccessKey = (typeof ACCESS_KEYS)[number];
 
 /** Never granted to staff, whatever the list says. */
-export const FOUNDER_ONLY: readonly AccessKey[] = ["revenue", "system", "team"];
+export const FOUNDER_ONLY: readonly AccessKey[] = ["revenue", "books", "system", "team"];
 
 /** What a staff member can be given — every key except the founder-only ones. */
 export const GRANTABLE: readonly AccessKey[] = ACCESS_KEYS.filter((k) => !FOUNDER_ONLY.includes(k));
@@ -55,6 +56,7 @@ export const ACCESS_LABEL: Record<AccessKey, string> = {
   trials: "Free-trial invites",
   hosts: "Host scorecards",
   revenue: "Revenue & analytics",
+  books: "Books & accounting",
   markets: "Markets & demand",
   automation: "Playbooks & autopilot",
   system: "System & settings",
@@ -150,6 +152,7 @@ export function accessKeyForPath(pathname: string): AccessKey | null {
     trials: "trials",
     hosts: "hosts",
     revenue: "revenue",
+    books: "books",
     markets: "markets",
     demand: "markets",
     playbooks: "automation",
@@ -169,4 +172,10 @@ export const EXPORT_ACCESS: Record<string, AccessKey> = {
   campaign: "campaigns",
   invites: "trials",
   bookings: "bookings",
+  ledger: "books",
+  invoices: "books",
+  pnl: "books",
+  hosts: "hosts",
+  demand: "markets",
+  playbooks: "automation",
 };

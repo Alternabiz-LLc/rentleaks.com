@@ -289,7 +289,7 @@ export default async function ContactPage({ params, searchParams }: { params: Pr
                   <b>Account</b>
                   <p>
                     {contact.user ? (
-                      <Link prefetch={false} href={`/admin/accounts?manage=${contact.user.id}`}>
+                      <Link prefetch={false} href={`/admin/accounts/${contact.user.id}`}>
                         {contact.user.role} · {contact.user._count.listings} listings
                         {contact.user.trialEndsAt && contact.user.trialEndsAt.getTime() > t ? ` · trial until ${when(contact.user.trialEndsAt, false)}` : ""}
                         {contact.user.suspendedAt ? " · suspended" : ""}
