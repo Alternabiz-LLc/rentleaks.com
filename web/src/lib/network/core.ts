@@ -855,3 +855,154 @@ export function maskIp(ip: string | null | undefined) {
   if (ip.includes(".")) return ip.split(".").slice(0, 3).join(".") + ".x";
   return ip.split(":").slice(0, 3).join(":") + ":…";
 }
+
+/* ------------------------------------------------------------------------
+   Lead magnets: the two guides, the consent people give for them, and the
+   public roster of partner headshots. The website, the API and the desk all
+   read these, so a guide can never exist in one place and not another.
+   ------------------------------------------------------------------------ */
+
+export type Audience = "tenant" | "partner";
+
+export type Guide = {
+  id: string;
+  audience: Audience;
+  title: string;
+  /** One line, for the card and the email subject. */
+  tagline: string;
+  file: string;
+  pages: number;
+  inside: string[];
+  /** What the form asks for beyond name and email. */
+  extra: "city" | "brokerage";
+  cta: string;
+};
+
+export const GUIDES: Guide[] = [
+  {
+    id: "renter-playbook",
+    audience: "tenant",
+    title: "The New York renter's broker playbook",
+    tagline: "Who pays a broker fee now, what your agreement must say, and how to hire an agent for a fee you set.",
+    file: "rentleaks-renter-broker-playbook.pdf",
+    pages: 5,
+    inside: [
+      "The FARE Act in plain English — and the one case where a renter still pays",
+      "What a broker actually costs: months, percentages and flat fees, side by side",
+      "A fee-cap worksheet you fill in before you talk to anyone",
+      "The eight things a fair representation & fee agreement says",
+      "12 questions to ask a broker (and four reasons to walk away)",
+    ],
+    extra: "city",
+    cta: "Send me the playbook",
+  },
+  {
+    id: "partner-kit",
+    audience: "partner",
+    title: "RentLeaks referral partner kit",
+    tagline: "How the referral program works, what a lead looks like, what it pays, and what you sign.",
+    file: "rentleaks-referral-partner-kit.pdf",
+    pages: 5,
+    inside: [
+      "What a lead contains before you spend a minute on it",
+      "The fee math, with worked numbers at five rent levels",
+      "How leads are shared out — and why you can't pay for position",
+      "The referral agreement, section by section",
+      "A compliance checklist to print and keep with your files",
+    ],
+    extra: "brokerage",
+    cta: "Send me the partner kit",
+  },
+];
+
+export const GUIDE = new Map(GUIDES.map((g) => [g.id, g]));
+
+/** The sentence someone agrees to when they ask for a guide. Stored with the lead. */
+export const GUIDE_CONSENT: Record<Audience, string> = {
+  tenant:
+    "Email me the guide and have a RentLeaks agent or one of our referral partner brokers contact me by email, phone or text about finding a rental. " +
+    "I can ask to stop at any time by replying to any email.",
+  partner:
+    "Email me the kit and have the RentLeaks broker network team contact me by email, phone or text about joining the referral partner program. " +
+    "I can ask to stop at any time by replying to any email.",
+};
+
+/** The one-line promise printed under both forms. */
+export const GUIDE_PROMISE = "One guide, a reply from a person, and nothing else. We never sell your details, and there's nothing to pay.";
+
+export const ROSTER_SLOTS = 10;
+
+export type RosterCard = {
+  id: string;
+  name: string;
+  brokerage: string;
+  headline: string;
+  markets: string[];
+  languages: string[];
+  photo: string | null;
+  rating: number | null;
+  leases: number;
+  state: string;
+};
+
+export type GuideInput = {
+  audience: Audience;
+  guideId: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  city: string | null;
+  brokerage: string | null;
+  licenseState: string | null;
+  consentText: string;
+  source: string;
+  campaign: string | null;
+  referrer: string | null;
+};
+
+export function parseGuide(body: Record<string, unknown>): Parse<GuideInput> {
+  const guideId = text(body.guideId, 40);
+  const guide = GUIDE.get(guideId);
+  if (!guide) return { ok: false, field: "guideId", message: "Pick a guide." };
+  const name = text(body.name, 120);
+  if (name.length < 2) return { ok: false, field: "name", message: "Add your name." };
+  const email = text(body.email, 200).toLowerCase();
+  if (!EMAIL.test(email)) return { ok: false, field: "email", message: "Add an email we can send the guide to." };
+  const phone = text(body.phone, 40);
+  if (phone && !/^\+?[\d\s().-]{7,}$/.test(phone)) return { ok: false, field: "phone", message: "That phone number doesn't look right." };
+  if (body.consent !== true && body.consent !== "on" && body.consent !== "true") {
+    return { ok: false, field: "consent", message: "Please agree to be contacted so we can send the guide and follow up." };
+  }
+  const where = splitCity(text(body.city, 80));
+  const brokerage = text(body.brokerage, 120);
+  if (guide.audience === "partner" && brokerage.length < 2) return { ok: false, field: "brokerage", message: "Add your brokerage." };
+  const src = text(body.source, 24).toLowerCase();
+  return {
+    ok: true,
+    spam: text(body.website, 200) !== "",
+    value: {
+      audience: guide.audience,
+      guideId,
+      name,
+      email,
+      phone: phone || null,
+      city: where.city ? [where.city, where.state].filter(Boolean).join(", ").slice(0, 80) : null,
+      brokerage: brokerage || null,
+      licenseState: guide.audience === "partner" && STATE.test(text(body.licenseState, 2).toUpperCase()) ? text(body.licenseState, 2).toUpperCase() : null,
+      consentText: GUIDE_CONSENT[guide.audience],
+      source: /^[a-z0-9_]{1,24}$/.test(src) ? src : "web",
+      campaign: text(body.campaign, 80) || null,
+      referrer: text(body.referrer, 300) || null,
+    },
+  };
+}
+
+/** What a renter would pay at each fee shape — the calculator on the public page uses the same math. */
+export function feeCompare(monthlyRent: number) {
+  const rent = Math.max(0, Math.round(monthlyRent));
+  return [
+    { label: "One month's rent", cents: rent * 100 },
+    { label: "12% of a year", cents: Math.round(rent * 12 * 0.12) * 100 },
+    { label: "15% of a year", cents: Math.round(rent * 12 * 0.15) * 100 },
+  ];
+}

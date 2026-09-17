@@ -1619,3 +1619,10 @@ a.dk-rank__row:hover { background: var(--dk-paper-2); }
 .dk-ent-pack ul { display: grid; gap: 3px; margin: 2px 0; padding-left: 16px; font-size: 12.5px; color: var(--dk-ink-2); list-style: disc; }
 .dk-checklist li small { color: inherit; opacity: 0.8; font-size: 12px; white-space: nowrap; }
 .dk-checklist li:not(.is-ok):not(.is-bad) { background: var(--dk-card-2, color-mix(in srgb, var(--dk-teal) 5%, transparent)); }
+.rf-roster { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+.rf-roster__card { display: flex; gap: 10px; align-items: center; margin: 0; padding: 8px; border: 1px solid var(--dk-line); border-radius: 12px; background: var(--dk-surface); }
+.rf-roster__card--empty { border-style: dashed; opacity: 0.75; }
+.rf-roster__card img { width: 52px; height: 52px; border-radius: 10px; object-fit: cover; }
+.rf-roster__empty { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 10px; border: 1px dashed var(--dk-line-2, var(--dk-line)); color: var(--dk-ink-3); font-size: 0.8rem; }
+.rf-roster figcaption { display: grid; gap: 1px; font-size: 0.78rem; min-width: 0; }
+.rf-roster figcaption b, .rf-roster figcaption span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

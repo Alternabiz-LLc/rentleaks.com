@@ -192,4 +192,5 @@ export const EXPORT_ACCESS: Record<string, AccessKey> = {
   "network-partners": "network",
   "network-agreements": "network",
   "network-deals": "network",
+  "network-guides": "network",
 };

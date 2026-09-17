@@ -4,6 +4,8 @@ import { Card, Facts, flashOf, NetShell, Pill, since, until, type Step } from "@
 import { booksToday } from "@/lib/books/data";
 import { canSignNow, FEE_TYPES, feeLabel, isFeeType, parseFeeValue, PARTNER_STATUS, SEARCH_STAGE, SPECIALTIES, usd, type PartnerStatus, type SearchStage } from "@/lib/network/core";
 import { answerOffer, freshSignerLink, json, NetworkError, partnerFromToken, partnerMove, reportLease, searchBrief } from "@/lib/network/engine";
+import { clearHeadshot, headshotUrl, setHeadshot } from "@/lib/network/guides";
+import { sniffReceipt } from "@/lib/books/receipts";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -97,8 +99,37 @@ async function profile(fd: FormData) {
     .filter((x) => SPECIALTIES.some((s) => s.id === x));
   const capacity = Math.round(Number(fd.get("capacity")));
   if (!markets.length || !specialties.length || !(capacity >= 1 && capacity <= 50)) back(token, "err", "Keep at least one market, one specialty and a capacity between 1 and 50.", "profile");
-  await prisma.networkPartner.update({ where: { id: p.id }, data: { markets: JSON.stringify([...new Set(markets)]), specialties: JSON.stringify(specialties), capacity, bio: String(fd.get("bio") || "").trim().slice(0, 600) } });
+  await prisma.networkPartner.update({
+    where: { id: p.id },
+    data: {
+      markets: JSON.stringify([...new Set(markets)]),
+      specialties: JSON.stringify(specialties),
+      capacity,
+      bio: String(fd.get("bio") || "").trim().slice(0, 600),
+      headline: String(fd.get("headline") || "").replace(/\s+/g, " ").trim().slice(0, 140) || null,
+    },
+  });
   back(token, "ok", "Profile saved.", "profile");
+}
+
+/** Upload or remove the headshot shown on rentleaks.com/hire-a-broker/. */
+async function headshot(fd: FormData) {
+  "use server";
+  const { token, p } = await guard(fd);
+  if (fd.get("op") === "remove") {
+    await clearHeadshot(p.id);
+    back(token, "ok", "Headshot removed.", "profile");
+  }
+  const file = fd.get("photo");
+  if (!file || typeof file === "string" || !("arrayBuffer" in file) || file.size === 0) back(token, "err", "Choose a photo first.", "profile");
+  const bytes = new Uint8Array(await (file as File).arrayBuffer());
+  try {
+    await setHeadshot(p.id, bytes, sniffReceipt(bytes));
+  } catch (err) {
+    if (err instanceof NetworkError) back(token, "err", err.message, "profile");
+    throw err;
+  }
+  back(token, "ok", "Headshot saved — it appears on the public page once you're active.", "profile");
 }
 
 /** The partner's portal: leads to answer, clients to serve, leases to report. */
@@ -108,6 +139,7 @@ export default async function Portal({ params, searchParams }: { params: Promise
   const p = await partnerFromToken(token);
   if (!p) redirect("/pro?expired=1");
   const now = nowMs();
+  const photo = headshotUrl(p);
   const [offers, clients, deals, referral] = await Promise.all([
     prisma.networkOffer.findMany({ where: { partnerId: p.id }, include: { search: true }, orderBy: { offeredAt: "desc" }, take: 60 }),
     prisma.networkSearch.findMany({ where: { chosenPartnerId: p.id }, orderBy: { updatedAt: "desc" }, take: 60 }),
@@ -434,6 +466,10 @@ export default async function Portal({ params, searchParams }: { params: Promise
             </label>
           </div>
           <label>
+            One line under your headshot <span className="nw-muted">— what you want a tenant to read first</span>
+            <input name="headline" maxLength={140} defaultValue={p.headline ?? ""} placeholder="Eight years in North Brooklyn — first rentals and relocations." />
+          </label>
+          <label>
             Short bio
             <textarea name="bio" rows={3} maxLength={600} defaultValue={p.bio} />
           </label>
@@ -441,6 +477,31 @@ export default async function Portal({ params, searchParams }: { params: Promise
             Save profile
           </button>
         </form>
+      </Card>
+
+      <Card kicker="Your headshot" title="Be one of the ten faces on the page" tone={photo ? undefined : "warn"}>
+        <p className="nw-muted">
+          rentleaks.com/hire-a-broker/ shows ten verified partners with their photo, brokerage and markets. A clear, friendly headshot — square, around 800 pixels, JPEG,
+          PNG or WebP, under 3 MB — is what gets you there. It appears while your account is active and comes down the moment it isn&rsquo;t.
+        </p>
+        <div className="nw-headshot">
+          {photo ? <img src={photo} alt={`${p.name} headshot`} width={104} height={104} /> : <span className="nw-headshot__empty">No photo yet</span>}
+          <form action={headshot} className="nw-form">
+            <input type="hidden" name="token" value={token} />
+            <label>
+              Photo
+              <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" required />
+            </label>
+            <div className="nw-row">
+              <button className="nw-btn">{photo ? "Replace photo" : "Upload photo"}</button>
+              {photo ? (
+                <button className="nw-btn nw-btn--ghost" name="op" value="remove" formNoValidate>
+                  Remove
+                </button>
+              ) : null}
+            </div>
+          </form>
+        </div>
       </Card>
     </NetShell>
   );

@@ -54,8 +54,26 @@
     });
   }
 
+  var SOURCES = ['fb_page', 'fb_post', 'fb_ad', 'instagram', 'linkedin', 'google', 'email', 'web', 'referral'];
+  var params = new URLSearchParams(location.search);
+  function source() {
+    var src = (params.get('src') || '').toLowerCase();
+    if (SOURCES.indexOf(src) !== -1) return src;
+    var us = (params.get('utm_source') || '').toLowerCase();
+    if (/^(fb|facebook)$/.test(us)) return /paid|cpc|ads?/.test((params.get('utm_medium') || '').toLowerCase()) ? 'fb_ad' : 'fb_post';
+    if (/^(ig|instagram)$/.test(us)) return 'instagram';
+    if (/linkedin/.test(us)) return 'linkedin';
+    if (/google/.test(us)) return 'google';
+    if (/mail|newsletter/.test(us)) return 'email';
+    return 'web';
+  }
+
+
+  var EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
   /* ---------- live numbers ---------- */
   var open = true;
+  var referralPct = 25;
   function applyConfig(cfg) {
     if (!cfg) return;
     if (cfg.offerHours) {
@@ -63,12 +81,17 @@
       $$('[data-live-hours-text]').forEach(function (el) { el.textContent = 'Answer within ' + cfg.offerHours + ' hours'; });
     }
     if (cfg.offersPerSearch) $$('[data-live-offers]').forEach(function (el) { el.textContent = String(cfg.offersPerSearch); });
-    if (cfg.referralPct) $$('[data-live-pct]').forEach(function (el) { el.textContent = cfg.referralPct + '%'; });
+    if (cfg.referralPct) {
+      referralPct = cfg.referralPct;
+      $$('[data-live-pct]').forEach(function (el) { el.textContent = cfg.referralPct + '%'; });
+      if (typeof window.rlDrawEarn === 'function') window.rlDrawEarn();
+    }
     var markets = $('[data-live-markets]');
     if (markets && cfg.markets && cfg.markets.length) {
       $('span', markets).textContent = cfg.markets.slice(0, 16).join(' · ');
       markets.hidden = false;
     }
+    if (cfg.roster) renderRoster(cfg.roster, cfg.rosterSlots || 10);
     var status = $('[data-live-status]');
     if (status && cfg.partners > 0 && WHO === 'tenant') {
       status.innerHTML = '<b>' + esc(cfg.partners) + '</b> verified broker' + (cfg.partners === 1 ? '' : 's') + ' in the network right now.';
@@ -111,6 +134,142 @@
       });
     }, { threshold: 0.06, rootMargin: '0px 0px -24px 0px' });
     reveal.forEach(function (el) { io.observe(el); });
+  }
+
+  /* ---------- the ten faces ---------- */
+  function renderRoster(cards, slots) {
+    var list = $('[data-roster]');
+    if (!list) return;
+    var items = list.children;
+    for (var i = 0; i < Math.min(cards.length, slots, items.length); i++) {
+      var c = cards[i];
+      var li = items[i];
+      var where = (c.markets || []).join(' · ');
+      li.className = 'hb-face';
+      li.innerHTML =
+        (c.photo ? '<img class="hb-face__photo" src="' + esc(c.photo) + '" alt="' + esc(c.name) + ', ' + esc(c.brokerage) + '" width="72" height="72" loading="lazy">' : '<span class="hb-face__photo"></span>') +
+        '<b>' + esc(c.name) + '</b>' +
+        '<small>' + esc(c.brokerage) + (c.state ? ' · ' + esc(c.state) : '') + '</small>' +
+        (c.headline ? '<p>' + esc(c.headline) + '</p>' : '') +
+        (where ? '<small class="hb-face__where">' + esc(where) + '</small>' : '') +
+        (c.leases ? '<span class="hb-face__tag">' + c.leases + ' lease' + (c.leases === 1 ? '' : 's') + ' through RentLeaks</span>' : '<span class="hb-face__tag">Verified licence</span>');
+    }
+    var note = $('[data-roster-note]');
+    if (note && cards.length) {
+      note.textContent = cards.length >= slots
+        ? 'All ' + slots + ' spots are taken right now — agents who join go on the list as spots open.'
+        : cards.length + ' of ' + slots + ' spots taken. Verified licence, real photo, real markets — no stock images.';
+    }
+  }
+
+  /* ---------- the guide forms (lead magnets) ---------- */
+  function guideError(f, msg, field) {
+    var box = $('.ent-form__error', f);
+    if (box) { box.textContent = msg || ''; box.hidden = !msg; }
+    $$('[aria-invalid]', f).forEach(function (x) { x.removeAttribute('aria-invalid'); });
+    if (field && f.elements[field] && f.elements[field].setAttribute) {
+      var el2 = f.elements[field];
+      if (el2.type !== 'checkbox') el2.setAttribute('aria-invalid', 'true');
+      el2.focus();
+    }
+  }
+  $$('.hb-guideform').forEach(function (f) {
+    f.addEventListener('submit', function (e) {
+      e.preventDefault();
+      if (!open) { guideError(f, 'We\u2019re pausing new requests for a moment — please try again soon.'); return; }
+      var el2 = f.elements;
+      var body = {
+        guideId: el2.guideId.value,
+        name: el2.name.value,
+        email: el2.email.value,
+        phone: el2.phone ? el2.phone.value : '',
+        city: el2.city ? el2.city.value : '',
+        brokerage: el2.brokerage ? el2.brokerage.value : '',
+        licenseState: el2.licenseState ? el2.licenseState.value : '',
+        consent: el2.consent.checked,
+        website: el2.website.value,
+        source: source(),
+        campaign: (params.get('utm_campaign') || '').slice(0, 80),
+        referrer: (document.referrer || '').slice(0, 300)
+      };
+      if (body.name.trim().length < 2) { guideError(f, 'Add your name.', 'name'); return; }
+      if (!EMAIL.test(body.email.trim())) { guideError(f, 'Add an email we can send the guide to.', 'email'); return; }
+      if (el2.brokerage && body.brokerage.trim().length < 2) { guideError(f, 'Add your brokerage.', 'brokerage'); return; }
+      if (!body.consent) { guideError(f, 'Please tick the box so we can send the guide and follow up.', 'consent'); return; }
+      guideError(f, '');
+      var btn = $('button[type="submit"]', f);
+      var label = btn.innerHTML;
+      btn.textContent = 'Sending\u2026';
+      f.classList.add('is-busy');
+      request('POST', '/api/network/guide', body).then(function (r) {
+        f.classList.remove('is-busy');
+        btn.innerHTML = label;
+        if (r.status === 201 && r.json && r.json.ok) {
+          var done = f.parentNode.querySelector('.hb-guide__done');
+          f.hidden = true;
+          if (done) {
+            done.hidden = false;
+            var a = $('[data-download]', done);
+            if (r.json.download && a) { a.href = r.json.download; a.hidden = false; }
+            var txt = $('[data-done-text]', done);
+            if (txt && r.json.duplicate) txt.textContent = 'You already asked for this one — the link from your first email still works, and it is below.';
+            done.focus();
+          }
+          try { if (window.fbq) window.fbq('track', 'Lead', { content_category: 'broker-network-guide', content_name: body.guideId }); } catch (err) { /* optional */ }
+          return;
+        }
+        var er = (r.json && r.json.error) || {};
+        guideError(f, er.message || 'We could not send that. Try again in a moment.', er.code);
+      }).catch(function () {
+        f.classList.remove('is-busy');
+        btn.innerHTML = label;
+        guideError(f, 'We could not reach our server. Check your connection and try again.');
+      });
+    });
+  });
+
+  /* ---------- calculators ---------- */
+  var usd = function (n) { return '$' + Math.round(n).toLocaleString('en-US'); };
+  var feeCalc = $('#calc-fee');
+  if (feeCalc) {
+    var drawFee = function () {
+      var rent = Number(feeCalc.elements.rent.value) || 0;
+      var cap = Number(feeCalc.elements.cap.value) || 0;
+      var rows = [
+        ['A landlord\u2019s agent listed it', 'No fee to you', 'fare'],
+        ['You hire a broker: one month', usd(rent), ''],
+        ['You hire a broker: 12% of a year', usd(rent * 12 * 0.12), ''],
+        ['You hire a broker: 15% of a year', usd(rent * 12 * 0.15), ''],
+        ['Your cap: ' + (cap || 0) + ' month' + (cap === 1 ? '' : 's'), usd(rent * cap), 'cap']
+      ];
+      $('[data-fee-out]', feeCalc).innerHTML = rows
+        .map(function (r) { return '<tr' + (r[2] ? ' class="is-' + r[2] + '"' : '') + '><td>' + esc(r[0]) + '</td><td>' + esc(r[1]) + '</td></tr>'; })
+        .join('');
+    };
+    feeCalc.addEventListener('input', drawFee);
+    feeCalc.addEventListener('submit', function (e) { e.preventDefault(); });
+    drawFee();
+  }
+  var earnCalc = $('#calc-earn');
+  if (earnCalc) {
+    var drawEarn = function () {
+      var leases = Number(earnCalc.elements.leases.value) || 0;
+      var fee = Number(earnCalc.elements.fee.value) || 0;
+      var pct = referralPct / 100;
+      var gross = leases * fee;
+      $('[data-earn-out]', earnCalc).innerHTML = [
+        ['Gross fees from referred renters', usd(gross), ''],
+        ['Referral fee at ' + referralPct + '%', '\u2212 ' + usd(gross * pct), ''],
+        ['Your brokerage keeps', usd(gross * (1 - pct)), 'cap'],
+        ['Cost to join, per lead or per month', '$0', 'fare']
+      ]
+        .map(function (r) { return '<tr' + (r[2] ? ' class="is-' + r[2] + '"' : '') + '><td>' + esc(r[0]) + '</td><td>' + esc(r[1]) + '</td></tr>'; })
+        .join('');
+    };
+    earnCalc.addEventListener('input', drawEarn);
+    earnCalc.addEventListener('submit', function (e) { e.preventDefault(); });
+    drawEarn();
+    window.rlDrawEarn = drawEarn;
   }
 
   /* ---------- the form ---------- */
@@ -176,7 +335,6 @@
   function checked(name) { return $$('input[name="' + name + '"]:checked', form).map(function (i) { return i.value; }); }
   function radio(name) { var c = checked(name); return c[0] || ''; }
   function splitList(v) { return String(v || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean); }
-  var EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
   var today = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
 
   /* ----- tenant helpers ----- */
@@ -277,20 +435,6 @@
       }
     }
     return null;
-  }
-
-  var SOURCES = ['fb_page', 'fb_post', 'fb_ad', 'instagram', 'linkedin', 'google', 'email', 'web', 'referral'];
-  var params = new URLSearchParams(location.search);
-  function source() {
-    var src = (params.get('src') || '').toLowerCase();
-    if (SOURCES.indexOf(src) !== -1) return src;
-    var us = (params.get('utm_source') || '').toLowerCase();
-    if (/^(fb|facebook)$/.test(us)) return /paid|cpc|ads?/.test((params.get('utm_medium') || '').toLowerCase()) ? 'fb_ad' : 'fb_post';
-    if (/^(ig|instagram)$/.test(us)) return 'instagram';
-    if (/linkedin/.test(us)) return 'linkedin';
-    if (/google/.test(us)) return 'google';
-    if (/mail|newsletter/.test(us)) return 'email';
-    return 'web';
   }
 
   function payload() {

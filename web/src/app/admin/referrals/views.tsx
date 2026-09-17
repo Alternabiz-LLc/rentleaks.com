@@ -1,6 +1,6 @@
 import Link from "next/link";
-import type { Agreement, AgreementEvent, AgreementSigner, NetworkDeal, NetworkOffer, NetworkPartner, NetworkSearch } from "@prisma/client";
-import { agreementAction, dealAction, invitePartner, networkSettingsAction, partnerAction, searchAction } from "@/app/admin/_actions/referrals";
+import type { Agreement, AgreementEvent, AgreementSigner, GuideLead, NetworkDeal, NetworkOffer, NetworkPartner, NetworkSearch } from "@prisma/client";
+import { agreementAction, dealAction, guideAction, invitePartner, networkSettingsAction, partnerAction, searchAction } from "@/app/admin/_actions/referrals";
 import { Icon } from "@/components/admin/desk/Icon";
 import { RouteDrawer } from "@/components/admin/desk/RouteDrawer";
 import { Chip, Empty, GradeChip, Panel, ago, type ChipTone } from "@/components/admin/desk/parts";
@@ -10,6 +10,7 @@ import { SignaturePad } from "@/components/network/SignaturePad";
 import {
   AGREEMENT_STATUS,
   ESIGN_DISCLOSURE,
+  GUIDE,
   feeEstimateCents,
   feeLabel,
   HOME_TYPES,
@@ -21,6 +22,7 @@ import {
   usd,
   type AgreementStatus,
   type PartnerStatus,
+  type RosterCard,
   type SearchStage,
 } from "@/lib/network/core";
 
@@ -1044,3 +1046,348 @@ export function SettingsView({
 }
 
 export const HOME_LABEL = Object.fromEntries(HOME_TYPES.map((h) => [h.id, h.label])) as Record<string, string>;
+
+/* ------------------------------------------------------------------------
+   Guide leads (the lead magnets)
+   ------------------------------------------------------------------------ */
+
+export type GuideRow = GuideLead & { assignedName: string | null };
+
+const GUIDE_STATUS: Record<string, { label: string; tone: ChipTone }> = {
+  new: { label: "to follow up", tone: "warn" },
+  contacted: { label: "contacted", tone: "brand" },
+  converted: { label: "converted", tone: "good" },
+  closed: { label: "closed", tone: "ink" },
+  spam: { label: "spam", tone: "bad" },
+};
+
+export function GuidesView({ leads, self, audience, status, now }: { leads: GuideRow[]; self: Self; audience: string; status: string; now: number }) {
+  const rows = leads.filter((l) => (audience ? l.audience === audience : true)).filter((l) => (status ? l.status === status : l.status !== "spam"));
+  const count = (f: (l: GuideRow) => boolean) => leads.filter(f).length;
+  return (
+    <>
+      <div className="dk-inline">
+        {[
+          ["", "Everyone"],
+          ["tenant", "Renters"],
+          ["partner", "Agents"],
+        ].map(([k, l]) => (
+          <Link key={k || "all"} prefetch={false} scroll={false} className={`dk-chip${audience === k ? " dk-chip--brand" : ""}`} href={self({ audience: k || undefined, lead: undefined })}>
+            {l} · {k ? count((x) => x.audience === k && x.status !== "spam") : count((x) => x.status !== "spam")}
+          </Link>
+        ))}
+        <span className="dk-dim">·</span>
+        {[
+          ["", "Open"],
+          ["new", "To follow up"],
+          ["converted", "Converted"],
+          ["spam", "Spam"],
+        ].map(([k, l]) => (
+          <Link key={k || "open"} prefetch={false} scroll={false} className={`dk-chip${status === k ? " dk-chip--brand" : ""}`} href={self({ status: k || undefined, lead: undefined })}>
+            {l}
+          </Link>
+        ))}
+      </div>
+      <Panel
+        flush
+        kicker="Lead magnets"
+        title="Guide downloads"
+        sub="Everyone here asked for a guide and agreed to be contacted by our agents and referral partners. The sentence they agreed to is on each row."
+        actions={
+          <Link prefetch={false} className="dk-btn dk-btn--ghost dk-btn--sm" href="/api/admin/export/network-guides">
+            <Icon name="export" size={13} /> Export CSV
+          </Link>
+        }
+      >
+        {rows.length ? (
+          <div className="dk-tablewrap">
+            <table className="dk-table">
+              <thead>
+                <tr>
+                  <th>Who</th>
+                  <th>Guide</th>
+                  <th>Where</th>
+                  <th>Status</th>
+                  <th>Asked</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((l) => (
+                  <tr key={l.id}>
+                    <td className="dk-wrap">
+                      <Link prefetch={false} href={self({ lead: l.id })} scroll={false}>
+                        <b>{l.name}</b>
+                      </Link>
+                      <div className="dk-dim">
+                        {l.email}
+                        {l.phone ? ` · ${l.phone}` : ""}
+                      </div>
+                    </td>
+                    <td className="dk-wrap">
+                      {GUIDE.get(l.guideId)?.title ?? l.guideId}
+                      <div className="dk-dim">{l.downloads ? `opened ${l.downloads}×` : l.sentAt ? "emailed, not opened" : "not emailed"}</div>
+                    </td>
+                    <td className="dk-wrap">
+                      {l.audience === "partner" ? l.brokerage || "—" : l.city || "—"}
+                      {l.licenseState ? <div className="dk-dim">{l.licenseState}</div> : null}
+                    </td>
+                    <td>
+                      <Chip tone={GUIDE_STATUS[l.status]?.tone ?? ""}>{GUIDE_STATUS[l.status]?.label ?? l.status}</Chip>
+                      {l.assignedName ? <div className="dk-dim">{l.assignedName}</div> : null}
+                    </td>
+                    <td className="dk-dim">{ago(now - l.createdAt.getTime())}</td>
+                    <td>
+                      <form action={guideAction} className="dk-inline">
+                        <Hidden values={{ id: l.id, returnTo: self() }} />
+                        {l.status === "new" ? (
+                          <button className="dk-btn dk-btn--sm" name="op" value="contacted">
+                            Contacted
+                          </button>
+                        ) : null}
+                        <Link prefetch={false} className="dk-btn dk-btn--ghost dk-btn--sm" href={self({ lead: l.id })} scroll={false}>
+                          Open
+                        </Link>
+                      </form>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <Empty title="Nothing here yet.">
+            The guides are on rentleaks.com/hire-a-broker/guide.html — share that link in ads, posts and email signatures, and downloads land here.
+          </Empty>
+        )}
+      </Panel>
+    </>
+  );
+}
+
+export function GuideDrawer({ l, self, now, founder, me }: { l: GuideRow; self: Self; now: number; founder: boolean; me: { name: string } }) {
+  const back = self();
+  const guide = GUIDE.get(l.guideId);
+  const first = l.name.split(" ")[0];
+  const tenant = l.audience === "tenant";
+  const template = tenant
+    ? `Hi ${first},\n\nThanks for downloading ${guide?.title ?? "the guide"} — I hope the fee-cap worksheet is useful.\n\nIf you'd like, tell me the neighbourhood, your budget and roughly when you need to move, and I'll have verified brokers who work that area send you proposals — each with their fee, at or under the cap you set. No obligation, and nothing to pay us.\n\nBest,\n${me.name}\nRentLeaks`
+    : `Hi ${first},\n\nThanks for downloading the partner kit. Happy to answer anything about how the leads or the referral fee work${l.brokerage ? ` at ${l.brokerage}` : ""}.\n\nIf you'd like to start, applying takes two minutes (licence, markets, specialties) and you'll sign the referral agreement in the app. We verify the licence with the state and countersign, then leads in your markets start arriving.\n\nBest,\n${me.name}\nRentLeaks broker network`;
+  return (
+    <RouteDrawer closeHref={self({ lead: undefined })} kicker={`Guide download · ${ago(now - l.createdAt.getTime())}`} title={l.name} width={660}>
+      <div className="dk-dossier">
+        <div className="dk-chiprow">
+          <Chip tone={GUIDE_STATUS[l.status]?.tone ?? ""}>{GUIDE_STATUS[l.status]?.label ?? l.status}</Chip>
+          <Chip tone={tenant ? "brand" : "value"}>{tenant ? "renter" : "agent"}</Chip>
+          {l.downloads ? <Chip tone="good">opened {l.downloads}×</Chip> : <Chip>not opened</Chip>}
+          {l.assignedName ? <Chip tone="ink">owner: {l.assignedName}</Chip> : null}
+        </div>
+        <dl className="dk-dossier__facts">
+          <div>
+            <dt>Contact</dt>
+            <dd>
+              <a href={`mailto:${l.email}`}>{l.email}</a>
+              {l.phone ? (
+                <>
+                  {" "}
+                  · <a href={`tel:${l.phone.replace(/[^\d+]/g, "")}`}>{l.phone}</a>
+                </>
+              ) : null}
+            </dd>
+          </div>
+          <div>
+            <dt>Guide</dt>
+            <dd>{guide?.title ?? l.guideId}</dd>
+          </div>
+          {l.city ? (
+            <div>
+              <dt>Where</dt>
+              <dd>{l.city}</dd>
+            </div>
+          ) : null}
+          {l.brokerage ? (
+            <div>
+              <dt>Brokerage</dt>
+              <dd>
+                {l.brokerage}
+                {l.licenseState ? ` · ${l.licenseState}` : ""}
+              </dd>
+            </div>
+          ) : null}
+          <div>
+            <dt>Source</dt>
+            <dd>
+              {l.source}
+              {l.campaign ? ` · ${l.campaign}` : ""}
+            </dd>
+          </div>
+          <div>
+            <dt>Emailed</dt>
+            <dd>{l.sentAt ? when(l.sentAt) : "not sent"}</dd>
+          </div>
+        </dl>
+        <Panel kicker="Consent" title="What they agreed to" sub={`Ticked ${when(l.createdAt)} UTC${l.ip ? ` from ${l.ip}` : ""}.`}>
+          <p className="dk-muted">“{l.consentText}”</p>
+        </Panel>
+
+        <form action={guideAction} className="dk-form">
+          <Hidden values={{ id: l.id, returnTo: back, op: "reply" }} />
+          <label className="dk-field dk-field--wide">
+            <span>Reply by email (from you, reply-to your address)</span>
+            <input name="subject" defaultValue={tenant ? "Your broker playbook — and the next step" : "Your partner kit — and how to start"} />
+          </label>
+          <label className="dk-field dk-field--wide">
+            <span>Message</span>
+            <textarea name="body" rows={9} defaultValue={template} />
+          </label>
+          <button className="dk-btn dk-btn--primary">
+            <Icon name="mail" size={14} /> Send reply
+          </button>
+        </form>
+
+        <div className="dk-inline">
+          <form action={guideAction}>
+            <Hidden values={{ id: l.id, returnTo: back, op: "contacted" }} />
+            <button className="dk-btn dk-btn--sm">
+              <Icon name="phone" size={13} /> Called them
+            </button>
+          </form>
+          <form action={guideAction}>
+            <Hidden values={{ id: l.id, returnTo: back, op: "resend" }} />
+            <button className="dk-btn dk-btn--sm">
+              <Icon name="mail" size={13} /> Re-send the guide
+            </button>
+          </form>
+          <form action={guideAction}>
+            <Hidden values={{ id: l.id, returnTo: back, op: "converted" }} />
+            <button className="dk-btn dk-btn--sm">
+              <Icon name="check" size={13} /> Converted
+            </button>
+          </form>
+          {l.assignedName ? null : (
+            <form action={guideAction}>
+              <Hidden values={{ id: l.id, returnTo: back, op: "mine" }} />
+              <button className="dk-btn dk-btn--ghost dk-btn--sm">Take it</button>
+            </form>
+          )}
+        </div>
+
+        <form action={guideAction} className="dk-form">
+          <Hidden values={{ id: l.id, returnTo: back, op: "note" }} />
+          <label className="dk-field dk-field--wide">
+            <span>Private note</span>
+            <textarea name="note" rows={2} defaultValue={l.note ?? ""} placeholder="What they said on the call" />
+          </label>
+          <button className="dk-btn dk-btn--sm">Save note</button>
+        </form>
+
+        <form action={guideAction} className="dk-inline">
+          <Hidden values={{ id: l.id, returnTo: back }} />
+          <input name="reason" placeholder="Closing it? Why (not moving, wrong state…)" />
+          <button className="dk-btn dk-btn--sm" name="op" value="closed">
+            Close
+          </button>
+          <button className="dk-btn dk-btn--ghost dk-btn--sm" name="op" value="spam">
+            Spam
+          </button>
+          {founder ? (
+            <button className="dk-btn dk-btn--ghost dk-btn--sm" name="op" value="delete">
+              Delete
+            </button>
+          ) : null}
+        </form>
+      </div>
+    </RouteDrawer>
+  );
+}
+
+/* ------------------------------------------------------------------------
+   The public roster: ten headshot slots
+   ------------------------------------------------------------------------ */
+
+export function RosterPanel({ cards, partners, self, slots }: { cards: RosterCard[]; partners: PartnerRow[]; self: Self; slots: number }) {
+  const back = self();
+  const withPhoto = partners.filter((p) => p.status === "active" && p.photoAt);
+  const pinned = withPhoto.filter((p) => p.featuredAt).length;
+  const empty = Math.max(0, slots - cards.length);
+  return (
+    <Panel
+      kicker="rentleaks.com/hire-a-broker/"
+      title={`The ${slots} faces on the public pages`}
+      sub={`${cards.length} filled · ${pinned} pinned. Pinned partners come first; the rest of the slots go to active partners with a headshot, most leases first. Empty slots invite agents to join.`}
+    >
+      <div className="rf-roster">
+        {cards.map((c) => (
+          <figure key={c.id} className="rf-roster__card">
+            {c.photo ? <img src={c.photo} alt={`${c.name} headshot`} width={64} height={64} /> : <span className="rf-roster__empty" />}
+            <figcaption>
+              <b>{c.name}</b>
+              <span className="dk-dim">{c.brokerage}</span>
+              <span className="dk-dim">{c.markets.join(", ")}</span>
+            </figcaption>
+          </figure>
+        ))}
+        {Array.from({ length: empty }).map((_, i) => (
+          <figure key={`empty-${i}`} className="rf-roster__card rf-roster__card--empty">
+            <span className="rf-roster__empty">{cards.length + i + 1}</span>
+            <figcaption>
+              <b>Open slot</b>
+              <span className="dk-dim">Invite a broker, or ask a partner for a headshot</span>
+            </figcaption>
+          </figure>
+        ))}
+      </div>
+      {withPhoto.length ? (
+        <div className="dk-tablewrap" style={{ marginTop: 12 }}>
+          <table className="dk-table">
+            <thead>
+              <tr>
+                <th>Partner with a headshot</th>
+                <th>Headline</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {withPhoto.map((p) => (
+                <tr key={p.id}>
+                  <td className="dk-wrap">
+                    <Link prefetch={false} href={self({ partner: p.id })} scroll={false}>
+                      <b>{p.name}</b>
+                    </Link>
+                    <div className="dk-dim">{p.brokerage}</div>
+                  </td>
+                  <td className="dk-wrap">
+                    <form action={partnerAction} className="dk-inline">
+                      <Hidden values={{ id: p.id, returnTo: back, op: "headline" }} />
+                      <input name="headline" defaultValue={p.headline ?? ""} placeholder="One line tenants read first" style={{ minWidth: 220 }} />
+                      <button className="dk-btn dk-btn--sm">Save</button>
+                    </form>
+                  </td>
+                  <td>
+                    <form action={partnerAction} className="dk-inline">
+                      <Hidden values={{ id: p.id, returnTo: back }} />
+                      {p.featuredAt ? (
+                        <button className="dk-btn dk-btn--sm" name="op" value="unfeature">
+                          Unpin
+                        </button>
+                      ) : (
+                        <button className="dk-btn dk-btn--sm" name="op" value="feature">
+                          Pin to the page
+                        </button>
+                      )}
+                      <button className="dk-btn dk-btn--ghost dk-btn--sm" name="op" value="photo-remove">
+                        Remove photo
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <Empty title="No headshots yet.">Partners add theirs in the portal, under “Your headshot”. Nudge your best few — the page looks alive with faces on it.</Empty>
+      )}
+    </Panel>
+  );
+}

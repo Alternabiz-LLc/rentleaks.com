@@ -25,7 +25,7 @@ const OUT = path.join(ROOT, "hire-a-broker");
 const V = "20260924";
 
 const N = await import(pathToFileURL(path.join(ROOT, "web/src/lib/network/core.ts")).href);
-const { HOME_TYPES, BUILDING_AGES, TERMS, MUST_HAVES, SPECIALTIES, LANGUAGES, LICENSE_TYPES, FEE_TYPES, TENANT_STEPS, PARTNER_STEPS, NETWORK_FAQ } = N;
+const { HOME_TYPES, BUILDING_AGES, TERMS, MUST_HAVES, SPECIALTIES, LANGUAGES, LICENSE_TYPES, FEE_TYPES, TENANT_STEPS, PARTNER_STEPS, NETWORK_FAQ, GUIDES, GUIDE_CONSENT, GUIDE_PROMISE, ROSTER_SLOTS } = N;
 
 const ctx = { window: {}, localStorage: { getItem: () => null, setItem() {} }, console };
 vm.createContext(ctx);
@@ -77,6 +77,18 @@ const PAGES = {
     h1: "Your own broker, <em>in three steps</em>",
     lede: "Tell us what you're looking for and the most you'll pay a broker. Licensed, verified agents who work your area send a short pitch and a fee at or under your cap. You pick one — or none — and sign one clear agreement right in the app.",
     image: "photo-1502672260266-1c1ef2d93688",
+  },
+  guide: {
+    file: "guide.html",
+    who: "guide",
+    title: "Free Guides: The NYC Renter's Broker Playbook & Referral Partner Kit | RentLeaks",
+    description:
+      "Two free PDFs: how broker fees work after the FARE Act and how to hire an agent for a fee you set, and — for licensed agents — how the RentLeaks referral partner program works and what it pays.",
+    keywords: "nyc broker fee guide, fare act explained renters, hire a broker guide, real estate referral program pdf, rental agent leads guide, broker fee calculator nyc, referral fee calculator",
+    kicker: "Free guides · Renters & licensed agents",
+    h1: "Two guides, <em>one honest page</em>",
+    lede: "Whichever side of the table you&rsquo;re on: what a broker fee should cost and what your agreement must say, or how our referral program sends you renters who already want to hire someone. Free, no strings — and a person follows up.",
+    image: "photo-1521791136064-7986c2920216",
   },
   partner: {
     file: "agents.html",
@@ -182,6 +194,7 @@ function menu(current) {
   const items = [
     { key: "tenant", href: "./", label: "For renters" },
     { key: "partner", href: "agents.html", label: "For agents & brokers" },
+    { key: "guide", href: "guide.html", label: "Free guides" },
     { key: "", href: "#how", label: "How it works" },
     { key: "", href: "#faq", label: "Questions" },
   ];
@@ -189,13 +202,37 @@ function menu(current) {
     <div class="container ent-menu__inner">
       <a class="ent-menu__brand" href="./"><span class="logo__mark">RL</span> Broker network</a>
       <ul>${items.map((i) => `<li><a href="${i.href}"${i.key === current ? ' class="is-on" aria-current="page"' : ""}>${esc(i.label)}</a></li>`).join("")}</ul>
-      <a class="btn btn--brand btn--sm ent-menu__cta" href="#start">${current === "tenant" ? "Start my search" : "Apply now"}</a>
+      <a class="btn btn--brand btn--sm ent-menu__cta" href="#start">${current === "tenant" ? "Start my search" : current === "guide" ? "Get the guides" : "Apply now"}</a>
     </div>
   </nav>`;
 }
 
 function hero(pg) {
   const tenant = pg.who === "tenant";
+  if (pg.who === "guide") {
+    return `<section class="ent-hero hb-hero" style="--ent-img:url('${shot(pg.image)}')">
+    <div class="ent-hero__media" role="presentation"></div>
+    <div class="container ent-hero__inner">
+      <nav class="rl-crumb rl-crumb--light" aria-label="Breadcrumb"><a href="../index.html">Home</a> / <a href="./">Hire a broker</a> / Free guides</nav>
+      <span class="ent-hero__kicker">${esc(pg.kicker)}</span>
+      <h1 class="ent-hero__title">${pg.h1}</h1>
+      <p class="ent-hero__lede">${esc(pg.lede)}</p>
+      <div class="ent-hero__actions">
+        <a class="btn btn--dark btn--lg" href="#start">Get the renter&rsquo;s playbook ${icon("arrow", 18)}</a>
+        <a class="btn btn--on-dark btn--lg" href="#partner-kit">Get the partner kit</a>
+      </div>
+      <dl class="ent-hero__stats">${[
+        ["2", "free PDFs"],
+        [`${GUIDES[0].pages}`, "pages each"],
+        ["$0", "and no card"],
+        ["1", "business day to a reply"],
+      ]
+        .map(([v, k]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`)
+        .join("")}</dl>
+      <p class="hb-hero__live" data-live-status hidden></p>
+    </div>
+  </section>`;
+  }
   const stats = tenant
     ? [
         ["3", "steps"],
@@ -529,7 +566,7 @@ function portal() {
 }
 
 function faq(who) {
-  const items = NETWORK_FAQ.filter((f) => f.who === who || f.who === "both");
+  const items = who === "both" ? NETWORK_FAQ : NETWORK_FAQ.filter((f) => f.who === who || f.who === "both");
   return `<section class="ent-section" id="faq">
     <div class="container ent-faq">
       <div class="section-head animate-on-scroll"><div class="section-head__text"><span class="section-head__eyebrow">Questions</span><h2>Answered plainly</h2></div></div>
@@ -540,6 +577,17 @@ function faq(who) {
 }
 
 function cta(who) {
+  if (who === "guide") {
+    return `<section class="professionals-cta">
+    <div class="container">
+      <span class="rl-kicker rl-kicker--light">When you&rsquo;re ready</span>
+      <h2 class="professionals-cta__title">Hire a broker, or take the leads</h2>
+      <p class="professionals-cta__subtitle">Renters: set your fee cap and compare up to three verified brokers. Agents: apply with your licence and start answering leads in your markets.</p>
+      <a href="./#start" class="btn btn--dark btn--lg">Hire a broker</a>
+      <a href="agents.html#start" class="btn btn--on-dark btn--lg">Apply as an agent</a>
+    </div>
+  </section>`;
+  }
   return `<section class="professionals-cta">
     <div class="container">
       <span class="rl-kicker rl-kicker--light">${who === "tenant" ? "Are you a licensed agent?" : "Looking for a place yourself?"}</span>
@@ -554,21 +602,160 @@ function cta(who) {
   </section>`;
 }
 
+function guideCard(g, i) {
+  const tenant = g.audience === "tenant";
+  const id = tenant ? "start" : "partner-kit";
+  return `<article class="hb-guide animate-on-scroll" id="${id}" style="--i:${i}">
+      <div class="hb-guide__cover" aria-hidden="true">
+        <span class="hb-guide__badge">${tenant ? "For renters" : "For licensed agents"}</span>
+        <b>${esc(g.title)}</b>
+        <small>${g.pages} pages · PDF</small>
+        ${icon(tenant ? "key" : "handshake", 28)}
+      </div>
+      <div class="hb-guide__body">
+        <h3>${esc(g.title)}</h3>
+        <p class="hb-guide__tag">${esc(g.tagline)}</p>
+        <ul class="ent-ticks">${g.inside.map((x) => `<li>${icon("check", 15)}${esc(x)}</li>`).join("")}</ul>
+        <form class="hb-guideform form" data-guide="${esc(g.id)}" data-audience="${esc(g.audience)}" novalidate>
+          <input type="text" name="website" class="ent-hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+          <input type="hidden" name="guideId" value="${esc(g.id)}">
+          <div class="ent-grid">
+            <div class="form-group"><label for="${g.id}-name">Name</label><input id="${g.id}-name" name="name" class="form-input" autocomplete="name" required></div>
+            <div class="form-group"><label for="${g.id}-email">Email</label><input id="${g.id}-email" name="email" type="email" class="form-input" autocomplete="email" required></div>
+            <div class="form-group"><label for="${g.id}-phone">Phone <small>optional</small></label><input id="${g.id}-phone" name="phone" type="tel" class="form-input" autocomplete="tel"></div>
+            ${
+              tenant
+                ? `<div class="form-group"><label for="${g.id}-city">Where you&rsquo;re looking</label><input id="${g.id}-city" name="city" class="form-input" list="hb-cities" placeholder="Brooklyn, NY"></div>`
+                : `<div class="form-group"><label for="${g.id}-brokerage">Brokerage</label><input id="${g.id}-brokerage" name="brokerage" class="form-input" autocomplete="organization" required></div>
+            <div class="form-group"><label for="${g.id}-state">Licence state <small>optional</small></label><input id="${g.id}-state" name="licenseState" class="form-input" maxlength="2" placeholder="NY"></div>`
+            }
+          </div>
+          <label class="ent-check ent-consent"><input type="checkbox" name="consent" required> ${esc(GUIDE_CONSENT[g.audience])}</label>
+          <p class="ent-form__error" role="alert" hidden></p>
+          <button type="submit" class="btn btn--brand btn--lg btn--block">${esc(g.cta)} ${icon("arrow", 18)}</button>
+          <p class="ent-fine">${esc(GUIDE_PROMISE)}</p>
+        </form>
+        <div class="hb-guide__done" hidden tabindex="-1">
+          ${icon("check", 30)}
+          <h4>On its way</h4>
+          <p data-done-text>Check your inbox — the PDF link is in the email. A person from our team will follow up within one business day.</p>
+          <a class="btn btn--outline" data-download hidden href="#">Open it now</a>
+        </div>
+      </div>
+    </article>`;
+}
+
+function guides() {
+  return `<section class="ent-section ent-section--quote" id="guides">
+    <div class="container">
+      <div class="section-head animate-on-scroll">
+        <div class="section-head__text">
+          <span class="section-head__eyebrow">Free, no strings</span>
+          <h2>Take the guide that fits your side of the table</h2>
+          <p>Both are written the way we work: plain English, real numbers, and the rules that actually apply in New York. You get the PDF straight away by email, and a person follows up — that&rsquo;s the whole deal.</p>
+        </div>
+      </div>
+      <div class="hb-guides">${GUIDES.map(guideCard).join("")}</div>
+    </div>
+  </section>`;
+}
+
+function calculators() {
+  return `<section class="ent-section" id="calculators">
+    <div class="container">
+      <div class="section-head animate-on-scroll">
+        <div class="section-head__text">
+          <span class="section-head__eyebrow">Two quick numbers</span>
+          <h2>Work it out before anyone calls you</h2>
+          <p>No email needed for these — they&rsquo;re the same math as the guides, and as the app.</p>
+        </div>
+      </div>
+      <div class="hb-calcs">
+        <form class="hb-calc animate-on-scroll" id="calc-fee" novalidate>
+          <h3>${icon("scale", 20)} What a broker fee costs</h3>
+          <div class="ent-grid">
+            <div class="form-group"><label for="c-rent">Monthly rent ($)</label><input id="c-rent" name="rent" type="number" min="500" step="50" value="3600" inputmode="numeric" class="form-input"></div>
+            <div class="form-group"><label for="c-cap">Your cap (months of rent)</label><input id="c-cap" name="cap" type="number" min="0" max="3" step="0.25" value="1" inputmode="decimal" class="form-input"></div>
+          </div>
+          <table class="hb-calc__out"><tbody data-fee-out></tbody></table>
+          <p class="ent-fine">Under the FARE Act you owe nothing for a home a landlord&rsquo;s agent listed. These are what it costs when you hire your own broker.</p>
+          <a class="btn btn--outline btn--sm" href="#start">Get the playbook</a>
+        </form>
+        <form class="hb-calc animate-on-scroll" id="calc-earn" novalidate>
+          <h3>${icon("chart", 20)} What the program pays an agent</h3>
+          <div class="ent-grid">
+            <div class="form-group"><label for="c-leases">Leases from referrals a year</label><input id="c-leases" name="leases" type="number" min="1" max="200" step="1" value="12" inputmode="numeric" class="form-input"></div>
+            <div class="form-group"><label for="c-fee">Your average fee ($)</label><input id="c-fee" name="fee" type="number" min="500" step="100" value="3000" inputmode="numeric" class="form-input"></div>
+          </div>
+          <table class="hb-calc__out"><tbody data-earn-out></tbody></table>
+          <p class="ent-fine">The referral percentage shown is the current program default (<span data-live-pct>25%</span>), fixed for you by your signed agreement. Nothing is owed unless a lease is signed.</p>
+          <a class="btn btn--outline btn--sm" href="#partner-kit">Get the partner kit</a>
+        </form>
+      </div>
+    </div>
+  </section>`;
+}
+
+function rosterSection(who) {
+  const slots = Array.from({ length: ROSTER_SLOTS })
+    .map(
+      (_, i) => `<li class="hb-face hb-face--empty" data-slot="${i}">
+        <span class="hb-face__photo">${icon("users", 22)}</span>
+        <b>Your headshot here</b>
+        <small>Agents, teams &amp; brokerages in the program</small>
+        <a class="hb-face__cta" href="${who === "partner" ? "#start" : "agents.html#start"}">Join the program &rsaquo;</a>
+      </li>`,
+    )
+    .join("");
+  return `<section class="ent-section ent-section--tight" id="partners">
+    <div class="container">
+      <div class="section-head animate-on-scroll">
+        <div class="section-head__text">
+          <span class="section-head__eyebrow">The people</span>
+          <h2>${ROSTER_SLOTS} licensed agents, teams and brokerages</h2>
+          <p>Every partner&rsquo;s licence is verified with the state before they get a lead. These are the ones taking renters right now — the empty spots are open to agents who join.</p>
+        </div>
+        <div class="section-head__action"><a class="btn btn--primary btn--sm" href="${who === "partner" ? "#start" : "agents.html#start"}">Take a spot</a></div>
+      </div>
+      <ul class="hb-faces" data-roster>${slots}</ul>
+      <p class="ent-fine" data-roster-note>Slots fill as partners add a headshot in their portal. Verified licence, real photo, real markets — no stock images.</p>
+    </div>
+  </section>`;
+}
+
+function guideStrip(who) {
+  const g = GUIDES.find((x) => (who === "partner" ? x.audience === "partner" : x.audience === "tenant"));
+  return `<section class="ent-section ent-section--tight">
+    <div class="container">
+      <a class="hb-strip animate-on-scroll" href="guide.html#${who === "partner" ? "partner-kit" : "start"}">
+        <span class="hb-strip__mark">${icon("pen", 24)}</span>
+        <span class="hb-strip__text"><b>Free: ${esc(g.title)}</b><small>${esc(g.tagline)} ${g.pages} pages, PDF — straight to your inbox.</small></span>
+        <span class="hb-strip__go">${icon("arrow", 18)}</span>
+      </a>
+    </div>
+  </section>`;
+}
+
 function page(key) {
   const pg = PAGES[key];
   const w = pg.who;
-  const body = [
-    hero(pg),
-    menu(key),
-    steps(w),
-    w === "partner" ? sampleLead() : "",
-    w === "tenant" ? tenantForm() : partnerForm(),
-    trust(w),
-    agreementPreview(w),
-    w === "partner" ? portal() : "",
-    faq(w),
-    cta(w),
-  ].join("\n");
+  const body =
+    w === "guide"
+      ? [hero(pg), menu(key), guides(), calculators(), rosterSection("guide"), faq("both"), cta("guide")].join("\n")
+      : [
+          hero(pg),
+          menu(key),
+          steps(w),
+          w === "partner" ? sampleLead() : "",
+          w === "tenant" ? tenantForm() : partnerForm(),
+          trust(w),
+          rosterSection(w),
+          agreementPreview(w),
+          guideStrip(w),
+          w === "partner" ? portal() : "",
+          faq(w),
+          cta(w),
+        ].join("\n");
   return `${head(pg)}
 <body class="tahoe-body ent-body hb-body" data-page="hire-a-broker" data-who="${w}">
   <div class="tahoe-bg" aria-hidden="true"><div class="tahoe-orb tahoe-orb--1"></div><div class="tahoe-orb tahoe-orb--2"></div><div class="tahoe-noise"></div></div>

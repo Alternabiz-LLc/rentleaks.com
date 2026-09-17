@@ -7,6 +7,12 @@ import { advise } from "../src/lib/ops/advisor";
 import { reportLines } from "../src/lib/ops/report";
 import {
   briefLines,
+  feeCompare,
+  GUIDE,
+  GUIDE_CONSENT,
+  GUIDES,
+  parseGuide,
+  ROSTER_SLOTS,
   canonicalDocument,
   canSignNow,
   envelopeStatus,
@@ -260,4 +266,52 @@ test("advisor and weekly report: the network lines", () => {
   const base = { leads: 1, leadsBefore: 1, replyMins: null, shortlists: 0, opened: 0, bookingsSigned: 0, newHosts: 0, newListings: 0, income: 0, expenses: 0, net: 0, netBefore: 0 };
   assert.ok(reportLines({ ...base, network: { searches: 4, signed: 2, leases: 1 } }).some(([k, v]) => k.startsWith("Broker network") && v === "4 / 2 / 1"));
   assert.ok(!reportLines(base).some(([k]) => k.startsWith("Broker network")));
+});
+
+test("guides: the lead magnets, their consent and the roster shape", () => {
+  assert.equal(GUIDES.length, 2);
+  assert.deepEqual(GUIDES.map((g) => g.audience).sort(), ["partner", "tenant"]);
+  for (const g of GUIDES) {
+    assert.ok(g.file.endsWith(".pdf"), `${g.id} has a file`);
+    assert.ok(g.inside.length >= 4, `${g.id} lists what's inside`);
+    assert.equal(GUIDE.get(g.id), g);
+  }
+  // Every consent sentence says who makes contact and how to stop.
+  for (const who of ["tenant", "partner"] as const) {
+    assert.match(GUIDE_CONSENT[who], /contact me by email, phone or text/);
+    assert.match(GUIDE_CONSENT[who], /stop at any time/);
+  }
+  assert.match(GUIDE_CONSENT.tenant, /referral partner brokers/);
+  assert.equal(ROSTER_SLOTS, 10);
+
+  const bad = parseGuide({ guideId: "renter-playbook", name: "Rae", email: "rae@example.com" });
+  assert.equal(bad.ok, false);
+  assert.equal(bad.ok === false && bad.field, "consent", "no tick box, no guide");
+
+  const ok = parseGuide({ guideId: "renter-playbook", name: "Rae Thompson", email: " RAE@Example.com ", city: "Brooklyn, NY", consent: "on", source: "fb_ad", website: "" });
+  assert.equal(ok.ok, true);
+  if (ok.ok) {
+    assert.equal(ok.value.email, "rae@example.com");
+    assert.equal(ok.value.audience, "tenant");
+    assert.equal(ok.value.city, "Brooklyn, NY");
+    assert.equal(ok.value.source, "fb_ad");
+    assert.equal(ok.value.consentText, GUIDE_CONSENT.tenant, "the exact sentence is stored");
+    assert.equal(ok.spam, false);
+  }
+
+  const noBrokerage = parseGuide({ guideId: "partner-kit", name: "Alex Agent", email: "alex@brokerage.com", consent: true });
+  assert.equal(noBrokerage.ok === false && noBrokerage.field, "brokerage");
+  const partner = parseGuide({ guideId: "partner-kit", name: "Alex Agent", email: "alex@brokerage.com", brokerage: "Harbor & Vine", licenseState: "ny", consent: true, website: "http://spam" });
+  assert.ok(partner.ok && partner.spam, "the honeypot is caught, quietly");
+  assert.equal(partner.ok && partner.value.licenseState, "NY");
+  assert.equal(partner.ok && partner.value.consentText, GUIDE_CONSENT.partner);
+  assert.equal(parseGuide({ guideId: "nope", name: "A", email: "a@b.co", consent: true }).ok, false);
+
+  // The calculator on the page and the guide's table agree.
+  const rows = feeCompare(3600);
+  assert.deepEqual(
+    rows.map((r) => r.cents),
+    [360_000, 518_400, 648_000],
+  );
+  assert.equal(EXPORT_ACCESS["network-guides"], "network");
 });

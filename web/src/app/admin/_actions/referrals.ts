@@ -8,7 +8,8 @@ import { back, field, returnTo } from "@/lib/admin/flash";
 import { parseMoney } from "@/lib/books/core";
 import { booksToday } from "@/lib/books/data";
 import { logActivity } from "@/lib/crm";
-import { PARTNER_STATUS, SEARCH_STAGE, signatureMatches, usd, type PartnerStatus, type SearchStage } from "@/lib/network/core";
+import { GUIDE, PARTNER_STATUS, ROSTER_SLOTS, SEARCH_STAGE, signatureMatches, usd, type PartnerStatus, type SearchStage } from "@/lib/network/core";
+import { clearHeadshot, guideLink } from "@/lib/network/guides";
 import {
   alertNetworkTeam,
   clientIp,
@@ -278,6 +279,31 @@ export async function partnerAction(fd: FormData) {
     case "note":
       await prisma.networkPartner.update({ where: { id }, data: { verifyNote: field(fd, "verifyNote", 300) || null } });
       return back(path, "ok", "Note saved.");
+    case "feature": {
+      if (p.status !== "active") back(path, "err", "Only an active broker can appear on the public page.");
+      if (!p.photoAt) back(path, "err", "They need a headshot first — ask them to add one in their portal.");
+      const featured = await prisma.networkPartner.count({ where: { status: "active", featuredAt: { not: null }, photoAt: { not: null }, NOT: { id } } });
+      if (featured >= ROSTER_SLOTS) back(path, "err", `All ${ROSTER_SLOTS} pinned slots are taken — unpin someone first.`);
+      await prisma.networkPartner.update({ where: { id }, data: { featuredAt: new Date() } });
+      await audit(me.id, "network.partner.feature", "networkPartner", id);
+      revalidatePath(PATH);
+      return back(path, "ok", `${p.name} is pinned to the public roster.`);
+    }
+    case "unfeature":
+      await prisma.networkPartner.update({ where: { id }, data: { featuredAt: null } });
+      await audit(me.id, "network.partner.unfeature", "networkPartner", id);
+      revalidatePath(PATH);
+      return back(path, "ok", "Unpinned — they can still appear if a slot is free.");
+    case "headline":
+      await prisma.networkPartner.update({ where: { id }, data: { headline: field(fd, "headline", 140) || null } });
+      revalidatePath(PATH);
+      return back(path, "ok", "Headline saved.");
+    case "photo-remove":
+      if (!p.photoAt) back(path, "err", "They have no headshot.");
+      await clearHeadshot(id);
+      await audit(me.id, "network.partner.photo.remove", "networkPartner", id);
+      revalidatePath(PATH);
+      return back(path, "ok", "Headshot removed from the public page.");
     case "portal":
       if (p.status !== "active" && p.status !== "paused") back(path, "err", "The portal opens once they're verified.");
       await emailPortalLink(p.email);
@@ -465,4 +491,78 @@ export async function networkSettingsAction(fd: FormData) {
   await audit(guard.user.id, "network.settings", "setting", "net", Object.fromEntries(values));
   revalidatePath(PATH);
   return back(path, "ok", "Saved. New terms apply to new applications and agreements — signed ones keep theirs.");
+}
+
+
+/* ------------------------------------------------------------------------
+   Guide leads (the lead magnets)
+   ------------------------------------------------------------------------ */
+
+export async function guideAction(fd: FormData) {
+  const path = returnTo(fd, `${PATH}?tab=guides`);
+  const guard = await requireAdminAction("network");
+  if (!guard.ok) back(path, "err", guard.error);
+  const me = guard.user;
+  const id = field(fd, "id", 60);
+  const op = field(fd, "op", 20);
+  const lead = await prisma.guideLead.findUnique({ where: { id } });
+  if (!lead) back(path, "err", "That lead no longer exists.");
+  const guide = GUIDE.get(lead!.guideId);
+  switch (op) {
+    case "note":
+      await prisma.guideLead.update({ where: { id }, data: { note: field(fd, "note", 1000) || null } });
+      return back(path, "ok", "Note saved.");
+    case "mine":
+      await prisma.guideLead.update({ where: { id }, data: { assignedToId: me.id } });
+      return back(path, "ok", "It's yours.");
+    case "contacted":
+      await prisma.guideLead.update({ where: { id }, data: { status: lead!.status === "new" ? "contacted" : lead!.status, contactedAt: lead!.contactedAt ?? new Date() } });
+      await crm(lead!.email, "Guide follow-up: called", "", me.id);
+      revalidatePath(PATH);
+      return back(path, "ok", "Marked as contacted.");
+    case "converted":
+      await prisma.guideLead.update({ where: { id }, data: { status: "converted", contactedAt: lead!.contactedAt ?? new Date() } });
+      await audit(me.id, "network.guide.converted", "guideLead", id);
+      revalidatePath(PATH);
+      return back(path, "ok", "Marked converted — nice one.");
+    case "closed":
+      await prisma.guideLead.update({ where: { id }, data: { status: "closed", note: field(fd, "reason", 300) || lead!.note } });
+      revalidatePath(PATH);
+      return back(path, "ok", "Closed.");
+    case "spam":
+      await prisma.guideLead.update({ where: { id }, data: { status: "spam" } });
+      await audit(me.id, "network.guide.spam", "guideLead", id);
+      revalidatePath(PATH);
+      return back(path.replace(/([?&])lead=[^&#]*&?/, "$1"), "ok", "Marked as spam — their link stops working.");
+    case "resend": {
+      const mail = await sendMail({
+        to: lead!.email,
+        subject: `${guide?.title ?? "Your guide"} — your copy`,
+        text: `Hi ${lead!.name.split(" ")[0]},\n\nHere's your copy again:\n${guideLink(lead!)}\n\n${me.name}\nRentLeaks broker network`,
+        replyTo: me.email,
+        purpose: "personal",
+      });
+      if (mail.delivered) await prisma.guideLead.update({ where: { id }, data: { sentAt: new Date() } });
+      return back(path, mail.delivered || mail.transport === "console" ? "ok" : "err", mail.delivered ? `Sent to ${lead!.email}.` : (mail.error ?? "Logged — email isn't configured."));
+    }
+    case "reply": {
+      const subject = field(fd, "subject", 200);
+      const body = String(fd.get("body") ?? "").trim().slice(0, 8000);
+      if (!subject || body.length < 10) back(path, "err", "Write a subject and a message.");
+      const mail = await sendMail({ to: lead!.email, subject, text: body, replyTo: me.email, purpose: "personal" });
+      if (!mail.delivered && mail.transport !== "console") back(path, "err", mail.error ?? "Not delivered.");
+      await prisma.guideLead.update({ where: { id }, data: { status: lead!.status === "new" ? "contacted" : lead!.status, contactedAt: lead!.contactedAt ?? new Date() } });
+      await crm(lead!.email, subject, body, me.id);
+      await audit(me.id, "network.guide.reply", "guideLead", id);
+      revalidatePath(PATH);
+      return back(path, "ok", mail.delivered ? `Sent to ${lead!.email}.` : "Logged — email isn't configured, so nothing went out.");
+    }
+    case "delete":
+      if (!guard.founder) back(path, "err", "Only the account owner can delete a lead.");
+      await prisma.guideLead.delete({ where: { id } });
+      await audit(me.id, "network.guide.delete", "guideLead", id);
+      revalidatePath(PATH);
+      return back(`${PATH}?tab=guides`, "ok", "Deleted.");
+  }
+  return back(path, "err", "Unknown action.");
 }

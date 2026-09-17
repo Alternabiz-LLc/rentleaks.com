@@ -9,15 +9,33 @@ import { flashOf, qs, readParams, type SP } from "@/components/admin/ui";
 import { canAccess, isFounder } from "@/lib/access";
 import { requireAdminPage } from "@/lib/admin/guard";
 import { nowMs } from "@/lib/admin/metrics";
-import { BOARD_STAGES, feeLabel, HOME_TYPES, matchScore, median, norm, PARTNER_STATUSES, SEARCH_STAGE, usd, type SearchStage } from "@/lib/network/core";
+import { BOARD_STAGES, feeLabel, GUIDES, HOME_TYPES, matchScore, median, norm, PARTNER_STATUSES, ROSTER_SLOTS, SEARCH_STAGE, usd, type SearchStage } from "@/lib/network/core";
 import { json, networkSettings, partnerStats, referrer, roomLink, searchBrief } from "@/lib/network/engine";
+import { roster } from "@/lib/network/guides";
 import { prisma } from "@/lib/prisma";
-import { AgreementDrawer, AgreementsView, FeesView, PartnerDrawer, PartnersView, SearchDrawer, SettingsView, type Candidate, type DealRow, type EnvRow, type PartnerRow, type SearchRow } from "./views";
+import {
+  AgreementDrawer,
+  AgreementsView,
+  FeesView,
+  GuideDrawer,
+  GuidesView,
+  PartnerDrawer,
+  PartnersView,
+  RosterPanel,
+  SearchDrawer,
+  SettingsView,
+  type Candidate,
+  type DealRow,
+  type EnvRow,
+  type GuideRow,
+  type PartnerRow,
+  type SearchRow,
+} from "./views";
 
 export const metadata = { title: "Broker network — RentLeaks desk" };
 
 const DAY = 86_400_000;
-const TABS = ["searches", "partners", "agreements", "fees", "settings"] as const;
+const TABS = ["searches", "partners", "guides", "agreements", "fees", "settings"] as const;
 type Tab = (typeof TABS)[number];
 const PUBLIC_URL = "https://rentleaks.com/hire-a-broker/";
 const HOME = Object.fromEntries(HOME_TYPES.map((h) => [h.id, h.label])) as Record<string, string>;
@@ -45,7 +63,7 @@ export default async function ReferralsPage({ searchParams }: { searchParams: SP
         return { v: f, failed: true };
       },
     );
-  const [searchesRes, partnersRes, envsRes, dealsRes, statsRes, settings, ref] = await Promise.all([
+  const [searchesRes, partnersRes, envsRes, dealsRes, statsRes, settings, ref, guidesRes, rosterCards, team] = await Promise.all([
     safe(
       prisma.networkSearch.findMany({
         where: { status: { not: "spam" } },
@@ -64,6 +82,9 @@ export default async function ReferralsPage({ searchParams }: { searchParams: SP
     ),
     networkSettings().catch(() => ({ referralPctBp: 2500, offerHours: 24, offersPerSearch: 3, signDays: 14, termDays: 90, open: true })),
     referrer().catch(() => ({ name: "RentLeaks", licence: "", states: "", contact: "", complete: false })),
+    safe(prisma.guideLead.findMany({ orderBy: { createdAt: "desc" }, take: 500 }), []),
+    roster().catch(() => []),
+    prisma.user.findMany({ where: { role: { in: ["admin", "staff"] } }, select: { id: true, name: true } }).catch(() => []),
   ]);
   const pending = searchesRes.failed || partnersRes.failed || envsRes.failed || dealsRes.failed;
   const envs: EnvRow[] = envsRes.v;
@@ -93,6 +114,8 @@ export default async function ReferralsPage({ searchParams }: { searchParams: SP
       env: x.agreementId ? (envById.get(x.agreementId) ?? null) : null,
     };
   });
+  const staff = new Map(team.map((u) => [u.id, u.name]));
+  const guideLeads: GuideRow[] = guidesRes.v.map((l) => ({ ...l, assignedName: l.assignedToId ? (staff.get(l.assignedToId) ?? null) : null }));
   const invoiceIds = dealsRes.v.map((d) => d.invoiceId).filter((x): x is string => !!x);
   const invoices = invoiceIds.length ? await prisma.invoice.findMany({ where: { id: { in: invoiceIds } }, select: { id: true, number: true, status: true } }).catch(() => []) : [];
   const invById = new Map(invoices.map((i) => [i.id, i]));
@@ -122,6 +145,9 @@ export default async function ReferralsPage({ searchParams }: { searchParams: SP
   const owed = deals.filter((d) => d.status === "reported" || d.status === "invoiced").reduce((n, d) => n + d.referralDueCents, 0);
   const paidYear = deals.filter((d) => d.status === "paid" && d.paidAt && d.paidAt.getUTCFullYear() === now.getUTCFullYear()).reduce((n, d) => n + d.referralDueCents, 0);
   const waitingSign = envs.filter((e) => (e.status === "sent" || e.status === "partial") && t - e.createdAt.getTime() > 3 * DAY);
+  const freshGuides = guideLeads.filter((l) => l.status === "new");
+  const guides90 = guideLeads.filter((l) => t - l.createdAt.getTime() < 90 * DAY && l.status !== "spam");
+  const guidesConverted = guideLeads.filter((l) => l.status === "converted").length;
 
   const signals: Signal[] = [
     {
@@ -141,6 +167,12 @@ export default async function ReferralsPage({ searchParams }: { searchParams: SP
       value: toInvoice.length ? `${toInvoice.length} to invoice` : owed ? `${usd(owed)} outstanding` : "nothing due",
       tone: toInvoice.length ? "warn" : "ok",
       href: self({ tab: "fees", open: undefined }),
+    },
+    {
+      label: "Guide downloads",
+      value: freshGuides.length ? `${freshGuides.length} to follow up` : guides90.length ? "all followed up" : "none yet",
+      tone: freshGuides.filter((l) => t - l.createdAt.getTime() > 2 * DAY).length ? "critical" : freshGuides.length ? "warn" : "ok",
+      href: self({ tab: "guides", status: "new", open: undefined }),
     },
     {
       label: "RentLeaks licence in agreements",
@@ -191,6 +223,7 @@ export default async function ReferralsPage({ searchParams }: { searchParams: SP
   const openSearch = p.open ? searchById.get(p.open) : undefined;
   const openPartner = p.partner ? partners.find((x) => x.id === p.partner) : undefined;
   const openEnvId = p.env && envById.has(p.env) ? p.env : undefined;
+  const openLead = p.lead ? guideLeads.find((l) => l.id === p.lead) : undefined;
   const [contact, partnerOffers, envFull, partnerEvents] = await Promise.all([
     openSearch ? prisma.contact.findUnique({ where: { email: openSearch.email }, select: { id: true } }).catch(() => null) : null,
     openPartner
@@ -227,7 +260,7 @@ export default async function ReferralsPage({ searchParams }: { searchParams: SP
             <a className="dk-btn dk-btn--onink" href={PUBLIC_URL} target="_blank" rel="noopener noreferrer">
               <Icon name="external" size={15} /> Public pages
             </a>
-            <Link prefetch={false} className="dk-btn dk-btn--onink" href={`/api/admin/export/${tab === "partners" ? "network-partners" : tab === "agreements" ? "network-agreements" : tab === "fees" ? "network-deals" : "network-searches"}`}>
+            <Link prefetch={false} className="dk-btn dk-btn--onink" href={`/api/admin/export/${tab === "partners" ? "network-partners" : tab === "agreements" ? "network-agreements" : tab === "fees" ? "network-deals" : tab === "guides" ? "network-guides" : "network-searches"}`}>
               <Icon name="export" size={15} /> Export
             </Link>
             <Link prefetch={false} className="dk-btn dk-btn--light" href={self({ tab: "partners", status: undefined, open: undefined })} scroll={false}>
@@ -258,7 +291,11 @@ export default async function ReferralsPage({ searchParams }: { searchParams: SP
 
       <div className="dk-kpis">
         <Kpi label="Live searches" value={live.length} sub={`${live.filter((s) => s.status === "proposals").length} choosing · ${live.filter((s) => ["signed", "touring", "applied"].includes(s.status)).length} under way`} href={self({ tab: undefined, status: undefined })} tone={unmatched.length ? "alert" : undefined} />
-        <Kpi label="Got a proposal · 90 days" value={r90.length ? `${Math.round((withProposal.length / r90.length) * 100)}%` : "—"} sub={firstProposalHours === null ? "no proposals yet" : `first one in ${firstProposalHours < 1 ? "under an hour" : `${Math.round(firstProposalHours)} h`} (median)`} />
+        {tab === "guides" ? (
+          <Kpi label="Guide leads · 90 days" value={guides90.length} sub={freshGuides.length ? `${freshGuides.length} waiting on a reply` : guidesConverted ? `${guidesConverted} converted` : "none waiting"} tone={freshGuides.length ? "alert" : undefined} href={self({ tab: "guides" })} />
+        ) : (
+          <Kpi label="Got a proposal · 90 days" value={r90.length ? `${Math.round((withProposal.length / r90.length) * 100)}%` : "—"} sub={firstProposalHours === null ? "no proposals yet" : `first one in ${firstProposalHours < 1 ? "under an hour" : `${Math.round(firstProposalHours)} h`} (median)`} />
+        )}
         <Kpi label="Active brokers" value={active.length} sub={toVerify.length ? `${toVerify.length} to verify` : `${partners.filter((x) => x.status === "applied").length} signing up`} tone={toVerify.length ? "alert" : "good"} href={self({ tab: "partners", status: toVerify.length ? "verifying" : "active" })} />
         <Kpi label="Signed → leased · 90 days" value={signed90.length ? `${Math.round((leased90.length / signed90.length) * 100)}%` : "—"} sub={`${leased90.length} leases of ${signed90.length} signed`} />
         <Kpi label="Referral fees outstanding" value={Math.round(owed / 100)} fmt="usd" sub={`${usd(paidYear)} collected this year`} tone="value" href={self({ tab: "fees" })} />
@@ -271,6 +308,7 @@ export default async function ReferralsPage({ searchParams }: { searchParams: SP
           tabs={[
             { key: "searches", label: "Tenant searches", href: self({ tab: undefined, status: undefined, partner: undefined, env: undefined, kind: undefined }), on: tab === "searches", count: unmatched.length || undefined },
             { key: "partners", label: "Partner brokers", href: self({ tab: "partners", status: undefined, open: undefined, env: undefined, kind: undefined }), on: tab === "partners", count: toVerify.length || undefined },
+            { key: "guides", label: "Guide leads", href: self({ tab: "guides", status: undefined, open: undefined, partner: undefined, env: undefined, kind: undefined }), on: tab === "guides", count: freshGuides.length || undefined },
             { key: "agreements", label: "Agreements", href: self({ tab: "agreements", status: undefined, open: undefined, partner: undefined }), on: tab === "agreements", count: waitingSign.length || undefined },
             { key: "fees", label: "Referral fees", href: self({ tab: "fees", status: undefined, open: undefined, partner: undefined, env: undefined, kind: undefined }), on: tab === "fees", count: toInvoice.length || undefined },
             { key: "settings", label: "Terms & licence", href: self({ tab: "settings", status: undefined, open: undefined, partner: undefined, env: undefined, kind: undefined }), on: tab === "settings" },
@@ -293,6 +331,15 @@ export default async function ReferralsPage({ searchParams }: { searchParams: SP
                 mark: (
                   <MarkTile bg={unmatched.length ? "#a93a28" : undefined}>
                     <Icon name="search" size={14} />
+                  </MarkTile>
+                ),
+              },
+              {
+                label: `${freshGuides.length} guide leads to call`,
+                href: self({ tab: "guides", status: "new" }),
+                mark: (
+                  <MarkTile bg={freshGuides.length ? "#2b6b55" : undefined}>
+                    <Icon name="mail" size={14} />
                   </MarkTile>
                 ),
               },
@@ -373,7 +420,39 @@ export default async function ReferralsPage({ searchParams }: { searchParams: SP
             </>
           ) : null}
 
-          {tab === "partners" ? <PartnersView partners={partners} self={self} status={p.status && (PARTNER_STATUSES as readonly string[]).includes(p.status) ? p.status : ""} /> : null}
+          {tab === "partners" ? (
+            <>
+              <PartnersView partners={partners} self={self} status={p.status && (PARTNER_STATUSES as readonly string[]).includes(p.status) ? p.status : ""} />
+              <RosterPanel cards={rosterCards} partners={partners} self={self} slots={ROSTER_SLOTS} />
+            </>
+          ) : null}
+          {tab === "guides" ? (
+            <>
+              <GuidesView
+                leads={guideLeads}
+                self={self}
+                now={t}
+                audience={p.audience === "tenant" || p.audience === "partner" ? p.audience : ""}
+                status={["new", "contacted", "converted", "closed", "spam"].includes(p.status) ? p.status : ""}
+              />
+              <Panel kicker="What they downloaded" title="The two guides" sub="Both are built from tools/build-guides.py and live at rentleaks.com/hire-a-broker/guide.html.">
+                <div className="dk-grid dk-grid--2">
+                  {GUIDES.map((g) => (
+                    <div key={g.id}>
+                      <h3 className="rf-h3">{g.title}</h3>
+                      <p className="dk-muted">{g.tagline}</p>
+                      <p className="dk-dim">
+                        {g.pages} pages · for {g.audience === "tenant" ? "renters" : "agents"} · {guideLeads.filter((l) => l.guideId === g.id && l.status !== "spam").length} downloads
+                      </p>
+                      <a className="dk-btn dk-btn--ghost dk-btn--sm" href={`/guides/${g.file}`} target="_blank" rel="noopener noreferrer">
+                        <Icon name="external" size={13} /> Open the PDF
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              </Panel>
+            </>
+          ) : null}
           {tab === "agreements" ? <AgreementsView envs={envs} self={self} kind={p.kind === "tenant_rep" || p.kind === "partner_referral" ? p.kind : ""} /> : null}
           {tab === "fees" ? <FeesView deals={deals} self={self} founder={founder} canBooks={canBooks} /> : null}
           {tab === "settings" ? <SettingsView settings={settings} referrer={ref} founder={founder} self={self} /> : null}
@@ -394,6 +473,7 @@ export default async function ReferralsPage({ searchParams }: { searchParams: SP
           room={roomLink(openSearch)}
         />
       ) : null}
+      {openLead ? <GuideDrawer l={openLead} self={self} now={t} founder={founder} me={{ name: me.name }} /> : null}
       {openPartner ? <PartnerDrawer p={openPartner} self={self} now={t} offers={partnerOffers} founder={founder} me={{ name: me.name }} referrerOk={ref.complete} events={partnerEvents} /> : null}
       {envFull ? (
         <AgreementDrawer

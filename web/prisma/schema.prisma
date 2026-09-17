@@ -1105,8 +1105,16 @@ model NetworkPartner {
   specialties     String    @default("[]")
   languages       String    @default("[]")
   bio             String    @default("")
+  // One line under the headshot on the public roster.
+  headline        String?
   website         String?
   capacity        Int       @default(5)
+  // Headshot, kept in the database like receipts so no bucket is needed.
+  photoData       Bytes?
+  photoType       String?
+  photoAt         DateTime?
+  // Set when the desk pins them to the ten public roster slots.
+  featuredAt      DateTime?
   referralPctBp   Int       @default(2500)
   // applied | verifying | active | paused | rejected
   status          String    @default("applied")
@@ -1305,4 +1313,43 @@ model NetworkDeal {
 
   @@index([partnerId])
   @@index([status])
+}
+
+/// A guide download: someone asked for a lead magnet and agreed to be contacted.
+model GuideLead {
+  id           String    @id @default(cuid())
+  // tenant | partner
+  audience     String
+  guideId      String
+  name         String
+  email        String
+  phone        String?
+  city         String?
+  brokerage    String?
+  licenseState String?
+  consent      Boolean   @default(true)
+  // The exact sentence they agreed to, kept as the record of consent.
+  consentText  String    @default("")
+  source       String    @default("web")
+  campaign     String?
+  referrer     String?
+  ip           String?
+  userAgent    String?
+  tokenHash    String    @unique
+  sentAt       DateTime?
+  downloadedAt DateTime?
+  downloads    Int       @default(0)
+  // new | contacted | converted | closed | spam
+  status       String    @default("new")
+  note         String?
+  contactedAt  DateTime?
+  assignedToId String?
+  partnerId    String?
+  searchId     String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([audience, createdAt])
+  @@index([status, createdAt])
+  @@index([email])
 }

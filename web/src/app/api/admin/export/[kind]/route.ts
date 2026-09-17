@@ -140,6 +140,13 @@ async function build(kind: string, url: URL): Promise<{ headers: string[]; rows:
         rows: rows.map((d) => [d.createdAt, d.status, d.leaseSignedOn, partners.get(d.partnerId)?.name, partners.get(d.partnerId)?.brokerage, d.address, d.monthlyRentCents / 100, d.grossFeeCents / 100, d.referralPctBp / 100, d.referralDueCents / 100, d.invoiceId, d.paidAt, d.searchId, d.note]),
       };
     }
+    case "network-guides": {
+      const rows = await prisma.guideLead.findMany({ orderBy: { createdAt: "desc" }, take: MAX });
+      return {
+        headers: ["asked", "audience", "guide", "status", "name", "email", "phone", "city", "brokerage", "licence_state", "consented_to", "emailed", "downloads", "last_download", "contacted", "source", "campaign", "ip", "note"],
+        rows: rows.map((l) => [l.createdAt, l.audience, l.guideId, l.status, l.name, l.email, l.phone, l.city, l.brokerage, l.licenseState, l.consentText, l.sentAt, l.downloads, l.downloadedAt, l.contactedAt, l.source, l.campaign, l.ip, l.note]),
+      };
+    }
     case "properties": {
       const rows = await prisma.managedProperty.findMany({ orderBy: { name: "asc" }, take: MAX });
       return {

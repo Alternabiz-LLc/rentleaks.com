@@ -211,3 +211,20 @@
 .rf-checklist { margin: 0.4rem 0 0.8rem; padding-left: 1.1rem; display: grid; gap: 0.3rem; font-size: 0.86rem; }
 .rf-pitch { margin-top: 0.25rem; font-size: 0.8rem; font-style: italic; opacity: 0.85; max-width: 38ch; }
 .rf-h3 { margin: 1rem 0 0.2rem; font-size: 0.92rem; }
+
+/* Guide download page */
+.nw-ticks { display: grid; gap: 0.45rem; margin: 0.9rem 0 0; padding: 0; list-style: none; }
+.nw-ticks li { position: relative; padding-left: 1.4rem; font-size: 0.9rem; color: var(--nw-ink-2); line-height: 1.5; }
+.nw-ticks li::before {
+  content: ""; position: absolute; left: 0; top: 0.36em; width: 0.62rem; height: 0.34rem;
+  border-left: 2px solid var(--nw-brand); border-bottom: 2px solid var(--nw-brand); transform: rotate(-45deg);
+}
+
+/* Headshot block in the partner portal */
+.nw-headshot { display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-start; }
+.nw-headshot img { width: 104px; height: 104px; border-radius: 16px; object-fit: cover; border: 1px solid var(--nw-line-2); }
+.nw-headshot__empty {
+  display: grid; place-items: center; width: 104px; height: 104px; border-radius: 16px; padding: 0.4rem; text-align: center;
+  border: 1px dashed var(--nw-line-2); color: var(--nw-muted); font-size: 0.72rem;
+}
+.nw-headshot .nw-form { flex: 1 1 16rem; }

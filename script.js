@@ -878,6 +878,7 @@
                   <li><a href="${base}hire-a-broker/">Hire a broker</a></li>
                   <li><a href="${base}hire-a-broker/#how">How it works</a></li>
                   <li><a href="${base}hire-a-broker/agents.html">Tenant leads for agents</a></li>
+                  <li><a href="${base}hire-a-broker/guide.html">Free guides</a></li>
                   <li><a href="${base}hire-a-broker/agents.html#portal">Partner portal</a></li>
                 </ul></div>
                 <div class="footer__col"><h4>Company</h4><ul>
