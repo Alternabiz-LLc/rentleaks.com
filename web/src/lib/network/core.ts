@@ -878,6 +878,8 @@ export type Guide = {
   cta: string;
 };
 
+/* guides:start — generated from tools/guides/*.json by tools/build-guides.py.
+   Edit the spec and re-run it; anything typed here is overwritten. */
 export const GUIDES: Guide[] = [
   {
     id: "renter-playbook",
@@ -914,6 +916,7 @@ export const GUIDES: Guide[] = [
     cta: "Send me the partner kit",
   },
 ];
+/* guides:end */
 
 export const GUIDE = new Map(GUIDES.map((g) => [g.id, g]));
 

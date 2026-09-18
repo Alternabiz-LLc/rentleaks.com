@@ -1,0 +1,314 @@
+{
+  "id": "partner-kit",
+  "audience": "partner",
+  "title": "RentLeaks referral partner kit",
+  "tagline": "How the referral program works, what a lead looks like, what it pays, and what you sign.",
+  "file": "rentleaks-referral-partner-kit.pdf",
+  "extra": "brokerage",
+  "cta": "Send me the partner kit",
+  "inside": [
+    "What a lead contains before you spend a minute on it",
+    "The fee math, with worked numbers at five rent levels",
+    "How leads are shared out — and why you can't pay for position",
+    "The referral agreement, section by section",
+    "A compliance checklist to print and keep with your files"
+  ],
+  "subject": "How the RentLeaks broker referral program works, what it pays, and what partners sign.",
+  "footer": "RentLeaks referral partner kit · rentleaks.com/hire-a-broker/agents.html",
+  "cover": {
+    "kicker": "RENTLEAKS · REFERRAL PARTNER PROGRAM",
+    "headline": "Tenant leads that<br/>already want a broker",
+    "lede": "How the referral program works, what a lead looks like, what it pays, and what you sign — for licensed salespersons, associate brokers and brokerages.",
+    "facts": [
+      [
+        "What&rsquo;s inside",
+        "The lead flow · the fee math with worked numbers · a compliance checklist · what the agreement says"
+      ],
+      [
+        "Who it&rsquo;s for",
+        "Licensed agents and brokerages who answer fast and work a defined patch"
+      ],
+      [
+        "Cost to join",
+        "Nothing. A broker-to-broker referral fee only after a lease is signed"
+      ]
+    ]
+  },
+  "blocks": [
+    {
+      "type": "kicker",
+      "text": "The offer"
+    },
+    {
+      "type": "h1",
+      "text": "A renter who has already decided to hire a broker"
+    },
+    {
+      "type": "lede",
+      "text": "Most rental &ldquo;leads&rdquo; are a name and a phone number attached to an apartment enquiry, sold to four agents at once. A RentLeaks lead is different: a renter filled in a brief asking to <i>hire</i> a broker, and set the most they&rsquo;re willing to pay one. You see the area, the budget, the dates and that fee cap before you spend a minute on it."
+    },
+    {
+      "type": "steps",
+      "items": [
+        [
+          "Join &amp; get verified",
+          "Apply with your licence and sign the referral agreement in the app. We check the licence with the state and countersign."
+        ],
+        [
+          "Accept a lead",
+          "Leads in your markets arrive by email and in your portal. Accept with your fee and a short pitch, or pass in one click."
+        ],
+        [
+          "Get chosen &amp; sign",
+          "The renter compares up to three brokers and picks. The tenant agreement — with your fee — is signed in the app before you start."
+        ],
+        [
+          "Close &amp; report",
+          "Work the search, report the signed lease in your portal, and we invoice your brokerage the referral fee."
+        ]
+      ]
+    },
+    {
+      "type": "h2",
+      "text": "What a lead looks like"
+    },
+    {
+      "type": "table",
+      "widths": [
+        2.1,
+        4.9
+      ],
+      "rows": [
+        [
+          "Field",
+          "Example"
+        ],
+        [
+          "Where",
+          "Brooklyn, NY — Williamsburg, Greenpoint"
+        ],
+        [
+          "Home",
+          "Apartment · 1 bedroom · new development"
+        ],
+        [
+          "Budget",
+          "$3,000–$3,600 a month"
+        ],
+        [
+          "When",
+          "Move in within a month · long term"
+        ],
+        [
+          "Fee cap",
+          "Up to one month&rsquo;s rent (about $3,600)"
+        ],
+        [
+          "Why you",
+          "Covers Williamsburg · new-development specialist · replies in under an hour"
+        ],
+        [
+          "Not included until you&rsquo;re chosen",
+          "The renter&rsquo;s name, email and phone"
+        ]
+      ]
+    },
+    {
+      "type": "body",
+      "text": "You have a set window to answer — 24 hours by default. Accept with a fee at or under the cap and two lines on why you&rsquo;re the right agent; that pitch is the first thing the renter reads. Pass, and the lead moves to the next broker straight away."
+    },
+    {
+      "type": "pagebreak"
+    },
+    {
+      "type": "kicker",
+      "text": "The math"
+    },
+    {
+      "type": "h2",
+      "text": "What it pays, with real numbers"
+    },
+    {
+      "type": "body",
+      "text": "There is no sign-up fee, no monthly fee and no charge per lead. When a referred renter signs a lease and your brokerage collects its fee, the brokerage pays RentLeaks a referral fee of <b>{{referral_pct}}</b> of that gross fee — the middle of the 20–35% band that is standard for broker-to-broker referrals. You keep the rest."
+    },
+    {
+      "type": "table",
+      "widths": [
+        1.25,
+        1.3,
+        1.65,
+        1.4,
+        1.4
+      ],
+      "rows": [
+        [
+          "Monthly rent",
+          "Your fee",
+          "Gross to your brokerage",
+          "Referral at {{referral_pct}}",
+          "Your brokerage keeps"
+        ],
+        [
+          "$2,800",
+          "1 month",
+          "$2,800",
+          "$700",
+          "$2,100"
+        ],
+        [
+          "$3,600",
+          "0.75 months",
+          "$2,700",
+          "$675",
+          "$2,025"
+        ],
+        [
+          "$3,600",
+          "1 month",
+          "$3,600",
+          "$900",
+          "$2,700"
+        ],
+        [
+          "$4,500",
+          "12% of the year",
+          "$6,480",
+          "$1,620",
+          "$4,860"
+        ],
+        [
+          "$6,000",
+          "1 month",
+          "$6,000",
+          "$1,500",
+          "$4,500"
+        ]
+      ]
+    },
+    {
+      "type": "box",
+      "tone": "value",
+      "title": "A year, roughly",
+      "text": "Accept two leads a week, get chosen on a third of them, close half of those, at an average $2,700 fee: about 17 leases, roughly $46,000 gross, about $34,500 to your brokerage after the {{referral_pct}} referral. Your own numbers will differ — the point is that the cost only ever appears after money arrives."
+    },
+    {
+      "type": "h3",
+      "text": "How leads are shared out"
+    },
+    {
+      "type": "body",
+      "text": "Matching is mechanical, not political. A lead goes to active partners licensed in that state whose markets cover the area, ranked on: how well the markets and specialties fit, median reply time, acceptance rate, leases closed, renter ratings and how recently you were last offered one — with open capacity respected, so nobody gets buried. There is no way to pay for position."
+    },
+    {
+      "type": "h2",
+      "text": "What you sign"
+    },
+    {
+      "type": "table",
+      "widths": [
+        1.9,
+        5.1
+      ],
+      "rows": [
+        [
+          "Section",
+          "What it says"
+        ],
+        [
+          "Referrals",
+          "Briefs without contact details; accept within the window at or under the cap, or pass."
+        ],
+        [
+          "Referral fee",
+          "{{referral_pct}} of the gross fee your brokerage receives, for a lease that renter signs within 12 months."
+        ],
+        [
+          "Paid broker to broker",
+          "Invoiced to the brokerage after you report the lease, due within 10 days of your brokerage being paid. Never to an individual salesperson."
+        ],
+        [
+          "Licences",
+          "Kept active and verifiable; tell us within five business days of any change."
+        ],
+        [
+          "Serving the renter",
+          "Signed tenant agreement before any fee; no fee for homes your brokerage lists for the landlord; every disclosure and fair-housing rule followed."
+        ],
+        [
+          "Records",
+          "Agreements and fee records kept at least three years."
+        ],
+        [
+          "Ending it",
+          "30 days&rsquo; email notice either way. Fees for renters introduced earlier stay payable."
+        ]
+      ]
+    },
+    {
+      "type": "small",
+      "text": "New York Real Property Law &sect; 442 is the reason the money moves brokerage to brokerage: a salesperson or associate broker can&rsquo;t take or pay a referral fee directly, so your supervising broker signs alongside you and the invoice goes to the firm."
+    },
+    {
+      "type": "pagebreak"
+    },
+    {
+      "type": "kicker",
+      "text": "Before your first lead"
+    },
+    {
+      "type": "h2",
+      "text": "Compliance checklist"
+    },
+    {
+      "type": "body",
+      "text": "Print this, tick it once, keep it with your files. It is the short version of what the agreement asks of you — and what regulators look for after the fact."
+    },
+    {
+      "type": "checklist",
+      "items": [
+        "My licence is active, and the name on it matches the name on my RentLeaks profile.",
+        "My supervising broker knows about the program and has signed the referral agreement.",
+        "I have the signed tenant representation &amp; fee agreement before charging a renter anything.",
+        "I never charge a referred renter for a home my brokerage lists for the landlord (FARE Act).",
+        "I never make a specific home conditional on being hired.",
+        "Every ad, conversation and screening standard follows fair-housing law — the home, never the people.",
+        "Agency and fee disclosures are given when the law requires them, in writing (in NY, DOS-1735-f).",
+        "I don&rsquo;t ask a renter for money before a viewing and a lease to sign.",
+        "I update the client&rsquo;s stage in the portal at least every two weeks.",
+        "I report a signed lease within five business days, with the fee my brokerage actually collected.",
+        "Agreements and fee records are kept for at least three years."
+      ]
+    },
+    {
+      "type": "spacer",
+      "height": 10
+    },
+    {
+      "type": "h3",
+      "text": "Getting more out of it"
+    },
+    {
+      "type": "bullets",
+      "items": [
+        "<b>Answer fast.</b> Reply time is the single biggest input into who gets the next lead — and renters pick the first good pitch they read.",
+        "<b>Write the pitch for one renter.</b> Name the buildings you know, the day you can show, the thing you&rsquo;d warn them about. Two specific lines beat a paragraph of adjectives.",
+        "<b>Price for the search, not the rent.</b> A 0.75-month fee that gets chosen beats a one-month fee that doesn&rsquo;t.",
+        "<b>Keep your markets honest.</b> List the neighbourhoods you actually work; mismatched leads cost you both time and standing.",
+        "<b>Add your headshot.</b> Verified partners with a photo and a line of bio are the ones renters recognise on the page — and the ones we feature."
+      ]
+    },
+    {
+      "type": "box",
+      "title": "Apply in two minutes",
+      "text": "<b>rentleaks.com/hire-a-broker/agents.html</b> — licence, markets, specialties. You&rsquo;ll sign the referral agreement in the app; we verify the licence with the state and countersign, then your portal opens and leads start arriving."
+    },
+    {
+      "type": "rule"
+    },
+    {
+      "type": "small",
+      "text": "This kit describes the RentLeaks referral partner program and is general information, not legal advice. Licensing and fee rules vary by state; the signed agreement governs. The referral percentage is the current default and is fixed for you by your signed agreement."
+    }
+  ]
+}

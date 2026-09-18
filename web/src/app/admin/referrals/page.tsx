@@ -19,6 +19,7 @@ import {
   FeesView,
   GuideDrawer,
   GuidesView,
+  GuideSources,
   PartnerDrawer,
   PartnersView,
   RosterPanel,
@@ -435,7 +436,8 @@ export default async function ReferralsPage({ searchParams }: { searchParams: SP
                 audience={p.audience === "tenant" || p.audience === "partner" ? p.audience : ""}
                 status={["new", "contacted", "converted", "closed", "spam"].includes(p.status) ? p.status : ""}
               />
-              <Panel kicker="What they downloaded" title="The two guides" sub="Both are built from tools/build-guides.py and live at rentleaks.com/hire-a-broker/guide.html.">
+              <GuideSources leads={guideLeads} />
+              <Panel kicker="What they downloaded" title={`The ${GUIDES.length} guides`} sub="Built from tools/guides/*.json by tools/build-guides.py, and offered at rentleaks.com/hire-a-broker/guide.html.">
                 <div className="dk-grid dk-grid--2">
                   {GUIDES.map((g) => (
                     <div key={g.id}>

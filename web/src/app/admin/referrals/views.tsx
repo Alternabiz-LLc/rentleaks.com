@@ -4,6 +4,7 @@ import { agreementAction, dealAction, guideAction, invitePartner, networkSetting
 import { Icon } from "@/components/admin/desk/Icon";
 import { RouteDrawer } from "@/components/admin/desk/RouteDrawer";
 import { Chip, Empty, GradeChip, Panel, ago, type ChipTone } from "@/components/admin/desk/parts";
+import { RankedBars } from "@/components/admin/desk/charts";
 import { when } from "@/components/admin/ui";
 import { AgreementView } from "@/components/network/AgreementView";
 import { SignaturePad } from "@/components/network/SignaturePad";
@@ -1162,6 +1163,27 @@ export function GuidesView({ leads, self, audience, status, now }: { leads: Guid
         )}
       </Panel>
     </>
+  );
+}
+
+export function GuideSources({ leads }: { leads: GuideRow[] }) {
+  const rows = new Map<string, { n: number; converted: number }>();
+  for (const l of leads.filter((x) => x.status !== "spam")) {
+    const key = l.campaign ? `${l.source} · ${l.campaign}` : l.source;
+    const at = rows.get(key) ?? { n: 0, converted: 0 };
+    at.n += 1;
+    at.converted += l.status === "converted" ? 1 : 0;
+    rows.set(key, at);
+  }
+  const list = [...rows.entries()].sort((a, b) => b[1].n - a[1].n).slice(0, 10);
+  return (
+    <Panel kicker="Where they came from" title="Sources" sub="The tagged links in the social kit land here — social posts, the bio links and anything with utm_source.">
+      {list.length ? (
+        <RankedBars rows={list.map(([k, v]) => ({ key: k, label: `${k}${v.converted ? ` · ${v.converted} converted` : ""}`, value: v.n }))} empty="No downloads yet." />
+      ) : (
+        <p className="dk-muted">Nothing yet. Post one of the guide links from marketing/social and this fills in.</p>
+      )}
+    </Panel>
   );
 }
 

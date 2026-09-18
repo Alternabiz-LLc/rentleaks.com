@@ -151,6 +151,49 @@ Every push to `main` then rebuilds the app; migrations run in GitHub Actions.
 `RESEND_API_KEY`. Leads show at `/admin#leads`. Details:
 marketing/facebook/PAGE-KIT.md §7.
 
+## Lead magnets and social profiles
+
+The two guides are generated, not hand-made. Their content lives in
+`tools/guides/*.json`:
+
+```bash
+python3 tools/build-guides.py            # render the PDFs + refresh the catalogue in core.ts
+node --no-warnings tools/build-broker-pages.mjs   # put them on rentleaks.com/hire-a-broker/
+```
+
+A new magnet is one file and one command:
+
+```bash
+python3 tools/new-lead-magnet.py --id fee-negotiation --audience tenant \
+    --title "How to negotiate a broker fee"
+# edit tools/guides/fee-negotiation.json, then:
+python3 tools/build-guides.py && node --no-warnings tools/build-broker-pages.mjs
+```
+
+The PDFs are served from the app (`web/public/guides/`), never from the
+website, so the private link the capture API emails is the only way to a copy.
+Downloads land on **Broker network → Guide leads** with the consent sentence,
+the source and the campaign.
+
+Social artwork and the profile kits are in `marketing/social/`:
+
+```bash
+python3 tools/build-social-art.py         # LinkedIn, Instagram and TikTok images
+```
+
+Once the profiles exist, point the site at them in one command — it sets the
+footer links on every page, the Organization `sameAs` in `index.html` and the
+`Profiles:` line in `llms.txt`:
+
+```bash
+python3 tools/apply-social-links.py --linkedin rentleaks --instagram rentleaks --tiktok rentleaks
+python3 tools/apply-social-links.py --show     # what's live
+python3 tools/apply-social-links.py --clear tiktok
+```
+
+Handles left empty stay hidden, so the site never links to a profile that
+isn't there.
+
 ## Email, photos and integrations
 
 After the first deploy, run:
