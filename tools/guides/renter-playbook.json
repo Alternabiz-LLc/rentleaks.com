@@ -1,6 +1,7 @@
 {
   "id": "renter-playbook",
   "audience": "tenant",
+  "order": 10,
   "title": "The New York renter's broker playbook",
   "tagline": "Who pays a broker fee now, what your agreement must say, and how to hire an agent for a fee you set.",
   "file": "rentleaks-renter-broker-playbook.pdf",

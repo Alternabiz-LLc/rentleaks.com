@@ -1,6 +1,7 @@
 {
   "id": "partner-kit",
   "audience": "partner",
+  "order": 10,
   "title": "RentLeaks referral partner kit",
   "tagline": "How the referral program works, what a lead looks like, what it pays, and what you sign.",
   "file": "rentleaks-referral-partner-kit.pdf",

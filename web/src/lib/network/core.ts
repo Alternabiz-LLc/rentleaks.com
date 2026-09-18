@@ -899,6 +899,23 @@ export const GUIDES: Guide[] = [
     cta: "Send me the playbook",
   },
   {
+    id: "fee-negotiation",
+    audience: "tenant",
+    title: "How to negotiate a broker fee in New York",
+    tagline: "When there is a fee to negotiate, what actually moves it, and the words to use.",
+    file: "rentleaks-fee-negotiation.pdf",
+    pages: 5,
+    inside: [
+      "How to tell in one question whether there is a fee to negotiate at all",
+      "A conversion table: months, percentages and flat fees in the same money",
+      "Six things that genuinely move a broker&rsquo;s fee — and two that never will",
+      "What to say, word for word, at each point in the conversation",
+      "The seven lines to check before you sign, and four reasons to walk",
+    ],
+    extra: "city",
+    cta: "Send me the negotiation guide",
+  },
+  {
     id: "partner-kit",
     audience: "partner",
     title: "RentLeaks referral partner kit",

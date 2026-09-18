@@ -269,11 +269,23 @@ test("advisor and weekly report: the network lines", () => {
 });
 
 test("guides: the lead magnets, their consent and the roster shape", () => {
-  assert.equal(GUIDES.length, 2);
-  assert.deepEqual(GUIDES.map((g) => g.audience).sort(), ["partner", "tenant"]);
+  // The catalog is generated from tools/guides/*.json, so this checks its shape
+  // rather than its length — adding a guide shouldn't break the suite.
+  assert.ok(GUIDES.length >= 2, "at least one guide for each audience");
+  for (const who of ["tenant", "partner"] as const) {
+    assert.ok(GUIDES.some((g) => g.audience === who), `a ${who} guide exists`);
+  }
+  assert.deepEqual(
+    GUIDES.map((g) => g.audience),
+    [...GUIDES].sort((a, b) => (a.audience === b.audience ? 0 : a.audience === "tenant" ? -1 : 1)).map((g) => g.audience),
+    "renters' guides come before partners'",
+  );
+  assert.equal(new Set(GUIDES.map((g) => g.id)).size, GUIDES.length, "ids are unique");
   for (const g of GUIDES) {
     assert.ok(g.file.endsWith(".pdf"), `${g.id} has a file`);
     assert.ok(g.inside.length >= 4, `${g.id} lists what's inside`);
+    assert.ok(g.pages >= 1, `${g.id} knows its page count`);
+    assert.ok(g.cta.trim().length > 0, `${g.id} has a button`);
     assert.equal(GUIDE.get(g.id), g);
   }
   // Every consent sentence says who makes contact and how to stop.

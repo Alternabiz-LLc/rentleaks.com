@@ -1,0 +1,130 @@
+{
+  "id": "fee-negotiation",
+  "audience": "tenant",
+  "order": 20,
+  "title": "How to negotiate a broker fee in New York",
+  "tagline": "When there is a fee to negotiate, what actually moves it, and the words to use.",
+  "file": "rentleaks-fee-negotiation.pdf",
+  "extra": "city",
+  "cta": "Send me the negotiation guide",
+  "inside": [
+    "How to tell in one question whether there is a fee to negotiate at all",
+    "A conversion table: months, percentages and flat fees in the same money",
+    "Six things that genuinely move a broker&rsquo;s fee — and two that never will",
+    "What to say, word for word, at each point in the conversation",
+    "The seven lines to check before you sign, and four reasons to walk"
+  ],
+  "subject": "When there's a fee to negotiate, what moves it, and what to say.",
+  "footer": "How to negotiate a broker fee in New York · RentLeaks",
+  "cover": {
+    "kicker": "RENTLEAKS · BROKER NETWORK",
+    "headline": "How to negotiate<br/>a broker fee",
+    "lede": "Half of all fee negotiations are over before they start, because the fee was never yours to pay. This is how to tell the difference — and how to move the number when it is.",
+    "facts": [
+      ["What&rsquo;s inside", "When there&rsquo;s nothing to negotiate · a conversion table · six levers · what to say · what to check before signing"],
+      ["Who it&rsquo;s for", "Anyone renting in New York who has been quoted a broker fee"],
+      ["From", "RentLeaks — all-in prices, honest fees, 30-day-plus homes"]
+    ]
+  },
+  "blocks": [
+    { "type": "kicker", "text": "Start here" },
+    { "type": "h1", "text": "Most of this is won before anyone says a number" },
+    { "type": "lede", "text": "The strongest position in a fee conversation is knowing which of three situations you&rsquo;re in. In one of them the fee isn&rsquo;t yours at all and there is nothing to negotiate. In another there is no broker and no fee. Only in the third — where you hired the agent — is there a number on the table, and by then you should already have decided the most you&rsquo;ll pay." },
+    { "type": "body", "text": "So the first move is never &ldquo;can you do better?&rdquo;. It&rsquo;s one question: <b>who hired you?</b> Since New York City&rsquo;s FARE Act took effect on <b>11 June 2025</b>, the answer decides who pays. An agent who was hired by the landlord to list and show an apartment is paid by the landlord, and that fee cannot be moved onto you. Asking them to &ldquo;meet you halfway&rdquo; on it concedes something you never owed." },
+    { "type": "box", "title": "The one-line version", "text": "You only negotiate a fee you would actually owe — the fee of a broker <i>you</i> hired. Everything else is either the landlord&rsquo;s cost or a violation, and neither is a bargaining position." },
+    { "type": "h2", "text": "Is there anything here to negotiate?" },
+    {
+      "type": "table",
+      "widths": [2.05, 1.75, 3.2],
+      "rows": [
+        ["What&rsquo;s in front of you", "Is the fee negotiable?", "What to do"],
+        ["A listing posted by the landlord&rsquo;s agent", "<b>There is no fee to you.</b> Nothing to negotiate.", "Ask for the itemised written fee disclosure — application, move-in, anything else — and check it against the listing."],
+        ["A listing direct from the owner", "<b>No broker, no fee.</b>", "Same: get every fee you <i>will</i> pay in writing before the lease."],
+        ["An agent you asked to search for you", "<b>Yes.</b> This is the real negotiation.", "Agree the number in writing before the first viewing you could be charged for."],
+        ["An agent saying a home is available to you &ldquo;only if&rdquo; you sign with them", "<b>No — walk.</b>", "Conditioning access on signing is prohibited. End the conversation."]
+      ]
+    },
+    { "type": "small", "text": "Charging a renter an unlawful fee carries penalties starting at $1,000 for a first violation and $2,000 for a repeat, and a renter can bring a case themselves. If an agent asks you for a fee on a home they list for the landlord, that isn&rsquo;t a hard bargain — it&rsquo;s a violation, and no discount makes it lawful." },
+    { "type": "pagebreak" },
+
+    { "type": "kicker", "text": "The number" },
+    { "type": "h2", "text": "Put every quote in the same money first" },
+    { "type": "body", "text": "Fees get quoted three ways — <b>months of rent</b>, a <b>percentage of the first year</b>, or a <b>flat fee</b> — and people trade them as if they were interchangeable. They aren&rsquo;t. One month is about <b>8.33%</b> of a year, so &ldquo;one month&rdquo; and &ldquo;15%&rdquo; are nearly twice apart on the same apartment. Convert before you compare, and never negotiate against a unit you haven&rsquo;t converted." },
+    {
+      "type": "table",
+      "widths": [1.35, 1.35, 1.35, 1.35, 1.6],
+      "rows": [
+        ["Monthly rent", "One month", "12% of a year", "15% of a year", "Flat $2,500"],
+        ["$2,400", "$2,400", "$3,456", "$4,320", "$2,500"],
+        ["$3,000", "$3,000", "$4,320", "$5,400", "$2,500"],
+        ["$3,600", "$3,600", "$5,184", "$6,480", "$2,500"],
+        ["$4,500", "$4,500", "$6,480", "$8,100", "$2,500"],
+        ["$6,000", "$6,000", "$8,640", "$10,800", "$2,500"]
+      ]
+    },
+    { "type": "body", "text": "Read the $3,600 row across: the same apartment, the same agent, the same month of work — and a <b>$2,880</b> spread between the cheapest and the dearest way of saying it. On a $6,000 rent the spread is $4,800. That gap is the whole negotiation, and it exists before anyone has argued about anything." },
+    { "type": "box", "tone": "value", "title": "Decide your cap before the first call", "text": "A cap is one number you set in advance — &ldquo;no more than one month&rdquo;, &ldquo;no more than 10% of the year&rdquo;, &ldquo;no more than $2,500&rdquo;. It changes the shape of every conversation after it: instead of reacting to a number they chose, you&rsquo;re comparing proposals that all sit at or under a number you chose. On RentLeaks you set the cap in your brief, and a proposal above it can&rsquo;t be sent to you at all." },
+    { "type": "h3", "text": "Say the cap early, not late" },
+    { "type": "body", "text": "Holding your number back feels like leverage and isn&rsquo;t. An agent who learns your cap in the first two minutes either works to it or tells you they can&rsquo;t — both of which are useful, and both of which are free. An agent who learns it after three weekends of viewings has already spent time you now feel you owe them for." },
+    { "type": "pagebreak" },
+
+    { "type": "kicker", "text": "The levers" },
+    { "type": "h2", "text": "Six things that move a fee" },
+    {
+      "type": "bullets",
+      "items": [
+        "<b>Scope.</b> Three neighbourhoods instead of eight, weekday viewings, you book your own showings for anything you find yourself. A smaller job is worth a smaller fee, and it&rsquo;s the easiest trade to name out loud.",
+        "<b>Exclusivity.</b> The right to be your only agent is worth real money to them. If you&rsquo;re willing to give it, price it: an exclusive at a lower fee is a fair swap, an exclusive at the same fee is you giving something away.",
+        "<b>Term.</b> Ninety days is normal. Six months is not, and agreeing to a longer term is another thing you can charge for rather than concede.",
+        "<b>How the fee is defined.</b> &ldquo;Only on a signed lease, only for homes you introduced&rdquo; costs them nothing if they&rsquo;re good and protects you entirely if they aren&rsquo;t.",
+        "<b>Rent level.</b> On a high rent a percentage is a very large number for the same work. That&rsquo;s the moment to ask for a flat fee — and the moment they&rsquo;re most likely to say yes.",
+        "<b>What comes next.</b> A renewal, a second apartment, a friend moving in the spring. Future work is the one currency an agent will discount against that costs you nothing today."
+      ]
+    },
+    { "type": "h2", "text": "And two that won&rsquo;t" },
+    {
+      "type": "bullets",
+      "items": [
+        "<b>Their brokerage split.</b> It&rsquo;s real, it&rsquo;s often half, and it isn&rsquo;t yours to solve. Sympathise and move on; a fee you can&rsquo;t afford doesn&rsquo;t become affordable because they only keep part of it.",
+        "<b>&ldquo;It&rsquo;s the market standard.&rdquo;</b> Standard isn&rsquo;t a number and it isn&rsquo;t a rule. The correct reply is to ask what the fee is in dollars, and then whether it&rsquo;s the fee for <i>this</i> search."
+      ]
+    },
+    { "type": "box", "tone": "bad", "title": "Two things never to negotiate for", "text": "Don&rsquo;t ask an agent to take their fee from the landlord&rsquo;s side while representing you — that changes who they work for, and they owe you a written agency disclosure about exactly that. And don&rsquo;t ask anyone to leave a fee off the paperwork. A fee that can&rsquo;t be written down is a fee you shouldn&rsquo;t be paying." },
+    { "type": "pagebreak" },
+
+    { "type": "kicker", "text": "The conversation" },
+    { "type": "h2", "text": "What to say, in order" },
+    {
+      "type": "steps",
+      "items": [
+        ["Open with the question, not the fee", "&ldquo;Before we go further — on this apartment, who hired you?&rdquo; If the answer is the landlord, there&rsquo;s no fee to you, and you can say so plainly: &ldquo;Then I&rsquo;m not paying a broker fee here. Can you send the itemised list of what I <i>will</i> pay at signing?&rdquo;"],
+        ["Name your cap in the first two minutes", "&ldquo;I&rsquo;m looking to hire someone for this search, and the most I&rsquo;ll pay is one month&rsquo;s rent. Does that work for you?&rdquo; You&rsquo;ll get a yes, a no, or a counter — all three save you a weekend."],
+        ["Convert their counter out loud", "&ldquo;Fifteen percent of the year on $3,600 is $6,480 — that&rsquo;s nearly two months. I&rsquo;m at $3,600.&rdquo; Numbers said in the same unit are very hard to argue with."],
+        ["Trade instead of splitting", "&ldquo;I can give you an exclusive for 90 days at $3,000, or you can stay non-exclusive at $3,600. Your pick.&rdquo; A trade lets them keep their pricing intact and still say yes."],
+        ["Get it in writing before the first viewing", "&ldquo;Send me the representation and fee agreement with that number in it and I&rsquo;ll sign today.&rdquo; Nothing agreed verbally survives a busy month."],
+        ["Be willing to end it politely", "&ldquo;That&rsquo;s more than I&rsquo;m able to pay, so I&rsquo;ll keep looking — thanks for being straight with me.&rdquo; The cap only works if it can be a real no."]
+      ]
+    },
+    { "type": "pagebreak" },
+
+    { "type": "kicker", "text": "Before you sign" },
+    { "type": "h2", "text": "Seven lines to find in the agreement" },
+    {
+      "type": "checklist",
+      "items": [
+        "The fee is <b>a number in dollars</b>, or a formula with a worked example — not &ldquo;standard&rdquo;, not &ldquo;customary&rdquo;.",
+        "<b>No lease, no fee.</b> It&rsquo;s owed on a signed lease and nothing else.",
+        "It applies <b>only to homes the agent introduced</b>, with a list you both keep.",
+        "<b>No fee</b> for any home their own brokerage represents for the landlord.",
+        "A term of <b>90 days or less</b>, endable in writing by either side.",
+        "Rent and deposits go <b>to the landlord</b> against a signed lease — never to an agent&rsquo;s personal account.",
+        "A signed <b>agency disclosure</b> saying who the agent represents, given before you start."
+      ]
+    },
+    { "type": "box", "tone": "bad", "title": "Four reasons to walk", "text": "The fee isn&rsquo;t a number · the term locks you in for six months with no exit · money is asked for before you&rsquo;ve seen anything · an apartment is available to you only if you sign with them. Any one of these is enough; the last one is prohibited outright." },
+    { "type": "spacer", "height": 6 },
+    { "type": "box", "title": "When you&rsquo;re ready", "text": "<b>rentleaks.com/hire-a-broker/</b> — set your cap, and licensed agents propose at or under it. Every licence is checked with the state, your name and number stay private until you choose someone, and the agreement is the one described on this page. No lease, no fee. Nothing owed to us, ever." },
+    { "type": "rule" },
+    { "type": "small", "text": "General information, not legal advice; rules vary by city and state and change over time. Figures are worked examples, not offers or quotes. RentLeaks is not a party to any agreement between a renter and a broker." }
+  ]
+}
