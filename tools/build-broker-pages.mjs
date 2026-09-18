@@ -41,6 +41,36 @@ const esc = (s) =>
     .replace(/"/g, "&quot;");
 const shot = (id, w = 2000) => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${w}&q=72`;
 
+/* ---- hero images ------------------------------------------------------
+ * Each page takes its own photo from images/ if the file is there, and falls
+ * back to the stock id when it isn't. Swapping a hero is therefore dropping a
+ * file in and re-running this script — no code change, and never a broken
+ * image while a photo is still being chosen.
+ *
+ *   images/hero-hire.jpg      the renter page
+ *   images/hero-guide.jpg     the guides page
+ *   images/hero-agents.jpg    the agents page
+ *
+ * Landscape, at least 2000px wide, and quiet on the left third — the kicker,
+ * headline and lede sit there. No people in them: this is a housing site, and
+ * a photo that pictures who lives somewhere is a fair-housing problem.
+ */
+const HERO = {
+  tenant: { file: "images/hero-hire.jpg", stock: "photo-1502672260266-1c1ef2d93688" },
+  guide: { file: "images/hero-guide.jpg", stock: "photo-1521791136064-7986c2920216" },
+  partner: { file: "images/hero-agents.jpg", stock: "photo-1773069459487-3d2d7bb4532e" },
+};
+const heroUsed = [];
+function heroImage(pg) {
+  const h = HERO[pg.who] || HERO.tenant;
+  if (h.file && fs.existsSync(path.join(ROOT, h.file))) {
+    heroUsed.push(`${pg.file} \u2190 ${h.file}`);
+    return `../${h.file}?v=${V}`;
+  }
+  heroUsed.push(`${pg.file} \u2190 stock ${h.stock}`);
+  return shot(h.stock);
+}
+
 const ICON = {
   check: '<path d="M5 12l5 5L20 7"/>',
   arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
@@ -76,7 +106,6 @@ const PAGES = {
     kicker: "Hire a broker · Long & short term · New & classic buildings",
     h1: "Your own broker, <em>in three steps</em>",
     lede: "Tell us what you're looking for and the most you'll pay a broker. Licensed, verified agents who work your area send a short pitch and a fee at or under your cap. You pick one — or none — and sign one clear agreement right in the app.",
-    image: "photo-1502672260266-1c1ef2d93688",
   },
   guide: {
     file: "guide.html",
@@ -88,7 +117,6 @@ const PAGES = {
     kicker: "Free guides · Renters & licensed agents",
     h1: "Two guides, <em>one honest page</em>",
     lede: "Whichever side of the table you&rsquo;re on: what a broker fee should cost and what your agreement must say, or how our referral program sends you renters who already want to hire someone. Free, no strings — and a person follows up.",
-    image: "photo-1521791136064-7986c2920216",
   },
   partner: {
     file: "agents.html",
@@ -100,7 +128,6 @@ const PAGES = {
     kicker: "For licensed agents & brokers · Referral partner program",
     h1: "Tenant leads that <em>already want a broker</em>",
     lede: "Every lead is a renter who asked to hire a broker — with an area, a budget, dates and the fee they're willing to pay. Accept with your fee and a short pitch. If they choose you, the fee agreement is signed in the app before you start.",
-    image: "photo-1560518883-ce09059eeffa",
   },
 };
 
@@ -210,7 +237,7 @@ function menu(current) {
 function hero(pg) {
   const tenant = pg.who === "tenant";
   if (pg.who === "guide") {
-    return `<section class="ent-hero hb-hero" style="--ent-img:url('${shot(pg.image)}')">
+    return `<section class="ent-hero hb-hero" style="--ent-img:url('${heroImage(pg)}')">
     <div class="ent-hero__media" role="presentation"></div>
     <div class="container ent-hero__inner">
       <nav class="rl-crumb rl-crumb--light" aria-label="Breadcrumb"><a href="../index.html">Home</a> / <a href="./">Hire a broker</a> / Free guides</nav>
@@ -246,7 +273,7 @@ function hero(pg) {
         ["25%", "referral, after a lease", "data-live-pct"],
         [String(cityCount), "markets on RentLeaks"],
       ];
-  return `<section class="ent-hero hb-hero" style="--ent-img:url('${shot(pg.image)}')">
+  return `<section class="ent-hero hb-hero" style="--ent-img:url('${heroImage(pg)}')">
     <div class="ent-hero__media" role="presentation"></div>
     <div class="container ent-hero__inner">
       <nav class="rl-crumb rl-crumb--light" aria-label="Breadcrumb"><a href="../index.html">Home</a> / ${tenant ? "Hire a broker" : '<a href="./">Hire a broker</a> / For agents'}</nav>
@@ -788,3 +815,4 @@ for (const key of Object.keys(PAGES)) {
   written.push(path.relative(ROOT, file));
 }
 console.log(`Wrote ${written.length} pages: ${written.join(", ")}`);
+console.log("  heroes: " + heroUsed.join(" \u00b7 "));
