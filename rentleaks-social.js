@@ -2,10 +2,13 @@
  * RentLeaks × social — the site side of the Facebook Page, plus the links to
  * the LinkedIn, Instagram and TikTok profiles.
  *
- * 1. Footer: "Follow on Facebook", "Message us" and one link per profile whose
- *    handle is filled in below (an empty handle simply hides that link, so
- *    nothing on the site can point at a profile that doesn't exist yet).
- *    tools/apply-social-links.py fills them in across the site in one command.
+ * 1. Footer: "Follow on Facebook", "Message us" and one button per platform.
+ *    Each button goes to the real profile once its handle is filled in below,
+ *    and until then to that platform's own page on this site — so the row is
+ *    always complete and nothing ever points at a profile that doesn't exist.
+ *    tools/apply-social-links.py fills the handles in across the site in one
+ *    command; the in-page [data-social-profile] buttons on those landing pages
+ *    are stricter and disappear entirely until there is a real profile.
  * 2. Listing pages: a share row under the title (Facebook share dialog,
  *    Messenger on phones, copy link) with UTM tags so shares are countable.
  * 3. Meta Pixel — OFF unless a page carries <meta name="rl-meta-pixel">,
@@ -24,6 +27,10 @@
   /* Handles, not URLs. Empty = no link. Keep in step with the Organization
      sameAs list in index.html — tools/apply-social-links.py does both. */
   var HANDLES = { linkedin: "", instagram: "", tiktok: "" };
+
+  /* The on-site landing pages that exist (tools/build-social-pages.py writes
+     them). A footer button falls back to one of these until its handle is set. */
+  var LANDING_PAGES = ["instagram.html", "tiktok.html", "linkedin.html"];
   var CONSENT_KEY = "rl_meta_consent";
 
   function ready(fn) {
@@ -69,23 +76,40 @@
 
   /* --- 1. footer links ---------------------------------------------------- */
 
+  /* Pages live one level down under these folders, same rule as script.js. */
+  function base() {
+    return /\/(listings|cities|operators|enterprise|hire-a-broker)\//.test(location.pathname || "") ? "../" : "";
+  }
+
+  var PROFILES = [
+    { key: "linkedin", label: "LinkedIn", icon: ICON_LI, url: "https://www.linkedin.com/company/", page: "linkedin.html" },
+    { key: "instagram", label: "Instagram", icon: ICON_IG, url: "https://www.instagram.com/", page: "instagram.html" },
+    { key: "tiktok", label: "TikTok", icon: ICON_TT, url: "https://www.tiktok.com/@", page: "tiktok.html" }
+  ];
+
+  /* A footer button always has somewhere real to go: the profile once its
+     handle is set, and until then the platform's own page on this site. A
+     platform with neither is left out rather than linked to nothing. */
+  function profileHref(p, medium) {
+    var handle = (HANDLES[p.key] || "").replace(/^@/, "").trim();
+    if (handle) return p.url + handle + "?utm_source=rentleaks&utm_medium=" + medium;
+    if (p.page && LANDING_PAGES.indexOf(p.page) !== -1) return base() + p.page;
+    return "";
+  }
+
   function addFooterLinks() {
     var brand = document.querySelector(".footer__brand");
     if (!brand || brand.querySelector(".rl-social")) return !!brand;
     var row = el("div", { class: "rl-social", "aria-label": "RentLeaks on social media" });
     row.appendChild(el("a", { href: PAGE_URL + "?utm_source=rentleaks&utm_medium=footer", target: "_blank", rel: "noopener" }, ICON_FB + "<span>Follow on Facebook</span>"));
     row.appendChild(el("a", { href: MESSENGER_URL, target: "_blank", rel: "noopener" }, ICON_MSG + "<span>Message us</span>"));
-    var profiles = [
-      { key: "linkedin", label: "LinkedIn", icon: ICON_LI, url: "https://www.linkedin.com/company/" },
-      { key: "instagram", label: "Instagram", icon: ICON_IG, url: "https://www.instagram.com/" },
-      { key: "tiktok", label: "TikTok", icon: ICON_TT, url: "https://www.tiktok.com/@" }
-    ];
-    profiles.forEach(function (p) {
-      var handle = (HANDLES[p.key] || "").replace(/^@/, "").trim();
-      if (!handle) return;
-      row.appendChild(
-        el("a", { href: p.url + handle + "?utm_source=rentleaks&utm_medium=footer", target: "_blank", rel: "noopener" }, p.icon + "<span>" + p.label + "</span>")
-      );
+    PROFILES.forEach(function (p) {
+      var href = profileHref(p, "footer");
+      if (!href) return;
+      var external = href.indexOf("http") === 0;
+      var attrs = { href: href };
+      if (external) { attrs.target = "_blank"; attrs.rel = "noopener"; }
+      row.appendChild(el("a", attrs, p.icon + "<span>" + p.label + "</span>"));
     });
     brand.appendChild(row);
     return true;

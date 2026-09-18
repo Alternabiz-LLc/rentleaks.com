@@ -209,6 +209,11 @@ show as **Instagram**, **TikTok** or **LinkedIn** in the desk inbox instead of
 "Website". The "Our profile" button on each page appears only once that handle
 is set.
 
+The footer social row follows the same rule, one step softer: every platform
+gets a button, pointing at the real profile once its handle is set and at that
+platform's page on this site until then. So the row is complete from day one
+and never links to an account that doesn't exist.
+
 ## Email, photos and integrations
 
 After the first deploy, run:
