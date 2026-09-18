@@ -91,6 +91,35 @@
     return true;
   }
 
+  /* --- 1b. in-page profile links ----------------------------------------- */
+
+  /* A landing page can carry <a data-social-profile="instagram" hidden>. The
+     link is filled in and shown only once that handle is set, so a page can
+     never point at a profile that doesn't exist yet. */
+  function fillProfileLinks() {
+    var urls = {
+      facebook: PAGE_URL,
+      linkedin: "https://www.linkedin.com/company/",
+      instagram: "https://www.instagram.com/",
+      tiktok: "https://www.tiktok.com/@"
+    };
+    Array.prototype.forEach.call(document.querySelectorAll("[data-social-profile]"), function (a) {
+      var key = a.getAttribute("data-social-profile");
+      if (key === "facebook") {
+        a.href = PAGE_URL + "?utm_source=rentleaks&utm_medium=page";
+        a.hidden = false;
+        return;
+      }
+      var handle = (HANDLES[key] || "").replace(/^@/, "").trim();
+      if (!handle || !urls[key]) {
+        a.remove();
+        return;
+      }
+      a.href = urls[key] + handle + "?utm_source=rentleaks&utm_medium=page";
+      a.hidden = false;
+    });
+  }
+
   /* --- 2. share row on listing pages ------------------------------------ */
 
   function canonicalUrl() {
@@ -226,6 +255,7 @@
   ready(function () {
     injectStyles();
     setupPixel();
+    fillProfileLinks();
     /* script.js re-renders the listing and the footer after its data loads,
        replacing what was there. Keep both in place while that settles. */
     var queued = false;

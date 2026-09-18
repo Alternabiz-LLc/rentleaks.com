@@ -12,7 +12,7 @@ import { loadAdvice } from "@/lib/ops/advisor";
 import { requireAdminPage } from "@/lib/admin/guard";
 import { bucketWeeks, lastWeeks, nowMs, recurringMonthly } from "@/lib/admin/metrics";
 import { scoreLead } from "@/lib/admin/score";
-import { KIND_LABEL as LEAD_KIND_LABEL, type LeadKind } from "@/lib/leads";
+import { KIND_LABEL as LEAD_KIND_LABEL, type LeadKind, LEAD_SOURCE_LABEL as SOURCE_LABEL } from "@/lib/leads";
 import { checkListing, type Fee } from "@/lib/listing-rules";
 import { prisma } from "@/lib/prisma";
 import { fmtMoney, typeLabel } from "@/lib/site";
@@ -21,15 +21,6 @@ export const metadata = { title: "Founder desk — RentLeaks" };
 
 const DAY = 86_400_000;
 
-const SOURCE_LABEL: Record<string, string> = {
-  fb_page: "Facebook Page",
-  fb_button: "Facebook button",
-  fb_post: "Facebook post",
-  fb_ad: "Facebook ad",
-  messenger: "Messenger",
-  instagram: "Instagram",
-  web: "Website",
-};
 
 const ACTIVITY_ICON: Record<string, { icon: "mail" | "phone" | "leads" | "crm" | "ticket" | "accounts" | "check" | "outreach"; tone?: string }> = {
   email: { icon: "mail" },

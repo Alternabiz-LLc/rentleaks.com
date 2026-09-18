@@ -1,7 +1,7 @@
 /**
- * RentLeaks — Facebook landing page (facebook.html)
+ * RentLeaks — social landing pages (facebook.html, instagram.html, tiktok.html)
  * ---------------------------------------------------------------------------
- * Where the Facebook Page's "Book now" button, posts and ads send people.
+ * Where a profile's link-in-bio, button, posts and ads send people.
  * Three things to do, one form each:
  *
  *   Find me a home   → a lead with city, budget and dates      (kind: match)
@@ -9,8 +9,11 @@
  *   Request to book  → move-in and move-out for one listing    (kind: stay)
  *
  * Requests go to the app's /api/leads. If the app can't be reached, nothing is
- * lost: the visitor is handed to Messenger with the request copied, so it lands
- * in the Page inbox instead. No payment is ever taken here.
+ * lost: the visitor is handed over with the request already written. Facebook
+ * hands over to Messenger, so it lands in the Page inbox; the other profiles
+ * have no inbox of their own, so they hand over to email. The mount point
+ * chooses: data-handoff="messenger" (default) or "email".
+ * No payment is ever taken here.
  *
  * Only live, non-sample listings (from /api/leads/listings) can be viewed or
  * booked. The sample catalogue is never offered as bookable.
@@ -22,11 +25,39 @@
 
   var MESSENGER_URL = 'https://m.me/rentleaks.official';
   var PAGE_URL = 'https://www.facebook.com/rentleaks.official';
+  var EMAIL = 'hello@rentleaks.com';
   var TIMEOUT = 8000;
   var DATA = window.RENTLEAKS_DATA || {};
 
-  var root = document.getElementById('fb-landing');
+  var root = document.getElementById('fb-landing') || document.getElementById('rl-landing');
   if (!root) return;
+
+  /* Every string that names the fallback lives here, so a page that hands over
+     to email never tells anyone to open Messenger. */
+  var HANDOFFS = {
+    messenger: {
+      name: 'messenger',
+      open: 'Message us',
+      keep: 'Continue on Messenger',
+      send: 'Send on Messenger',
+      head: 'Send it on Messenger instead',
+      lead: 'We couldn’t send your request online just now. Nothing is lost: tap below, and Messenger opens with your request copied — paste it if it isn’t filled in.',
+      hint: 'Prefer to chat? Messenger opens with your request copied, so you can paste it if it isn’t filled in.',
+      alt: 'Email it instead'
+    },
+    email: {
+      name: 'email',
+      open: 'Email us',
+      keep: 'Email us a copy',
+      send: 'Send it by email',
+      head: 'Send it by email instead',
+      lead: 'We couldn’t send your request online just now. Nothing is lost: tap below and your email opens with the request already written.',
+      lead2: 'If nothing opens, copy the text below and send it to ' + EMAIL + '.',
+      hint: 'Rather write to us? The email opens with your request already in it.',
+      alt: 'Browse homes'
+    }
+  };
+  var HO = HANDOFFS[root.getAttribute('data-handoff') === 'email' ? 'email' : 'messenger'];
 
   /* ---------- small helpers ---------------------------------------------- */
 
@@ -79,7 +110,7 @@
 
   /* Where the visitor came from: ?src= wins, then UTM, then the referrer. */
   var params = new URLSearchParams(location.search);
-  var SOURCES = ['fb_page', 'fb_button', 'fb_post', 'fb_ad', 'messenger', 'instagram', 'web'];
+  var SOURCES = ['fb_page', 'fb_button', 'fb_post', 'fb_ad', 'messenger', 'instagram', 'tiktok', 'linkedin', 'web'];
   function detectSource() {
     var src = (params.get('src') || '').toLowerCase();
     if (SOURCES.indexOf(src) !== -1) return src;
@@ -87,10 +118,16 @@
     var um = (params.get('utm_medium') || '').toLowerCase();
     if (/^(fb|facebook)$/.test(us)) return /paid|cpc|ads?/.test(um) ? 'fb_ad' : 'fb_post';
     if (/^(ig|instagram)$/.test(us)) return 'instagram';
+    if (/^(tt|tiktok)$/.test(us)) return 'tiktok';
+    if (/^(li|linkedin)$/.test(us)) return 'linkedin';
     if (/messenger/.test(us)) return 'messenger';
     if (/facebook\.com|fb\.com|l\.facebook/.test(document.referrer || '')) return 'fb_page';
     if (/instagram\.com/.test(document.referrer || '')) return 'instagram';
-    return 'web';
+    if (/tiktok\.com/.test(document.referrer || '')) return 'tiktok';
+    if (/linkedin\.com|lnkd\.in/.test(document.referrer || '')) return 'linkedin';
+    /* A page that names its own platform is the last word, so bio taps with no
+       referrer (in-app browsers strip it) aren't all filed as "web". */
+    return root.getAttribute('data-source') || 'web';
   }
   var SOURCE = detectSource();
   var CAMPAIGN = (params.get('utm_campaign') || '').slice(0, 80);
@@ -122,6 +159,13 @@
     if (text) qs.set('text', text.slice(0, 600));
     var q = qs.toString();
     return MESSENGER_URL + (q ? '?' + q : '');
+  }
+
+  /* Messenger on the Facebook page, a pre-written email everywhere else. */
+  function handoffLink(text, ref, subject) {
+    if (HO.name === 'messenger') return messengerLink(text, ref);
+    return 'mailto:' + EMAIL + '?subject=' + encodeURIComponent(subject || 'RentLeaks request') +
+      (text ? '&body=' + encodeURIComponent(text.slice(0, 1400)) : '');
   }
 
   function copy(text) {
@@ -359,7 +403,7 @@
             ? 'Tell us what you need, or message us, and we’ll send you homes you can view this week.'
             : 'We only list homes you can actually see and book. Tell us what you need and we’ll match you as hosts publish them.') + '</p>' +
           '<p class="fbl-actions"><a href="#" class="btn btn--primary" data-go-tab="match">Tell us what you need</a> ' +
-          '<a class="btn btn--outline" href="' + esc(messengerLink('', 'fb_landing_' + kind)) + '" target="_blank" rel="noopener">Message us</a></p>' +
+          '<a class="btn btn--outline" href="' + esc(handoffLink('', 'fb_landing_' + kind)) + '" target="_blank" rel="noopener">' + HO.open + '</a></p>' +
         '</div>';
         return;
       }
@@ -503,7 +547,7 @@
       request('POST', '/api/leads', lead).then(function (r) {
         if (r.status === 201) {
           track(lead.kind);
-          done(true, lead, r.json.messenger || messengerLink(text, 'lead_' + r.json.id), text);
+          done(true, lead, (HO.name === 'messenger' && r.json.messenger) || handoffLink(text, 'lead_' + r.json.id, KIND_LABEL[lead.kind]), text);
           return;
         }
         var err = (r.json && r.json.error) || {};
@@ -512,9 +556,9 @@
           showError(form, err.code, err.message || 'Check the form and try again.');
           return;
         }
-        done(false, lead, messengerLink(text, 'fb_landing_offline'), text);
+        done(false, lead, handoffLink(text, 'fb_landing_offline', KIND_LABEL[lead.kind]), text);
       }, function () {
-        done(false, lead, messengerLink(text, 'fb_landing_offline'), text);
+        done(false, lead, handoffLink(text, 'fb_landing_offline', KIND_LABEL[lead.kind]), text);
       }).then(function () {
         btn.disabled = false;
         btn.textContent = label;
@@ -530,14 +574,17 @@
         '<p>Thanks, ' + esc(lead.name.split(' ')[0]) + '. We emailed a copy to <b>' + esc(lead.email) + '</b> and ' +
         (lead.kind === 'match' ? 'we’ll reply' : 'you’ll hear back') + ' within one business day.</p>' +
         '<pre class="fbl-summary">' + esc(text) + '</pre>' +
-        '<p class="fbl-actions"><a class="btn btn--primary" data-messenger href="' + esc(messenger) + '" target="_blank" rel="noopener">Continue on Messenger</a> ' +
+        '<p class="fbl-actions"><a class="btn btn--primary" data-messenger href="' + esc(messenger) + '" target="_blank" rel="noopener">' + HO.keep + '</a> ' +
         '<a class="btn btn--outline" href="rent.html">Browse homes</a></p>' +
-        '<p class="fbl-hint">Prefer to chat? Messenger opens with your request copied, so you can paste it if it isn’t filled in.</p>'
-      : '<h2>Send it on Messenger instead</h2>' +
-        '<p>We couldn’t send your request online just now. Nothing is lost: tap below, and Messenger opens with your request copied — paste it if it isn’t filled in.</p>' +
+        '<p class="fbl-hint">' + HO.hint + '</p>'
+      : '<h2>' + HO.head + '</h2>' +
+        '<p>' + HO.lead + '</p>' +
         '<pre class="fbl-summary">' + esc(text) + '</pre>' +
-        '<p class="fbl-actions"><a class="btn btn--primary" data-messenger href="' + esc(messenger) + '" target="_blank" rel="noopener">Send on Messenger</a> ' +
-        '<a class="btn btn--outline" href="mailto:hello@rentleaks.com?subject=' + encodeURIComponent(KIND_LABEL[lead.kind]) + '&body=' + encodeURIComponent(text) + '">Email it instead</a></p>';
+        '<p class="fbl-actions"><a class="btn btn--primary" data-messenger href="' + esc(messenger) + '" target="_blank" rel="noopener">' + HO.send + '</a> ' +
+        (HO.name === 'messenger'
+          ? '<a class="btn btn--outline" href="mailto:' + EMAIL + '?subject=' + encodeURIComponent(KIND_LABEL[lead.kind]) + '&body=' + encodeURIComponent(text) + '">Email it instead</a></p>'
+          : '<a class="btn btn--outline" href="rent.html">Browse homes</a></p>' +
+            '<p class="fbl-hint">' + HO.lead2 + '</p>');
     box.innerHTML += '<p class="fbl-safety"><b>Stay safe:</b> never pay rent or a deposit before you have seen the home and signed a lease. RentLeaks never takes payment and never asks for wire transfers, gift cards or crypto.</p>';
     box.hidden = false;
     box.focus();

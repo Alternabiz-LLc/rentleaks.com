@@ -16,7 +16,7 @@ import { canAccess } from "@/lib/access";
 import { requireAdminPage } from "@/lib/admin/guard";
 import { nowMs } from "@/lib/admin/metrics";
 import { leadReplyDraft, scoreLead } from "@/lib/admin/score";
-import { KIND_LABEL, leadSummary, type LeadKind, type ViewingSlot } from "@/lib/leads";
+import { KIND_LABEL, leadSummary, type LeadKind, type ViewingSlot, LEAD_SOURCE_LABEL as SOURCE_LABEL } from "@/lib/leads";
 import { prisma } from "@/lib/prisma";
 import { appUrl, typeLabel } from "@/lib/site";
 import { slaOf } from "@/lib/ops/sla";
@@ -25,15 +25,6 @@ export const metadata = { title: "Leads — RentLeaks desk" };
 
 const DAY = 86_400_000;
 
-const SOURCE_LABEL: Record<string, string> = {
-  fb_page: "Facebook Page",
-  fb_button: "Facebook button",
-  fb_post: "Facebook post",
-  fb_ad: "Facebook ad",
-  messenger: "Messenger",
-  instagram: "Instagram",
-  web: "Website",
-};
 
 const STATUS: Record<string, { label: string; tone: string }> = {
   new: { label: "New", tone: "brand" },

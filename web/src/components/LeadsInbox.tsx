@@ -9,6 +9,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { updateLead } from "@/app/actions/leads";
+import { LEAD_SOURCE_LABEL as SOURCE_LABEL } from "@/lib/leads";
 
 export type LeadRow = {
   id: string;
@@ -36,15 +37,6 @@ const STATUSES = [
   ["spam", "Spam"],
 ] as const;
 
-const SOURCE_LABEL: Record<string, string> = {
-  fb_page: "Facebook Page",
-  fb_button: "Facebook button",
-  fb_post: "Facebook post",
-  fb_ad: "Facebook ad",
-  messenger: "Messenger",
-  instagram: "Instagram",
-  web: "Website",
-};
 
 export default function LeadsInbox({ leads }: { leads: LeadRow[] }) {
   const [pending, startTransition] = useTransition();

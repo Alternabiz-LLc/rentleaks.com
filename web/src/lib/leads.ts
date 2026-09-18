@@ -20,7 +20,21 @@
 
 export const LEAD_KINDS = ["match", "viewing", "stay"] as const;
 export const LEAD_STATUSES = ["new", "contacted", "booked", "closed", "spam"] as const;
-export const LEAD_SOURCES = ["fb_page", "fb_button", "fb_post", "fb_ad", "messenger", "instagram", "web"] as const;
+export const LEAD_SOURCES = ["fb_page", "fb_button", "fb_post", "fb_ad", "messenger", "instagram", "tiktok", "linkedin", "web"] as const;
+
+/** One list, read by every desk view — an unknown source falls back to "web",
+ *  so adding a landing page here is all it takes to see it named in the inbox. */
+export const LEAD_SOURCE_LABEL: Record<string, string> = {
+  fb_page: "Facebook Page",
+  fb_button: "Facebook button",
+  fb_post: "Facebook post",
+  fb_ad: "Facebook ad",
+  messenger: "Messenger",
+  instagram: "Instagram",
+  tiktok: "TikTok",
+  linkedin: "LinkedIn",
+  web: "Website",
+};
 export const VIEWING_WINDOWS = ["morning", "afternoon", "evening"] as const;
 export const VIEWING_MODES = ["in-person", "video"] as const;
 

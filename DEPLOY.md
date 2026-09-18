@@ -194,6 +194,21 @@ python3 tools/apply-social-links.py --clear tiktok
 Handles left empty stay hidden, so the site never links to a profile that
 isn't there.
 
+Each profile's link-in-bio lands on its own page, generated from one template:
+
+```bash
+python3 tools/build-social-pages.py                  # instagram.html, tiktok.html, linkedin.html
+python3 tools/build-social-pages.py instagram        # just one
+```
+
+They carry the same lead form as `facebook.html` (which stays hand-edited — it
+has the Messenger wiring). Two differences: the fallback when the app can't be
+reached is a pre-written email rather than Messenger, and the mount names its
+own platform, so a bio tap with no referrer is still attributed — new leads
+show as **Instagram**, **TikTok** or **LinkedIn** in the desk inbox instead of
+"Website". The "Our profile" button on each page appears only once that handle
+is set.
+
 ## Email, photos and integrations
 
 After the first deploy, run:
