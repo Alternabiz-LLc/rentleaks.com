@@ -19,7 +19,10 @@
     "",
     "To swap one for a real photograph, drop your own JPEG in at the same file",
     "name and re-run tools/build-ig-feed.py. Landscape or portrait both work —",
-    "the renderer crops to fill — but portrait 4:5 loses the least."
+    "the renderer crops to fill — but portrait 4:5 loses the least.",
+    "",
+    "path: where a photo goes when it isn't one of the feed interiors — the page",
+    "heroes under images/ use it. Without it the file lands in 'dir'."
   ],
   "dir": "images/social/photos",
   "photos": {
@@ -54,6 +57,11 @@
     "aparthotel-lounge": {
       "what": "Aparthotel residents' lounge — travertine counter, soft seating, terrazzo",
       "url": "https://cdn.gamma.app/awiu7b5j5s2bhx5/design-anything/4j4Qp2OhaCdehjwn1zvqA/HLSCm6pEinqfP92HYAXJm.jpg"
+    },
+    "hero-agents": {
+      "what": "Bright loft living room, whitewashed brick and tall steel windows — the hire-a-broker agents hero",
+      "path": "images/hero-agents.jpg",
+      "url": "https://cdn.gamma.app/awiu7b5j5s2bhx5/design-anything/VpOrCXh6PTTpYl5zuacxk/yz94WRivzqUltmDHrpl0J.jpg"
     }
   }
 }

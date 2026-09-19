@@ -20,27 +20,29 @@ FORCE="${1:-}"
 mkdir -p "$DIR"
 got=0; skipped=0; failed=0
 
-while IFS=$'\t' read -r slug url; do
-  out="$DIR/$slug.jpg"
+while IFS=$'\t' read -r slug path url; do
+  # A photo either lands in the feed's photo directory or at its own path —
+  # the page heroes live under images/, not with the feed interiors.
+  if [ -n "$path" ]; then out="$ROOT/$path"; mkdir -p "$(dirname "$out")"; else out="$DIR/$slug.jpg"; fi
   if [ -s "$out" ] && [ "$FORCE" != "--force" ]; then
-    echo "  = $slug.jpg (already here)"
+    echo "  = ${out#$ROOT/} (already here)"
     skipped=$((skipped + 1))
     continue
   fi
   if curl -fsSL --max-time 120 -o "$out.part" "$url"; then
     mv "$out.part" "$out"
-    echo "  + $slug.jpg  ($(du -h "$out" | cut -f1))"
+    echo "  + ${out#$ROOT/}  ($(du -h "$out" | cut -f1))"
     got=$((got + 1))
   else
     rm -f "$out.part"
-    echo "  ! $slug.jpg failed — $url" >&2
+    echo "  ! ${out#$ROOT/} failed — $url" >&2
     failed=$((failed + 1))
   fi
 done < <(python3 - "$SPEC" <<'PY'
 import json, sys
 spec = json.load(open(sys.argv[1]))
 for slug, p in spec["photos"].items():
-    print(f"{slug}\t{p['url']}")
+    print(f"{slug}\t{p.get('path', '')}\t{p['url']}")
 PY
 )
 
@@ -53,6 +55,8 @@ python3 "$ROOT/tools/build-ig-feed.py"
 # The landing-page heroes take one of these photos too, so they are rebuilt
 # here rather than leaving a page pointing at the stock room.
 python3 "$ROOT/tools/build-social-pages.py"
+# The hire-a-broker heroes read images/ at build time too.
+node --no-warnings "$ROOT/tools/build-broker-pages.mjs"
 echo
-echo "Commit images/social/photos/ and images/social/ig/, then deploy the static site:"
-echo "  git add images/social *.html && git commit -m 'Instagram feed: the interiors' && git push origin main"
+echo "Commit images/ and the rebuilt pages, then deploy the static site:"
+echo "  git add images *.html hire-a-broker && git commit -m 'Instagram feed: the interiors' && git push origin main"
