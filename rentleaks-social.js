@@ -90,9 +90,13 @@
   /* A footer button always has somewhere real to go: the profile once its
      handle is set, and until then the platform's own page on this site. A
      platform with neither is left out rather than linked to nothing. */
-  function profileHref(p, medium) {
+  function profileHref(p) {
     var handle = (HANDLES[p.key] || "").replace(/^@/, "").trim();
-    if (handle) return p.url + handle + "?utm_source=rentleaks&utm_medium=" + medium;
+    // No UTM on a profile URL. None of these platforms report a referrer or
+    // read query params on a profile page, so the only thing the parameters
+    // ever did was ride along into Instagram's ?next= when it bounced a
+    // visitor through a checkpoint, leaving a URL that looks tampered with.
+    if (handle) return p.url + handle;
     if (p.page && LANDING_PAGES.indexOf(p.page) !== -1) return base() + p.page;
     return "";
   }
@@ -101,10 +105,10 @@
     var brand = document.querySelector(".footer__brand");
     if (!brand || brand.querySelector(".rl-social")) return !!brand;
     var row = el("div", { class: "rl-social", "aria-label": "RentLeaks on social media" });
-    row.appendChild(el("a", { href: PAGE_URL + "?utm_source=rentleaks&utm_medium=footer", target: "_blank", rel: "noopener" }, ICON_FB + "<span>Follow on Facebook</span>"));
+    row.appendChild(el("a", { href: PAGE_URL, target: "_blank", rel: "noopener" }, ICON_FB + "<span>Follow on Facebook</span>"));
     row.appendChild(el("a", { href: MESSENGER_URL, target: "_blank", rel: "noopener" }, ICON_MSG + "<span>Message us</span>"));
     PROFILES.forEach(function (p) {
-      var href = profileHref(p, "footer");
+      var href = profileHref(p);
       if (!href) return;
       var external = href.indexOf("http") === 0;
       var attrs = { href: href };
@@ -130,7 +134,7 @@
     Array.prototype.forEach.call(document.querySelectorAll("[data-social-profile]"), function (a) {
       var key = a.getAttribute("data-social-profile");
       if (key === "facebook") {
-        a.href = PAGE_URL + "?utm_source=rentleaks&utm_medium=page";
+        a.href = PAGE_URL;
         a.hidden = false;
         return;
       }
@@ -139,7 +143,7 @@
         a.remove();
         return;
       }
-      a.href = urls[key] + handle + "?utm_source=rentleaks&utm_medium=page";
+      a.href = urls[key] + handle;
       a.hidden = false;
     });
   }
