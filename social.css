@@ -1,0 +1,133 @@
+/*
+ * social.css — the few things the social landing pages need that the rest of
+ * the site doesn't. Everything else on instagram.html, tiktok.html and
+ * linkedin.html is a component from styles.css, rentleaks-x.css or
+ * enterprise/enterprise.css, so the pages inherit the brand instead of
+ * restating it.
+ *
+ * Generated pages, hand-written stylesheet: tools/build-social-pages.py.
+ */
+
+/* The strip of real posts from the account. A horizontal scroller on a phone,
+   where it reads like a feed; a row of six on a wide screen. */
+.rl-feed {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(160px, 1fr);
+  gap: 12px;
+  margin: 22px 0 0;
+  padding: 0 0 6px;
+  list-style: none;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+.rl-feed li {
+  scroll-snap-align: start;
+  margin: 0;
+}
+
+.rl-feed img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  border-radius: 14px;
+  border: 1px solid var(--line, #dfe8ea);
+  background: var(--surface-2, #f3f6f7);
+}
+
+@media (min-width: 820px) {
+  .rl-feed {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(6, 1fr);
+    overflow: visible;
+  }
+}
+
+/* The type grid on these pages is a link card, not a plain cell. */
+.ent-grid > li > a {
+  display: block;
+  height: 100%;
+  text-decoration: none;
+  color: inherit;
+}
+
+.ent-grid > li > a:hover .ent-link,
+.ent-grid > li > a:focus-visible .ent-link {
+  color: var(--brand, #3795a6);
+}
+
+/* Questions people actually type into a search box, so they are worth marking
+   up: the same list is emitted as FAQPage structured data. */
+.rl-faq {
+  margin: 20px 0 0;
+  border-top: 1px solid var(--line, #dfe8ea);
+}
+
+.rl-faq details {
+  border-bottom: 1px solid var(--line, #dfe8ea);
+  padding: 2px 0;
+}
+
+.rl-faq summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 2px;
+  cursor: pointer;
+  font: 600 1.02rem/1.4 var(--font-sans, system-ui, sans-serif);
+  color: var(--ink, #10242a);
+  list-style: none;
+}
+
+.rl-faq summary::-webkit-details-marker { display: none; }
+
+.rl-faq summary::after {
+  content: "+";
+  flex: none;
+  font-weight: 500;
+  font-size: 1.3rem;
+  line-height: 1;
+  color: var(--brand, #3795a6);
+}
+
+.rl-faq details[open] summary::after { content: "\2212"; }
+
+.rl-faq p {
+  margin: 0 0 16px;
+  padding-right: 34px;
+  color: var(--ink-2, #48626a);
+  font: 0.98rem/1.6 var(--font-sans, system-ui, sans-serif);
+}
+
+/* A plain row of market links. Small, quiet, and genuinely useful to both a
+   reader and a crawler — every one is a page that exists. */
+.rl-markets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  margin: 18px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rl-markets a {
+  display: inline-block;
+  padding: 7px 13px;
+  border: 1px solid var(--line-strong, #b7cdd2);
+  border-radius: 999px;
+  font: 600 0.86rem/1 var(--font-sans, system-ui, sans-serif);
+  color: var(--ink, #10242a);
+  text-decoration: none;
+}
+
+.rl-markets a:hover,
+.rl-markets a:focus-visible {
+  border-color: var(--brand, #3795a6);
+  color: var(--brand, #3795a6);
+}

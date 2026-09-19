@@ -8,16 +8,16 @@ Instagram's own limits. Art is in `marketing/social/instagram/`.
 | Field | Paste this | Length |
 |---|---|---|
 | Username | `rentleaks` | 9 / 30 |
-| Name | `RentLeaks · flexible housing` | 28 / 30 |
+| Name | `RentLeaks: furnished, mid-term` | 30 / 30 |
 | Category | `Real Estate` | — |
-| Bio | see below | 131 / 150 |
+| Bio | see below | 126 / 150 |
 | Link | `https://rentleaks.com/instagram.html` | — |
 | Contact email | `hello@rentleaks.com` | — |
 
 **Bio**, exactly as it should read (the line break is deliberate — Instagram keeps it):
 
 ```
-Rooms, co-living, furnished & 1-month+ homes. All-in prices, 30 days min, 79 markets. Honest fees, real rules.
+Furnished, co-living & 1-month+ rentals. All-in prices, 30 days min, 79 markets. Honest fees, real rules.
 Free renter guides ↓
 ```
 
@@ -59,6 +59,51 @@ category **Real Estate** → link the RentLeaks Facebook Page.
 
 Then, to turn publishing on, `DEPLOY.md` § "Instagram publishing" has the two
 secrets to set and the one command that sets them.
+
+## Being found on Instagram
+
+Instagram search reads three fields and almost nothing else: **username**,
+**name**, and the **words in a caption**. Hashtags now matter less than the
+first line of a caption. So the levers, in order of how much they move:
+
+**1 · The Name field is a keyword field, not a second logo.** It is searched;
+"RentLeaks" alone is only findable by people who already know the brand.
+`RentLeaks: furnished, mid-term` uses all 30 characters and puts the two
+phrases people type — *furnished*, *mid-term* — in the one place that ranks.
+
+**2 · The first line of every caption is the searchable line.** Every caption in
+`IG-FEED.md` is written that way: "The rule most New York renters still haven't
+been told", "Convert before you compare", "Amsterdam is one of the strongest
+positions a mid-term renter can be in". Plain words people search, not slogans.
+
+**3 · Alt text is indexed and almost nobody writes it.** Each of the 20 posts
+has alt text in `IG-FEED.md` — paste it under Advanced settings → Write alt
+text. It describes the claim in plain words rather than saying "post image", so
+it works for a screen reader and for search at the same time.
+
+**4 · Tag the location on anything city-specific.** The NYC, Paris, Amsterdam,
+Berlin, London, Barcelona and Canada posts should each carry their city's
+location tag. Location pages are browsed by exactly the people who are moving
+there.
+
+**5 · Hashtags: 8–12, mixed by size.** Two or three big ones for reach, the rest
+narrow enough to rank in. The sets are in `POSTS-INSTAGRAM.md`; the defaults
+this feed ships with are in `tools/social/ig-posts.json`.
+
+**6 · The link in bio goes to a page built to be found too.**
+`rentleaks.com/instagram.html` carries FAQ structured data, an ItemList of the
+housing types, breadcrumbs, real alt text and links to 16 market pages — so the
+traffic Instagram sends lands somewhere search engines also index, rather than
+on a dead end. It files every visitor as coming from Instagram, so the desk
+shows what the account actually produces.
+
+**7 · Pin three.** The FARE Act post, the fee maths, and the agents post. Pinned
+posts are what a first-time visitor reads, and those three answer the three
+reasons people arrive.
+
+**What does not work**, so nobody spends time on it: keyword-stuffed bios,
+hashtags in the bio (not clickable, not indexed), follow-for-follow, and buying
+followers — which suppresses reach on a business account rather than raising it.
 
 ## House rules for this account
 

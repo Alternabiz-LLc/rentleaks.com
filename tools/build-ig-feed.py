@@ -98,6 +98,7 @@ def main():
                 "id": post["id"],
                 "image": f"{SITE}/images/social/ig/{name}",
                 "link": post.get("link", SITE),
+                "alt": post.get("alt", ""),
                 "caption": caption,
             }
         )
@@ -105,6 +106,8 @@ def main():
             f"## Day {n} · {post['id']}",
             "",
             f"**Image:** `images/social/ig/{name}`  ·  **Link:** {post.get('link', SITE)}",
+            "",
+            f"**Alt text** (Advanced settings → Write alt text): {post.get('alt', '—')}",
             "",
             "```",
             caption,

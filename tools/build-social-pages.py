@@ -19,8 +19,21 @@ the page — the site never links to a profile that isn't there.
 Attribution: the mount carries data-source, so a bio tap with no referrer (the
 in-app browsers strip it) is still filed as instagram/tiktok/linkedin rather
 than "web". The values match LEAD_SOURCES in web/src/lib/leads.ts.
+
+The page is a full landing page, built from the site's own components
+(enterprise.css) so it looks like the rest of rentleaks.com rather than like a
+form on a blank sheet: a photo hero with the live numbers, the lead form, the
+three steps, every housing type we list, what the account actually posts, the
+safety rules, and a closing call to action.
+
+Two things are read rather than written here, so they cannot drift:
+  · the housing types and the market count come from data.js, through node;
+  · the hero photo is images/social/photos/<slug>.jpg when that file exists,
+    and a stock photograph until tools/fetch-ig-photos.sh has run.
 """
+import json
 import os
+import subprocess
 import sys
 from datetime import date
 
@@ -29,12 +42,66 @@ SITE = "https://rentleaks.com"
 TODAY = date.today().strftime("%Y-%m-%d")
 
 # Asset versions, kept in step with facebook.html.
-CSS_X, CSS_LEADS = "20260913", "20260916"
-JS_RULES, JS_X, JS_SOCIAL, JS_LEADS = "20260913b", "20260918", "20260918", "20260918"
+CSS_X, CSS_LEADS, CSS_ENT = "20260913", "20260916", "20260923"
+JS_RULES, JS_X, JS_SOCIAL, JS_LEADS = "20260913b", "20260918", "20260919", "20260918"
+V = "20260919"
+
+STOCK = "https://images.unsplash.com/{id}?auto=format&fit=crop&w=2000&q=72"
+
+
+def site_data():
+    """housingTypes and the market count, read from data.js itself."""
+    js = (
+        "const fs=require('fs'),vm=require('vm');"
+        "const c={window:{},localStorage:{getItem:()=>null,setItem(){}},console};vm.createContext(c);"
+        "vm.runInContext(fs.readFileSync(process.argv[1],'utf8'),c);"
+        "const D=c.window.RENTLEAKS_DATA;"
+        "const cs=(D.cities||[]).map(c=>({name:c.name,slug:c.slug,rank:c.rank}));"
+        "console.log(JSON.stringify({types:D.housingTypes,cities:(D.cities||[]).length,cities_list:cs}));"
+    )
+    out = subprocess.run(
+        ["node", "--no-warnings", "-e", js, os.path.join(ROOT, "data.js")],
+        capture_output=True, text=True, check=True,
+    )
+    return json.loads(out.stdout)
+
+
+def hero_img(p):
+    """The page's own interior once it has been fetched, a stock room until then."""
+    local = os.path.join(ROOT, "images", "social", "photos", f"{p['photo']}.jpg")
+    if os.path.exists(local):
+        return f"images/social/photos/{p['photo']}.jpg?v={V}"
+    return STOCK.format(id=p["stock"])
+
+
+CHECK = (
+    '<svg class="ent-ico" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
+    'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>'
+)
+ARROW = (
+    '<svg class="ent-ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
+    'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>'
+)
 
 PAGES = {
     "instagram": {
         "platform": "Instagram",
+        "faq": [
+            ("Is RentLeaks free to use?", "Yes. Asking, browsing and booking a viewing cost nothing, there is no application fee, and RentLeaks never takes a payment from a renter. You are never charged for finding a home here."),
+            ("What is the minimum stay?", "Thirty days. RentLeaks is housing, not hotels — there are no nightly bookings, and in a few markets the local floor is higher (Berlin is nearer three months, Montr\u00e9al is 31 days)."),
+            ("What does an all-in price include?", "Base rent plus whatever utilities, wifi and cleaning that listing includes, shown as one number before you contact anyone. If something is not included, the listing says so."),
+            ("Do I have to pay a broker fee?", "Only if you hire your own broker, at a fee you agree in writing first. Since the FARE Act took effect in New York on 11 June 2025, a landlord's agent cannot pass their fee to you."),
+            ("Can I find a furnished apartment for three months?", "Yes — furnished apartments, private rooms, co-living and aparthotel stays all list from 30 days, with the stay length as a filter rather than an afterthought."),
+            ("How quickly will someone reply?", "Within one business day, by email, phone or text — whichever you asked for."),
+        ],
+        "photo": "aparthotel-lounge",
+        "stock": "photo-1773069459487-3d2d7bb4532e",
+        "posts": [
+            ["Who pays a broker fee now", "The FARE Act in one card, and the maths that goes with it."],
+            ["What a home actually costs", "All-in prices, and the fees a listing has to disclose."],
+            ["The rule in your city", "Deposit caps, sublet windows, minimum stays — sourced, per market."],
+            ["How to hire a broker", "Set a fee cap, compare up to three, sign one clear agreement."],
+        ],
         "source": "instagram",
         "title": "RentLeaks on Instagram — Find, View &amp; Book a Flexible Home",
         "description": (
@@ -52,6 +119,22 @@ PAGES = {
     },
     "tiktok": {
         "platform": "TikTok",
+        "faq": [
+            ("Is RentLeaks free to use?", "Yes. Asking, browsing and booking a viewing cost nothing, there is no application fee, and RentLeaks never takes a payment from a renter."),
+            ("What is the minimum stay?", "Thirty days. This is housing, not hotel nights — there are no nightly bookings."),
+            ("What does an all-in price include?", "Base rent plus the utilities, wifi and cleaning that listing includes, shown as one number before you enquire."),
+            ("Who pays the broker fee?", "Whoever hired the broker. Since 11 June 2025 in New York City, a landlord's agent cannot charge the renter; you pay only a broker you hired yourself, at a fee agreed in writing first."),
+            ("Can I take over someone's lease?", "Yes. Lease-break posts are free, and each one shows the remaining term and whether it is an assignment or a sublet."),
+            ("How quickly will someone reply?", "Within one business day, by email, phone or text."),
+        ],
+        "photo": "coliving-lounge",
+        "stock": "photo-1773069459487-3d2d7bb4532e",
+        "posts": [
+            ["The fee rule in 30 seconds", "Who hires the broker pays the broker — and the one exception."],
+            ["Convert before you compare", "One month, 12% and 15% on the same apartment."],
+            ["Don't sign that", "Four things that mean you should walk away from an agreement."],
+            ["Read the listing with me", "What a fee line tells you, and what it leaves out."],
+        ],
         "source": "tiktok",
         "title": "RentLeaks on TikTok — Find, View &amp; Book a Flexible Home",
         "description": (
@@ -69,6 +152,22 @@ PAGES = {
     },
     "linkedin": {
         "platform": "LinkedIn",
+        "faq": [
+            ("What is mid-term housing?", "Furnished homes let for 30 days or more — the gap between a hotel and a 12-month lease. Relocations, contracts, projects and renovations all sit in it."),
+            ("Is RentLeaks free to use?", "Yes for renters: no booking fee, no application fee, and no payment ever taken by RentLeaks."),
+            ("What does an all-in price include?", "Base rent plus the utilities, wifi and cleaning that listing includes, quoted as one monthly number."),
+            ("Can a company book for an employee?", "Yes. Tell us the dates, the budget and the market, and we reply within one business day."),
+            ("Which markets do you cover?", "79, across the United States and Canada plus major cities in the UK, Ireland, France, Spain, the Netherlands, Switzerland, Germany and Italy."),
+            ("How do broker fees work?", "Whoever hires the broker pays the broker. A renter pays only a broker they hired, at a fee agreed in writing before the search."),
+        ],
+        "photo": "furnished-living",
+        "stock": "photo-1773069459487-3d2d7bb4532e",
+        "posts": [
+            ["The mid-term market", "What sits between a hotel and a 12-month lease, and who needs it."],
+            ["Relocation without a year lease", "30-day-plus homes, all-in, in 79 markets."],
+            ["How the rules differ", "Berlin, Amsterdam, London and New York, side by side."],
+            ["For brokerages", "Tenant leads with a budget, dates and a fee already agreed."],
+        ],
         "source": "linkedin",
         "title": "RentLeaks on LinkedIn — Find, View &amp; Book a Flexible Home",
         "description": (
@@ -107,8 +206,9 @@ BOTS = [
 ]
 
 
-def head(slug, p):
+def head(slug, p, data):
     url = f"{SITE}/{slug}.html"
+    jsonld_blocks = jsonld(slug, p, data)
     t, d = p["title"], p["description"]
     meta = "\n".join(f'  <meta name="{k}" content="{v}">' for k, v in BOTS)
     return f"""<!DOCTYPE html>
@@ -181,14 +281,126 @@ def head(slug, p):
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="rentleaks-x.css?v={CSS_X}"><link rel="stylesheet" href="rentleaks-leads.css?v={CSS_LEADS}">
+{jsonld_blocks}
+  <link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="rentleaks-x.css?v={CSS_X}"><link rel="stylesheet" href="enterprise/enterprise.css?v={CSS_ENT}"><link rel="stylesheet" href="social.css?v={V}"><link rel="stylesheet" href="rentleaks-leads.css?v={CSS_LEADS}">
 </head>"""
 
 
-def body(slug, p):
+def jsonld(slug, p, data):
+    """WebPage, breadcrumb and the FAQ, as structured data.
+
+    The FAQ on the page and the FAQPage markup come from the same list, so they
+    can never disagree — which is the whole point of marking it up.
+    """
+    url = f"{SITE}/{slug}.html"
+    blocks = [
+        {
+            "@context": "https://schema.org",
+            "@type": "WebPage",
+            "@id": url,
+            "url": url,
+            "name": p["title"].replace("&amp;", "&"),
+            "description": p["description"],
+            "inLanguage": "en-US",
+            "isPartOf": {"@type": "WebSite", "name": "RentLeaks", "url": SITE},
+            "about": {"@type": "Organization", "name": "RentLeaks", "url": SITE},
+            "primaryImageOfPage": {"@type": "ImageObject", "url": f"{SITE}/images/og-default.jpg"},
+            "breadcrumb": {
+                "@type": "BreadcrumbList",
+                "itemListElement": [
+                    {"@type": "ListItem", "position": 1, "name": "Home", "item": SITE + "/"},
+                    {"@type": "ListItem", "position": 2, "name": f"RentLeaks on {p['platform']}", "item": url},
+                ],
+            },
+        },
+        {
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            "mainEntity": [
+                {"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}}
+                for q, a in p["faq"]
+            ],
+        },
+        {
+            "@context": "https://schema.org",
+            "@type": "ItemList",
+            "name": "Kinds of flexible home on RentLeaks",
+            "itemListElement": [
+                {"@type": "ListItem", "position": i + 1, "name": t["label"], "url": f"{SITE}/{t['href']}"}
+                for i, t in enumerate(data["types"])
+            ],
+        },
+    ]
+    return "\n".join(
+        '  <script type="application/ld+json">' + json.dumps(b, separators=(",", ":")) + "</script>"
+        for b in blocks
+    )
+
+
+def markets(data, utm, n=16):
+    """The busiest markets, linked. Real pages, useful to a reader and to a
+    crawler that would otherwise find this page a dead end."""
+    top = sorted(data["cities_list"], key=lambda c: c.get("rank") or 999)[:n]
+    items = "".join(
+        f'<li><a href="cities/{c["slug"]}.html{utm}&amp;utm_campaign=markets">{c["name"]}</a></li>' for c in top
+    )
+    return f'<ul class="rl-markets">{items}</ul>'
+
+
+def feed_strip(slug):
+    """Six real cards from the launch feed, when they have been rendered.
+
+    The best argument for following the account is the account's own work, so
+    the page shows it rather than describing it. Missing files are skipped, so
+    a fresh clone still builds a valid page.
+    """
+    picks = [
+        ("01-welcome", "Rooms, co-living, furnished homes and 1-month-plus stays at all-in prices"),
+        ("03-fare-who-pays", "Whoever hires the broker pays the broker — the New York FARE Act in one card"),
+        ("04-fee-maths", "One month versus 15% of a year: a $2,880 difference on the same apartment"),
+        ("11-nyc-fees", "New York application fees are capped at $20 and the deposit at one month"),
+        ("13-paris", "The Paris bail mobilit\u00e9 runs one to ten months and takes no deposit"),
+        ("20-for-agents", "Tenant leads for licensed agents: area, budget, dates and the fee they will pay"),
+    ]
+    out = []
+    for name, alt in picks:
+        rel = f"images/social/ig/{name}.jpg"
+        if os.path.exists(os.path.join(ROOT, rel)):
+            # Real alt text, not "post image": it is what a screen reader reads
+            # and what an image search has to go on.
+            out.append(
+                f'<li><img src="{rel}?v={V}" alt="{alt}" loading="lazy" decoding="async" width="1080" height="1350"></li>'
+            )
+    return "".join(out)
+
+
+def body(slug, p, data):
     plat, src = p["platform"], p["source"]
     utm = f"?utm_source={src}&amp;utm_medium=page"
-    return f"""<body class="tahoe-body" data-page="{slug}">
+    types = "".join(
+        f'''<li class="animate-on-scroll" style="--i:{i}">
+              <a href="{t['href']}{utm}&amp;utm_campaign=types">
+                <h3>{t['label']}</h3>
+                <p>{t['blurb']}</p>
+                <span class="ent-link">See {t['short'].lower()} {ARROW}</span>
+              </a>
+            </li>'''
+        for i, t in enumerate(data["types"])
+    )
+    posts = "".join(
+        f'<li class="animate-on-scroll" style="--i:{i}"><h3>{h}</h3><p>{d}</p></li>'
+        for i, (h, d) in enumerate(p["posts"])
+    )
+    faq = "".join(
+        f"<details><summary>{q}</summary><p>{a}</p></details>" for q, a in p["faq"]
+    )
+    market_links = markets(data, utm)
+    cities = data["cities"]
+    strip = feed_strip(slug)
+    strip_block = (
+        f'<ul class="rl-feed" aria-label="Recent posts from the {plat} account">{strip}</ul>' if strip else ""
+    )
+    return f"""<body class="tahoe-body ent-body" data-page="{slug}">
   <div class="tahoe-bg" aria-hidden="true">
     <div class="tahoe-orb tahoe-orb--1"></div>
     <div class="tahoe-orb tahoe-orb--2"></div>
@@ -198,50 +410,125 @@ def body(slug, p):
   <div class="tahoe-content">
     <div id="rl-header"></div>
     <main id="main">
-      <section class="container fbl-wrap page-hero fbl-hero">
-        <span class="rl-kicker">RentLeaks on {plat}</span>
-        <h1>{p['h1']}</h1>
-        <p>{p['lede']}</p>
-        <ul class="fbl-trust">
-          <li>Free to ask — no application fees</li>
-          <li>Reply within one business day</li>
-          <li>Never pay before you view</li>
-        </ul>
-        <p class="fbl-hero__links">
-          <a class="btn btn--outline" href="rent.html{utm}&amp;utm_campaign=browse">Browse homes</a>
-          <a class="btn btn--outline" href="mailto:hello@rentleaks.com?subject=RentLeaks%20from%20{plat}">Email us</a>
-          <a class="btn btn--outline" data-social-profile="{slug}" href="#" target="_blank" rel="noopener" hidden>{p['profile_cta']}</a>
-        </p>
+
+      <section class="ent-hero" style="--ent-img:url('{hero_img(p)}')">
+        <div class="ent-hero__media" role="presentation"></div>
+        <div class="container ent-hero__inner">
+          <nav class="rl-crumb rl-crumb--light" aria-label="Breadcrumb"><a href="index.html">Home</a> / RentLeaks on {plat}</nav>
+          <span class="ent-hero__kicker">RentLeaks on {plat}</span>
+          <h1 class="ent-hero__title">{p['h1']}</h1>
+          <p class="ent-hero__lede">{p['lede']}</p>
+          <div class="ent-hero__actions">
+            <a class="btn btn--dark btn--lg" href="#start">Tell us what you need {ARROW}</a>
+            <a class="btn btn--on-dark btn--lg" href="rent.html{utm}&amp;utm_campaign=browse">Browse homes</a>
+            <a class="btn btn--on-dark btn--lg" data-social-profile="{slug}" href="#" target="_blank" rel="noopener" hidden>{p['profile_cta']}</a>
+          </div>
+          <dl class="ent-hero__stats">
+            <div><dt>minimum stay</dt><dd>30 days</dd></div>
+            <div><dt>markets</dt><dd>{data['cities']}</dd></div>
+            <div><dt>prices</dt><dd>All-in</dd></div>
+            <div><dt>to ask</dt><dd>$0</dd></div>
+          </dl>
+        </div>
       </section>
-      <section class="rl-page" style="padding-top:0">
-        <div class="container fbl-wrap">
+
+      <section class="ent-section ent-section--tight" id="start">
+        <div class="container">
+          <span class="rl-kicker">Start here</span>
+          <h2 class="ent-h2">Tell us what you need, or book a viewing</h2>
+          <p class="ent-p">A reply within one business day, by email, phone or text. Free to ask, no application fee, and nothing is signed or paid until you have seen the home.</p>
           <div id="rl-landing" data-handoff="email" data-source="{src}">
             <noscript><p>This form needs JavaScript. You can also email <a href="mailto:hello@rentleaks.com">hello@rentleaks.com</a>, or <a href="rent.html">browse homes</a>.</p></noscript>
           </div>
         </div>
       </section>
-      <section class="rl-page" style="padding-top:0">
-        <div class="container fbl-wrap">
-          <h2>How it works</h2>
-          <ol class="fbl-steps">
-            <li><b>Tell us, or pick a home</b>Send what you need, or choose a home and give up to three viewing times.</li>
-            <li><b>We confirm</b>We or the host reply within one business day by email, phone or text.</li>
-            <li><b>View it, then decide</b>In person or on a live video call. Nothing is signed or paid until you have seen it.</li>
+
+      <section class="ent-section ent-section--ink">
+        <div class="container">
+          <span class="rl-kicker rl-kicker--light">How it works</span>
+          <h2 class="ent-ink-title">As easy as 1, 2, 3</h2>
+          <ol class="ent-steps">
+            <li class="animate-on-scroll" style="--i:0"><span aria-hidden="true">1</span><h3>Tell us, or pick a home</h3><p>Send what you need, or choose a home and give up to three viewing times.</p></li>
+            <li class="animate-on-scroll" style="--i:1"><span aria-hidden="true">2</span><h3>We confirm</h3><p>We or the host reply within one business day, by email, phone or text.</p></li>
+            <li class="animate-on-scroll" style="--i:2"><span aria-hidden="true">3</span><h3>View it, then decide</h3><p>In person or on a live video call. Nothing signed or paid until you have seen it.</p></li>
           </ol>
         </div>
       </section>
-      <section class="rl-page" style="padding-top:0">
-        <div class="container fbl-wrap">
-          <h2>Came from a post?</h2>
-          <p>The things we talk about on {plat}, in full:</p>
-          <ul class="fbl-trust">
-            <li><a href="hire-a-broker/guide.html{utm}&amp;utm_campaign=guide">The free renter guides</a> — who pays a broker fee now, what a fee should cost, and what a fair agreement says.</li>
-            <li><a href="hire-a-broker/{utm}&amp;utm_campaign=hire">Hire a broker</a> — set the most you&rsquo;ll pay, and licensed agents propose at or under it.</li>
-            <li><a href="hire-a-broker/agents.html{utm}&amp;utm_campaign=agents">For agents</a> — join the referral network; nothing to join, nothing per lead.</li>
-          </ul>
-          <p class="fbl-hint">General information, not legal advice. We describe homes, never the people who should live in them.</p>
+
+      <section class="ent-section">
+        <div class="container">
+          <span class="rl-kicker">What we list</span>
+          <h2 class="ent-h2">Six kinds of home, one honest price</h2>
+          <p class="ent-p">Every listing shows an all-in monthly price — base rent plus the utilities, wifi and cleaning it includes — and every stay is 30 days or more. Housing, not hotel nights.</p>
+          <ul class="ent-grid">{types}</ul>
         </div>
       </section>
+
+      <section class="ent-section ent-section--tight">
+        <div class="container">
+          <span class="rl-kicker">On the feed</span>
+          <h2 class="ent-h2">What we post on {plat}</h2>
+          <p class="ent-p">No listing spam. The things that actually change what you pay, and what you sign.</p>
+          <ul class="ent-grid">{posts}</ul>
+          {strip_block}
+          <p class="ent-fine">General information, not legal advice; rules vary by city and state. We describe homes, never the people who should live in them.</p>
+        </div>
+      </section>
+
+      <section class="ent-section">
+        <div class="container ent-split">
+          <div>
+            <span class="rl-kicker">Free guides</span>
+            <h2 class="ent-h2">Three PDFs worth five minutes</h2>
+            <p class="ent-p">Who pays a broker fee now, what one should cost, how to negotiate it, and — for licensed agents — how our referral program works and what it pays.</p>
+            <p><a class="btn btn--primary btn--lg" href="hire-a-broker/guide.html{utm}&amp;utm_campaign=guide">Get the guides {ARROW}</a></p>
+          </div>
+          <div>
+            <span class="rl-kicker">Stay safe</span>
+            <h2 class="ent-h2">Never pay before you have seen it</h2>
+            <ul class="ent-ticks">
+              <li>{CHECK}Rent and deposits go to the landlord, against a signed lease</li>
+              <li>{CHECK}Never to a personal account, by wire, gift card or crypto</li>
+              <li>{CHECK}See the home first — in person or on a live video call</li>
+              <li>{CHECK}RentLeaks never takes a payment and never asks you for one</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="ent-section ent-section--tight" id="questions">
+        <div class="container">
+          <span class="rl-kicker">Questions</span>
+          <h2 class="ent-h2">The ones people actually ask</h2>
+          <div class="rl-faq">{faq}</div>
+        </div>
+      </section>
+
+      <section class="ent-section ent-section--tight">
+        <div class="container">
+          <span class="rl-kicker">Where</span>
+          <h2 class="ent-h2">{cities} markets, and counting</h2>
+          <p class="ent-p">The United States and Canada, plus major cities across the UK, Ireland, France, Spain, the Netherlands, Switzerland, Germany and Italy. A few of the busiest:</p>
+          {market_links}
+          <p class="ent-p"><a class="ent-link" href="cities.html{utm}&amp;utm_campaign=markets">See every market {ARROW}</a></p>
+        </div>
+      </section>
+
+      <section class="ent-section ent-section--quote">
+        <div class="container ent-quote">
+          <div class="ent-quote__intro animate-on-scroll">
+            <span class="section-head__eyebrow">Next</span>
+            <h2 class="ent-h2">Two minutes of typing, then a real reply</h2>
+            <p class="ent-p">Or hire your own broker: set the most you will pay, and up to three verified licensed agents propose at or under it. No lease, no fee. Nothing owed to us, ever.</p>
+            <p class="ent-hero__actions">
+              <a class="btn btn--primary btn--lg" href="#start">Tell us what you need {ARROW}</a>
+              <a class="btn btn--outline btn--lg" href="hire-a-broker/{utm}&amp;utm_campaign=hire">Hire a broker</a>
+              <a class="btn btn--outline btn--lg" data-social-profile="{slug}" href="#" target="_blank" rel="noopener" hidden>{p['profile_cta']}</a>
+            </p>
+          </div>
+        </div>
+      </section>
+
     </main>
     <div id="rl-footer"></div>
   </div>
@@ -266,7 +553,8 @@ def main():
     for slug in want:
         p = PAGES[slug]
         path = os.path.join(ROOT, f"{slug}.html")
-        open(path, "w", encoding="utf-8").write(head(slug, p) + "\n" + body(slug, p))
+        data = site_data()
+        open(path, "w", encoding="utf-8").write(head(slug, p, data) + "\n" + body(slug, p, data))
         written.append(f"{slug}.html")
     print("Wrote " + ", ".join(written))
     print("  The profile button stays hidden until tools/apply-social-links.py sets that handle.")

@@ -14,6 +14,8 @@ post rests on one, and every legal post carries the not-legal-advice line.
 
 **Image:** `images/social/ig/01-welcome.jpg`  ·  **Link:** https://rentleaks.com/
 
+**Alt text** (Advanced settings → Write alt text): Card reading “Housing, not hotels” over a furnished living room — rooms, co-living, furnished homes and 1-month-plus stays at all-in prices in 79 markets
+
 ```
 Somewhere to live for three months is a genuinely hard thing to find. Hotels price by the night and aren't homes. Year leases don't bend. Everything in between is a mess of screenshots and deposits paid to strangers.
 
@@ -28,6 +30,8 @@ Every price is all-in. Link in bio.
 
 **Image:** `images/social/ig/02-all-in.jpg`  ·  **Link:** https://rentleaks.com/
 
+**Alt text** (Advanced settings → Write alt text): Card reading “All-in means all in” — rent plus utilities, wifi and cleaning shown as one monthly price
+
 ```
 The cheapest listing is usually the one hiding the most.
 
@@ -41,6 +45,8 @@ It makes the comparison boring, which is the point — you should be choosing be
 ## Day 3 · fare-who-pays
 
 **Image:** `images/social/ig/03-fare-who-pays.jpg`  ·  **Link:** https://rentleaks.com/hire-a-broker/guide.html
+
+**Alt text** (Advanced settings → Write alt text): Card reading “Whoever hires the broker pays the broker” — the New York FARE Act, in effect 11 June 2025
 
 ```
 The rule most New York renters still haven't been told.
@@ -62,6 +68,8 @@ Source: NYC FARE Act, Local Law 119 of 2024 — in effect 11 June 2025
 
 **Image:** `images/social/ig/04-fee-maths.jpg`  ·  **Link:** https://rentleaks.com/hire-a-broker/guide.html
 
+**Alt text** (Advanced settings → Write alt text): Card comparing broker fees on a $3,600 apartment: one month $3,600, 12% of a year $5,184, 15% $6,480
+
 ```
 Convert before you compare.
 
@@ -80,6 +88,8 @@ Worked examples, not offers.
 
 **Image:** `images/social/ig/05-fee-cap.jpg`  ·  **Link:** https://rentleaks.com/hire-a-broker/
 
+**Alt text** (Advanced settings → Write alt text): Card reading “Name your number before anyone shows you anything” — setting a broker fee cap
+
 ```
 A cap turns an awkward negotiation into a simple comparison.
 
@@ -95,6 +105,8 @@ Link in bio.
 ## Day 6 · three-steps
 
 **Image:** `images/social/ig/06-three-steps.jpg`  ·  **Link:** https://rentleaks.com/hire-a-broker/
+
+**Alt text** (Advanced settings → Write alt text): Card reading “Three steps, about two minutes of typing” — tell us what you need, pick your broker, sign in the app
 
 ```
 Hiring a broker, start to finish.
@@ -114,6 +126,8 @@ Link in bio.
 
 **Image:** `images/social/ig/07-agreement.jpg`  ·  **Link:** https://rentleaks.com/hire-a-broker/guide.html
 
+**Alt text** (Advanced settings → Write alt text): Card listing what a fair broker agreement says: a fee in dollars, no lease no fee, 90 days, only homes they introduced
+
 ```
 Save this before your next viewing.
 
@@ -129,6 +143,8 @@ General information, not legal advice.
 ## Day 8 · walk-away
 
 **Image:** `images/social/ig/08-walk-away.jpg`  ·  **Link:** https://rentleaks.com/hire-a-broker/guide.html
+
+**Alt text** (Advanced settings → Write alt text): Card reading “Don’t sign that” — four reasons to walk away from a broker agreement
 
 ```
 Four things that mean you should not sign that broker agreement.
@@ -147,6 +163,8 @@ Link in bio for the full checklist.
 
 **Image:** `images/social/ig/09-guides.jpg`  ·  **Link:** https://rentleaks.com/hire-a-broker/guide.html
 
+**Alt text** (Advanced settings → Write alt text): Card reading “Three guides we wish every renter had” — free PDFs on broker fees and the referral partner kit
+
 ```
 Three PDFs, free, and worth the five minutes.
 
@@ -163,6 +181,8 @@ Link in bio. You'll hear from a person, not a drip sequence.
 
 **Image:** `images/social/ig/10-scam-shield.jpg`  ·  **Link:** https://rentleaks.com/
 
+**Alt text** (Advanced settings → Write alt text): Card reading “Never pay before you’ve seen it” — no wire transfers, gift cards or crypto, and no personal accounts
+
 ```
 The single rule that prevents almost every rental scam: see the home — in person or on a live video call — before any money moves.
 
@@ -176,6 +196,8 @@ RentLeaks never takes a payment and will never ask you for one.
 ## Day 11 · nyc-fees
 
 **Image:** `images/social/ig/11-nyc-fees.jpg`  ·  **Link:** https://rentleaks.com/
+
+**Alt text** (Advanced settings → Write alt text): Card reading “Application fees are capped at $20 — and mostly banned” — New York deposit and screening fee limits
 
 ```
 New York renters pay fees that the law stopped allowing in 2019.
@@ -195,6 +217,8 @@ Source: NY Real Property Law § 238-a · General Obligations Law § 7-108 (HSTPA
 
 **Image:** `images/social/ig/12-nyc-sublet.jpg`  ·  **Link:** https://rentleaks.com/lease-break.html
 
+**Alt text** (Advanced settings → Write alt text): Card reading “Silence is consent” — New York sublet requests under Real Property Law § 226-b
+
 ```
 Breaking a New York lease is less hopeless than it feels.
 
@@ -212,6 +236,8 @@ Source: NY Real Property Law § 226-b — sublet and assignment
 ## Day 13 · paris
 
 **Image:** `images/social/ig/13-paris.jpg`  ·  **Link:** https://rentleaks.com/cities.html
+
+**Alt text** (Advanced settings → Write alt text): Card reading “The bail mobilité takes no deposit at all” — the Paris one-to-ten-month mobility lease
 
 ```
 If you're moving to Paris for a few months, ask for the bail mobilité by name.
@@ -231,6 +257,8 @@ Source: France — bail mobilité (loi ELAN)
 
 **Image:** `images/social/ig/14-amsterdam.jpg`  ·  **Link:** https://rentleaks.com/cities.html
 
+**Alt text** (Advanced settings → Write alt text): Card reading “Thirty days makes it a tenancy” — Amsterdam deposit cap and tenant protection
+
 ```
 Amsterdam is one of the strongest positions a mid-term renter can be in, and most people don't know it.
 
@@ -248,6 +276,8 @@ Source: Netherlands — Wet goed verhuurderschap
 ## Day 15 · berlin
 
 **Image:** `images/social/ig/15-berlin.jpg`  ·  **Link:** https://rentleaks.com/cities.html
+
+**Alt text** (Advanced settings → Write alt text): Card reading “Three months, not thirty days” — Berlin’s misappropriation ban and temporary-purpose contracts
 
 ```
 Berlin is the market where the usual 30-day rule doesn't apply.
@@ -267,6 +297,8 @@ Source: Berlin — Zweckentfremdungsverbot
 
 **Image:** `images/social/ig/16-london.jpg`  ·  **Link:** https://rentleaks.com/cities.html
 
+**Alt text** (Advanced settings → Write alt text): Card reading “The advertised rent is a ceiling” — London rental bidding and one month in advance
+
 ```
 Rental bidding in London is over.
 
@@ -284,6 +316,8 @@ Source: UK — Renters' Rights Act
 ## Day 17 · barcelona
 
 **Image:** `images/social/ig/17-barcelona.jpg`  ·  **Link:** https://rentleaks.com/cities.html
+
+**Alt text** (Advanced settings → Write alt text): Card reading “A season contract has to say what the season is for” — Barcelona’s contracte de temporada
 
 ```
 A Barcelona mid-term let is not a tourist let, and not an ordinary tenancy either.
@@ -303,6 +337,8 @@ Source: Catalonia — seasonal and room-rental regime
 
 **Image:** `images/social/ig/18-canada-minimums.jpg`  ·  **Link:** https://rentleaks.com/cities.html
 
+**Alt text** (Advanced settings → Write alt text): Card comparing minimum stays in Canada: Toronto 28 days, Vancouver 30, Montréal and Québec City 31
+
 ```
 Four Canadian cities, four different floors for a short stay.
 
@@ -319,6 +355,8 @@ General information, not legal advice.
 
 **Image:** `images/social/ig/19-lease-break.jpg`  ·  **Link:** https://rentleaks.com/lease-break.html
 
+**Alt text** (Advanced settings → Write alt text): Card reading “Posting a takeover is free” — lease-break listings showing remaining term and consent rules
+
 ```
 Leaving a lease early is a bad week that doesn't need to become a bad year.
 
@@ -332,6 +370,8 @@ Link in bio.
 ## Day 20 · for-agents
 
 **Image:** `images/social/ig/20-for-agents.jpg`  ·  **Link:** https://rentleaks.com/hire-a-broker/agents.html
+
+**Alt text** (Advanced settings → Write alt text): Card reading “Leads that already want a broker” — tenant leads for licensed agents with $0 to join
 
 ```
 Agents: this is what a lead should look like before you pay for it.

@@ -16,7 +16,11 @@
     "",
     "photo: a slug from tools/social/ig-photos.json. The picture fills the frame",
     "under a gradient scrim; if the file isn't in images/social/photos/ yet, the",
-    "painted card is drawn instead, so the feed always renders."
+    "painted card is drawn instead, so the feed always renders.",
+    "",
+    "alt: the alt text to paste into Instagram (Advanced settings → Write alt text).",
+    "Instagram reads it for accessibility and for search, so it repeats the claim",
+    "in plain words rather than saying 'post image'."
   ],
   "defaults": {
     "footer": "rentleaks.com",
@@ -30,6 +34,7 @@
       "kicker": "RentLeaks",
       "headline": "Housing, not hotels",
       "sub": "Rooms, co-living, furnished homes, 1-month-plus stays and lease-breaks — at all-in prices, in 79 markets.",
+      "alt": "Card reading “Housing, not hotels” over a furnished living room — rooms, co-living, furnished homes and 1-month-plus stays at all-in prices in 79 markets",
       "chips": [
         "30 days minimum",
         "All-in prices",
@@ -46,6 +51,7 @@
       "kicker": "How we price",
       "headline": "All-in means all in",
       "sub": "Base rent plus the utilities, wifi and cleaning the listing includes — one number, before you enquire.",
+      "alt": "Card reading “All-in means all in” — rent plus utilities, wifi and cleaning shown as one monthly price",
       "chips": [
         "Rent",
         "+ Utilities",
@@ -62,6 +68,7 @@
       "kicker": "New York · FARE Act",
       "headline": "Whoever hires the broker pays the broker",
       "sub": "In effect since 11 June 2025. A landlord's agent can't move their fee onto you.",
+      "alt": "Card reading “Whoever hires the broker pays the broker” — the New York FARE Act, in effect 11 June 2025",
       "chips": [
         "Landlord hires, landlord pays",
         "You hire, you pay",
@@ -78,6 +85,7 @@
       "kicker": "The maths",
       "headline": "One month or 15%?<br/>$2,880 apart",
       "sub": "Same apartment, same agent, three ways of saying the fee. One month is about 8.33% of a year.",
+      "alt": "Card comparing broker fees on a $3,600 apartment: one month $3,600, 12% of a year $5,184, 15% $6,480",
       "chips": [
         "$3,600 rent",
         "1 month = $3,600",
@@ -94,6 +102,7 @@
       "kicker": "Hire a broker",
       "headline": "Name your number before anyone shows you anything",
       "sub": "Set the most you'll pay. Verified licensed agents then propose at or under it — above your cap, a proposal can't even be sent.",
+      "alt": "Card reading “Name your number before anyone shows you anything” — setting a broker fee cap",
       "chips": [
         "One month",
         "A percentage",
@@ -110,6 +119,7 @@
       "kicker": "How it works",
       "headline": "Three steps, about two minutes of typing",
       "sub": "Tell us what you need · pick your broker · sign in the app.",
+      "alt": "Card reading “Three steps, about two minutes of typing” — tell us what you need, pick your broker, sign in the app",
       "chips": [
         "1 · Your brief",
         "2 · Up to 3 pitches",
@@ -125,6 +135,7 @@
       "kicker": "Before you sign",
       "headline": "What a fair broker agreement says",
       "sub": "If your agreement is missing these, that's the conversation to have before you sign — not after.",
+      "alt": "Card listing what a fair broker agreement says: a fee in dollars, no lease no fee, 90 days, only homes they introduced",
       "chips": [
         "A fee in dollars",
         "No lease, no fee",
@@ -141,6 +152,7 @@
       "kicker": "Four reasons to walk",
       "headline": "Don't sign that",
       "sub": "Any one of these is enough. The last one is prohibited outright.",
+      "alt": "Card reading “Don’t sign that” — four reasons to walk away from a broker agreement",
       "chips": [
         "The fee isn't a number",
         "Six months, no exit",
@@ -157,6 +169,7 @@
       "kicker": "Free, no strings",
       "headline": "Three guides we wish every renter had",
       "sub": "The renter's broker playbook, how to negotiate a fee, and — for licensed agents — the referral partner kit.",
+      "alt": "Card reading “Three guides we wish every renter had” — free PDFs on broker fees and the referral partner kit",
       "chips": [
         "5 pages each",
         "Free PDF",
@@ -173,6 +186,7 @@
       "kicker": "Scam Shield",
       "headline": "Never pay before you've seen it",
       "sub": "Rent and deposits go to the landlord, against a signed lease. Never to a personal account.",
+      "alt": "Card reading “Never pay before you’ve seen it” — no wire transfers, gift cards or crypto, and no personal accounts",
       "chips": [
         "No wire transfers",
         "No gift cards",
@@ -189,6 +203,7 @@
       "kicker": "New York",
       "headline": "Application fees are capped at $20 — and mostly banned",
       "sub": "Deposit: one month, maximum. A credit report you supply, dated within 30 days, has to be accepted.",
+      "alt": "Card reading “Application fees are capped at $20 — and mostly banned” — New York deposit and screening fee limits",
       "chips": [
         "Deposit ≤ 1 month",
         "Screening ≤ $20",
@@ -206,6 +221,7 @@
       "kicker": "New York · § 226-b",
       "headline": "Silence is consent",
       "sub": "In a building of four or more units, a landlord who doesn't answer a proper sublet request in 30 days has consented.",
+      "alt": "Card reading “Silence is consent” — New York sublet requests under Real Property Law § 226-b",
       "chips": [
         "10 days: they may ask for more",
         "30 days: decide",
@@ -223,6 +239,7 @@
       "kicker": "Paris",
       "headline": "The bail mobilité takes no deposit at all",
       "sub": "One to ten months, non-renewable — for tenants in study, training, apprenticeship or a temporary posting.",
+      "alt": "Card reading “The bail mobilité takes no deposit at all” — the Paris one-to-ten-month mobility lease",
       "chips": [
         "1–10 months",
         "No deposit permitted",
@@ -240,6 +257,7 @@
       "kicker": "Amsterdam",
       "headline": "Thirty days makes it a tenancy",
       "sub": "With full protection — and since July 2024, fixed terms are largely unavailable.",
+      "alt": "Card reading “Thirty days makes it a tenancy” — Amsterdam deposit cap and tenant protection",
       "chips": [
         "30 days = tenancy",
         "Deposit ≤ 2 months",
@@ -257,6 +275,7 @@
       "kicker": "Berlin",
       "headline": "Three months, not thirty days",
       "sub": "The misappropriation ban is the binding constraint, and a temporary purpose has to be documented in the contract.",
+      "alt": "Card reading “Three months, not thirty days” — Berlin’s misappropriation ban and temporary-purpose contracts",
       "chips": [
         "~90 days in practice",
         "Registration required",
@@ -274,6 +293,7 @@
       "kicker": "London",
       "headline": "The advertised rent is a ceiling",
       "sub": "Accepting more than the stated rent is prohibited, and no more than one month's rent may be taken in advance.",
+      "alt": "Card reading “The advertised rent is a ceiling” — London rental bidding and one month in advance",
       "chips": [
         "No bidding above ad",
         "≤ 1 month in advance",
@@ -291,6 +311,7 @@
       "kicker": "Barcelona",
       "headline": "A season contract has to say what the season is for",
       "sub": "Catalonia's seasonal and room-rental regime reaches mid-term lets, not only tourist lets — and rent caps can apply.",
+      "alt": "Card reading “A season contract has to say what the season is for” — Barcelona’s contracte de temporada",
       "chips": [
         "Contracte de temporada",
         "Purpose in the contract",
@@ -308,6 +329,7 @@
       "kicker": "Canada",
       "headline": "The minimum stay changes at the city line",
       "sub": "Toronto 28 days · Vancouver 30 · Montreal and Quebec City 31.",
+      "alt": "Card comparing minimum stays in Canada: Toronto 28 days, Vancouver 30, Montréal and Québec City 31",
       "chips": [
         "Toronto · 28",
         "Vancouver · 30",
@@ -324,6 +346,7 @@
       "kicker": "Lease-break",
       "headline": "Posting a takeover is free",
       "sub": "Remaining term, whether it's an assignment or a sublet, and what the landlord's consent needs — stated up front.",
+      "alt": "Card reading “Posting a takeover is free” — lease-break listings showing remaining term and consent rules",
       "chips": [
         "Free to post",
         "Remaining term shown",
@@ -340,6 +363,7 @@
       "kicker": "For licensed agents",
       "headline": "Leads that already want a broker",
       "sub": "Area, budget, dates and the fee they'll pay — before you spend a minute on them.",
+      "alt": "Card reading “Leads that already want a broker” — tenant leads for licensed agents with $0 to join",
       "chips": [
         "$0 to join",
         "Nothing per lead",
