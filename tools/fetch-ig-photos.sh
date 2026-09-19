@@ -48,8 +48,11 @@ echo
 echo "$got downloaded, $skipped already here, $failed failed."
 [ "$failed" -gt 0 ] && exit 1
 
-echo "Re-rendering the feed…"
+echo "Re-rendering the feed and the landing pages…"
 python3 "$ROOT/tools/build-ig-feed.py"
+# The landing-page heroes take one of these photos too, so they are rebuilt
+# here rather than leaving a page pointing at the stock room.
+python3 "$ROOT/tools/build-social-pages.py"
 echo
 echo "Commit images/social/photos/ and images/social/ig/, then deploy the static site:"
-echo "  git add images/social && git commit -m 'Instagram feed: the interiors' && git push origin main"
+echo "  git add images/social *.html && git commit -m 'Instagram feed: the interiors' && git push origin main"

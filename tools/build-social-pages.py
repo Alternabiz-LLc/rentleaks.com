@@ -67,10 +67,16 @@ def site_data():
 
 
 def hero_img(p):
-    """The page's own interior once it has been fetched, a stock room until then."""
+    """The page's own interior once it has been fetched, a stock room until then.
+
+    Root-absolute, and that matters: --ent-img is set inline on the element but
+    substituted inside enterprise/enterprise.css, and a browser resolves a
+    relative url() in a custom property against the stylesheet, not the page.
+    A bare "images/..." here would be fetched as "/enterprise/images/...".
+    """
     local = os.path.join(ROOT, "images", "social", "photos", f"{p['photo']}.jpg")
     if os.path.exists(local):
-        return f"images/social/photos/{p['photo']}.jpg?v={V}"
+        return f"/images/social/photos/{p['photo']}.jpg?v={V}"
     return STOCK.format(id=p["stock"])
 
 
