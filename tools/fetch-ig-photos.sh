@@ -23,7 +23,7 @@ got=0; skipped=0; failed=0
 while IFS=$'\t' read -r slug path url; do
   # A photo either lands in the feed's photo directory or at its own path —
   # the page heroes live under images/, not with the feed interiors.
-  if [ -n "$path" ]; then out="$ROOT/$path"; mkdir -p "$(dirname "$out")"; else out="$DIR/$slug.jpg"; fi
+  if [ "$path" != "-" ] && [ -n "$path" ]; then out="$ROOT/$path"; mkdir -p "$(dirname "$out")"; else out="$DIR/$slug.jpg"; fi
   if [ -s "$out" ] && [ "$FORCE" != "--force" ]; then
     echo "  = ${out#$ROOT/} (already here)"
     skipped=$((skipped + 1))
@@ -42,13 +42,20 @@ done < <(python3 - "$SPEC" <<'PY'
 import json, sys
 spec = json.load(open(sys.argv[1]))
 for slug, p in spec["photos"].items():
-    print(f"{slug}\t{p.get('path', '')}\t{p['url']}")
+      # "-" rather than an empty field: tab is IFS whitespace, so bash's read
+    # collapses two tabs into one and every column after it shifts left.
+    print(f"{slug}\t{p.get('path') or '-'}\t{p['url']}")
 PY
 )
 
 echo
 echo "$got downloaded, $skipped already here, $failed failed."
-[ "$failed" -gt 0 ] && exit 1
+# NOT `[ "$failed" -gt 0 ] && exit 1` — under `set -e` that aborts the whole
+# script when nothing failed, which silently skipped every step below it.
+if [ "$failed" -gt 0 ]; then exit 1; fi
+if [ "$skipped" -gt 0 ]; then
+  echo "(a file already on disk is left alone — pass --force to replace one, e.g. a placeholder)"
+fi
 
 echo "Re-rendering the feed and the landing pages…"
 python3 "$ROOT/tools/build-ig-feed.py"
