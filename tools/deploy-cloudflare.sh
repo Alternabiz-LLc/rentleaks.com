@@ -64,6 +64,18 @@ integrations() {
     [ -n "$v" ] && put_secret FB_PAGE_TOKEN "$v"
   fi
 
+  say "Instagram auto-posting (optional)"
+  echo "Needs a Professional Instagram account linked to that Page, and a token with"
+  echo "instagram_content_publish. The Instagram user id is the long number from"
+  echo "Graph API Explorer: GET /{page-id}?fields=instagram_business_account"
+  local ig; ig="$(ask "Instagram user id (Enter to skip): " "")"
+  if [ -n "$ig" ]; then
+    put_secret IG_USER_ID "$ig"
+    echo "Enter alone reuses the Page token above, which is usually the same token."
+    v="$(ask_hidden "Instagram token [reuse Page token]: ")"
+    [ -n "$v" ] && put_secret IG_TOKEN "$v"
+  fi
+
   if ! echo "$have" | grep -q META_FEED_KEY; then
     local key; key="$(openssl rand -hex 16)"
     put_secret META_FEED_KEY "$key"

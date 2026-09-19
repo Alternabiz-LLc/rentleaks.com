@@ -15,6 +15,7 @@ import { askFreshness, freshnessOn, pauseSilent } from "./freshness";
 import { runBooks } from "@/lib/books/data";
 import { runPlaybooks } from "./playbooks";
 import { sendWeeklyReport } from "./report";
+import { publishDueSocial } from "./social";
 
 /** Daily jobs run in the first tick of this New York hour. */
 export const DAILY_HOUR = { freshness: 10, renewals: 9 } as const;
@@ -65,6 +66,7 @@ export async function runOps(now = new Date()) {
   out.playbooks = await step("playbooks", () => runPlaybooks(now));
   out.books = await step("books", () => runBooks(now));
   out.network = await step("network", () => runNetwork(now));
+  out.social = await step("social", () => publishDueSocial(now));
   out.weekly = await step("weekly", () => sendWeeklyReport(now));
   await setSetting(SETTING_KEYS.opsHeartbeat, now.toISOString()).catch(() => undefined);
   return out;

@@ -22,7 +22,8 @@
     "db:studio": "prisma studio",
     "db:reset": "prisma migrate reset --force",
     "test": "tsx --test tests/*.test.ts",
-    "founder": "tsx scripts/set-founder.ts"
+    "founder": "tsx scripts/set-founder.ts",
+    "ig:queue": "tsx scripts/seed-ig-queue.ts"
   },
   "dependencies": {
     "@opennextjs/cloudflare": "^1.20.6",

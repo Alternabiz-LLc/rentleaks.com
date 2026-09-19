@@ -214,6 +214,55 @@ gets a button, pointing at the real profile once its handle is set and at that
 platform's page on this site until then. So the row is complete from day one
 and never links to an account that doesn't exist.
 
+## Instagram: the profile, the feed and automatic posting
+
+The profile copy, the avatar and the five highlight covers are in
+`marketing/social/IG-PROFILE.md` and `marketing/social/instagram/`.
+
+The launch feed is 20 posts, one a day, written from the site's own material —
+`rentleaks-rules.js` for the per-market rules, the hire-a-broker pages and the
+guides for the rest. It is generated, not hand-made:
+
+```bash
+python3 tools/build-ig-feed.py          # art + captions + queue
+python3 tools/build-ig-feed.py fee-maths   # re-render one while editing it
+```
+
+It writes the art to `images/social/ig/` **in the website repo**, on purpose:
+Instagram's publishing API fetches a post's picture by public URL, so it has to
+be a real JPEG on rentleaks.com. Deploy the static site before the first post is
+due. The captions land in `marketing/social/IG-FEED.md`, the queue in
+`tools/social/ig-queue.json`.
+
+Load the queue into the desk:
+
+```bash
+cd web
+npm run ig:queue -- --dry          # print the 20 dates, write nothing
+npm run ig:queue                   # one a day at 15:00 UTC, starting tomorrow
+npm run ig:queue -- --hour 13 --start 2026-10-01
+```
+
+Re-running is safe: a post already published is left alone, and the rest are
+updated rather than duplicated.
+
+**Automatic publishing** needs two secrets, and a prerequisite that has to be
+done in Meta's tools first: the Instagram account must be a Professional
+account linked to the RentLeaks Facebook Page. Instagram has no API for personal
+accounts.
+
+| Secret | What it is |
+|---|---|
+| `IG_USER_ID` | The Instagram user id — `GET /{page-id}?fields=instagram_business_account` in Graph API Explorer |
+| `IG_TOKEN` | A token with `instagram_content_publish`. Skip it and `FB_PAGE_TOKEN` is used, which is usually the same token |
+
+`bash tools/deploy-cloudflare.sh --secrets` asks for both. Until they are set,
+the 20 posts sit in **Admin → Social → Queue** and come up as "due — post it
+now": the same honest checklist every other channel uses. Nothing fails quietly.
+
+Once set, the five-minute cron publishes what is due — at most three per tick,
+and never a post more than 36 hours late, so a backlog can't become a burst.
+
 ## Email, photos and integrations
 
 After the first deploy, run:

@@ -26,7 +26,7 @@
   var MESSENGER_URL = "https://m.me/rentleakshq";
   /* Handles, not URLs. Empty = no link. Keep in step with the Organization
      sameAs list in index.html — tools/apply-social-links.py does both. */
-  var HANDLES = { linkedin: "", instagram: "", tiktok: "" };
+  var HANDLES = { linkedin: "", instagram: "rentleaks", tiktok: "" };
 
   /* The on-site landing pages that exist (tools/build-social-pages.py writes
      them). A footer button falls back to one of these until its handle is set. */

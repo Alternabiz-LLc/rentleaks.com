@@ -221,13 +221,19 @@ def post_card(size, kicker, headline, sub, chips, theme="night", footer="rentlea
         y += int(fs.size * 1.42)
     if chips:
         y += int(base * 0.03)
-        cx = pad
+        cx, gap = pad, int(base * 0.02)
+        cpad = (int(base * 0.037), int(base * 0.018))
+        row_h = 0
         for c in chips:
-            cw, ch = pill(d, cx, y, c, fc, fg=NIGHT if on_night else WHITE, bg=CELESTE if on_night else TEAL, pad=(int(base * 0.037), int(base * 0.018)))
-            cx += cw + int(base * 0.02)
-            if cx > w - pad - int(base * 0.2):
+            # Measure first: a chip that starts inside the frame can still run
+            # off the right edge, so the wrap has to happen before it is drawn.
+            need = text_w(d, c, fc) + cpad[0] * 2
+            if cx > pad and cx + need > w - pad:
                 cx = pad
-                y += ch + int(base * 0.02)
+                y += row_h + gap
+            cw, ch = pill(d, cx, y, c, fc, fg=NIGHT if on_night else WHITE, bg=CELESTE if on_night else TEAL, pad=cpad)
+            row_h = ch
+            cx += cw + gap
     ff = font("semi", max(11, int(base * 0.028)))
     rule(d, pad, h - pad - int(base * 0.05), int(base * 0.085), CELESTE if on_night else TEAL)
     d.text((pad, h - pad - int(base * 0.032)), footer, font=ff, fill=sub_c)
@@ -383,6 +389,11 @@ SPECS = {
         ("highlight-guides-1080.png", lambda: highlight(1080, "Guides")),
         ("highlight-howitworks-1080.png", lambda: highlight(1080, "How it works")),
         ("highlight-agents-1080.png", lambda: highlight(1080, "For agents")),
+        ("highlight-fees-1080.png", lambda: highlight(1080, "Fees")),
+        ("highlight-cities-1080.png", lambda: highlight(1080, "Cities")),
+        # Instagram shows the avatar small but stores what you upload; give it
+        # a real one so the profile stays sharp everywhere it is shown large.
+        ("profile-1080.png", lambda: logo(1080)),
     ],
     "tiktok": [
         ("profile-200.png", lambda: logo(200)),
