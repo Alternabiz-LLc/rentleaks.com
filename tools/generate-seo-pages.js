@@ -76,6 +76,7 @@ const LOCALES = [
   { code: "en", tag: "en-US", dir: "" },
   { code: "fr", tag: "fr", dir: "fr" },
   { code: "de", tag: "de", dir: "de" },
+  { code: "it", tag: "it", dir: "it" },
 ];
 
 const TRANSLATED = new Set([
@@ -633,6 +634,7 @@ ${imageUrls.join("\n")}
 
   <sitemap><loc>${SITE}/sitemap-fr.xml</loc><lastmod>${lastmod}</lastmod></sitemap>
   <sitemap><loc>${SITE}/sitemap-de.xml</loc><lastmod>${lastmod}</lastmod></sitemap>
+  <sitemap><loc>${SITE}/sitemap-it.xml</loc><lastmod>${lastmod}</lastmod></sitemap>
 </sitemapindex>
 `);
 
@@ -867,6 +869,7 @@ function writeRobots() {
   lines.push(`Sitemap: ${SITE}/sitemap-images.xml`);
   lines.push(`Sitemap: ${SITE}/sitemap-fr.xml`);
   lines.push(`Sitemap: ${SITE}/sitemap-de.xml`);
+  lines.push(`Sitemap: ${SITE}/sitemap-it.xml`);
   lines.push("Host: https://rentleaks.com");
   fs.writeFileSync(path.join(ROOT, "robots.txt"), lines.join("\n") + "\n");
 }

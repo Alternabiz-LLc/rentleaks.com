@@ -750,7 +750,7 @@
 
   /* Locales that have a built tree under their own directory. Kept in step
      with locales/*.json and with the list in rentleaks-i18n.js. */
-  const LOCALE_DIRS = ['fr', 'de'];
+  const LOCALE_DIRS = ['fr', 'de', 'it'];
 
   /* How far below the site root this page sits, counted rather than matched.
      The old version tested a fixed list of folder names, which was already

@@ -156,6 +156,70 @@ function money(n, currency, L) {
 
 const T = (L, s) => (L.ui && L.ui[s]) || s;
 
+/* A city's name in the page's own language. data.js stores the English
+   exonym, which is how the German tree was saying "Flexibles Wohnen in
+   Cologne" and the Italian one would have said "a Rome". Only the names that
+   genuinely differ are listed; everything else falls through unchanged. */
+const CITY = (L, name) => (L.cityNames && L.cityNames[name]) || name;
+
+/* ------------------------------------------------------------------ *
+ * The same translation the browser does, done here instead
+ * ------------------------------------------------------------------ *
+ * rentleaks-i18n.js can translate a card title after load, and it does. But
+ * a crawler reads the file, not the page after JavaScript — so a French page
+ * whose 111 card titles say "Sunny private room in Bushwick share" in the
+ * source is, for those 111 strings, an English page. The titles are template
+ * output from data.js, not host prose, so the same dictionary and the same
+ * patterns apply; they are simply applied here as well.
+ *
+ * Deliberately a copy of the runtime logic rather than a shared module: this
+ * file is ESM run by node, that one is a classic script the browser parses
+ * before anything else. The two are checked against each other by
+ * tools/check-locales.mjs.
+ */
+function makeTranslator(L) {
+  const dict = Object.assign({}, L.cityNames || {}, L.ui || {});
+  const rules = (L.patterns || []).map((r) => ({ re: new RegExp(r.re), to: r.to }));
+  const months = L.months || {};
+
+  const expand = (tpl, m, depth = 0) =>
+    tpl.replace(/\{(\d+)(?::(\w+))?\}/g, (_, i, fn) => {
+      const v = m[Number(i)];
+      if (v === undefined) return "";
+      if (fn === "sqm") return String(Math.round(Number(v) * 0.092903));
+      if (fn === "mon") return months[v] || v;
+      if (fn === "t") { const r = depth < 3 ? one(v, depth + 1) : null; return r === null ? v : r; }
+      return v;
+    });
+
+  const one = (t, depth = 0) => {
+    if (dict[t] !== undefined) return dict[t];
+    for (const r of rules) {
+      const m = r.re.exec(t);
+      if (m) return expand(r.to, m, depth);
+    }
+    return null;
+  };
+
+  const SEP = " \u00b7 ";
+  return function tr(text) {
+    const t = String(text == null ? "" : text).trim();
+    if (t.length < 2) return text;
+    let hit = one(t);
+    if (hit === null && t.includes(SEP)) {
+      let any = false;
+      const parts = t.split(SEP).map((p) => {
+        const v = one(p.trim());
+        if (v === null) return p;
+        any = true;
+        return v;
+      });
+      if (any) hit = parts.join(SEP);
+    }
+    return hit === null ? text : hit;
+  };
+}
+
 /* ------------------------------------------------------------------ *
  * <head>
  * ------------------------------------------------------------------ */
@@ -280,20 +344,21 @@ const css = (depth) => {
    that does not exist would be worse than a language seam. */
 function card(L, l, depth) {
   const up = "../".repeat(depth);
+  const tr = L.__tr || (L.__tr = makeTranslator(L));
   const shots = (l.images || []).length;
   const photos = L.locale === "de" ? `${shots} Fotos` : L.locale === "fr" ? `${shots} photos` : `${shots} photos`;
   return `<article class="listing-card" data-id="${esc(l.id)}" itemscope itemtype="https://schema.org/Accommodation">
     <a href="${up}${l.path}" class="listing-card__link" itemprop="url">
       <div class="listing-card__img-wrap">
-        <img class="listing-card__photo" src="${l.image}" alt="${esc(l.imageAlt)}" width="1400" height="933" loading="lazy" decoding="async" itemprop="image">
+        <img class="listing-card__photo" src="${l.image}" alt="${esc(tr(l.imageAlt))}" width="1400" height="933" loading="lazy" decoding="async" itemprop="image">
         ${l.video ? `<span class="listing-card__vid">${esc(T(L, "Video"))}</span>` : ""}
         ${shots > 1 ? `<span class="listing-card__shots">${esc(photos)}</span>` : ""}
       </div>
       <div class="listing-card__body">
         <p class="listing-card__price">${money(l.allIn, l.currency, L)}<span class="listing-card__period"> ${esc(T(L, "all-in /mo"))}</span></p>
-        <h3 class="listing-card__title" itemprop="name">${esc(l.title)}</h3>
+        <h3 class="listing-card__title" itemprop="name">${esc(tr(l.title))}</h3>
         <p class="listing-card__address" itemprop="address">${esc(l.address)}</p>
-        <p class="listing-card__specs">${esc(l.specs)}</p>
+        <p class="listing-card__specs">${esc(tr(l.specs))}</p>
       </div>
     </a>
   </article>`;
@@ -551,7 +616,7 @@ function writeTypePages(L, out) {
                 "@type": "ListItem",
                 position: i + 1,
                 url: SITE + "/" + l.path,
-                name: l.title,
+                name: makeTranslator(L)(l.title),
               })),
             },
           }),
@@ -567,12 +632,13 @@ function writeCityPages(L, out) {
   DATA.cities.forEach((cityRow) => {
     const subset = LISTINGS.filter((l) => l.cityId === cityRow.id);
     const nhoods = (cityRow.neighborhoods || []).slice(0, 5).join(", ");
-    const vars = { city: cityRow.name, nhoods, n: subset.length };
+    const local = CITY(L, cityRow.name);
+    const vars = { city: local, nhoods, n: subset.length };
     const neutral = `cities/${cityRow.slug}.html`;
     const title = fill(C.title, vars);
     const main = `
   <section class="container page-hero">
-    <nav class="rl-crumb" aria-label="${esc(T(L, "Breadcrumb"))}"><a href="../index.html">${esc(T(L, "Home"))}</a> / <a href="../cities.html">${esc(T(L, "Cities"))}</a> / ${esc(cityRow.name)}</nav>
+    <nav class="rl-crumb" aria-label="${esc(T(L, "Breadcrumb"))}"><a href="../index.html">${esc(T(L, "Home"))}</a> / <a href="../cities.html">${esc(T(L, "Cities"))}</a> / ${esc(local)}</nav>
     <h1>${esc(fill(C.h1, vars))}</h1>
     <p>${esc(fill(C.blurb, vars))}</p>
     <p>${(cityRow.neighborhoods || []).map((n) => esc(n)).join(" · ")}</p>
@@ -613,7 +679,7 @@ function writeCityPages(L, out) {
             name: title,
             url: urlFor(L.locale, neutral),
             inLanguage: L.htmlLang,
-            about: { "@type": "City", name: cityRow.name, addressRegion: cityRow.state },
+            about: { "@type": "City", name: local, addressRegion: cityRow.state },
             mainEntity: {
               "@type": "ItemList",
               numberOfItems: subset.length,
@@ -621,7 +687,7 @@ function writeCityPages(L, out) {
                 "@type": "ListItem",
                 position: i + 1,
                 url: SITE + "/" + l.path,
-                name: l.title,
+                name: makeTranslator(L)(l.title),
               })),
             },
           }),
@@ -893,7 +959,9 @@ function writeRuntimeDict(L) {
     nav: L.nav || {},
     patterns: L.patterns || [],
     months: L.months || {},
-    ui: L.ui,
+    // Folded into ui rather than shipped separately: the sweep already does
+    // exact-match lookup, and a city name is exactly that.
+    ui: Object.assign({}, L.cityNames || {}, L.ui),
   };
   const js = `/* Generated by tools/build-locales.mjs from locales/${L.locale}.json — do not edit. */
 window.RL_I18N=${JSON.stringify(payload)};

@@ -186,4 +186,5 @@ Sitemap: https://rentleaks.com/sitemap.xml
 Sitemap: https://rentleaks.com/sitemap-images.xml
 Sitemap: https://rentleaks.com/sitemap-fr.xml
 Sitemap: https://rentleaks.com/sitemap-de.xml
+Sitemap: https://rentleaks.com/sitemap-it.xml
 Host: https://rentleaks.com

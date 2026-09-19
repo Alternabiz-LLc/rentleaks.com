@@ -144,8 +144,17 @@ for (const c of CODES) {
   // on it that matches its English is a key that was copied and not translated.
   const SAME = new Set([
     "FAQ", "Stay DNA", "Wifi", "Video", "Website", "Name", "Max", "Min", "API",
-    "Co-Living", "Coliving", "Aparthotel", "Contact", "Type", "Message",
-    "Name A–Z", "Sort", "Grid", "Moment",
+    "Co-Living", "Coliving", "Co-living", "Aparthotel", "Contact", "Type", "Message",
+    "Name A–Z", "Sort", "Grid", "Moment", "Pool", "Status", "Selfie", "Photos",
+    "Description", "Home", "Privacy", "Password", "Cover", "Route", "Start",
+    // Country and city names that happen to be identical in the target
+    // language. Listed rather than pattern-matched so a genuinely untranslated
+    // one still trips the check.
+    "France", "Canada", "Berlin", "Paris", "London", "Madrid", "Amsterdam",
+    "Rotterdam", "Utrecht", "Basel", "Turin", "Lyon", "Marseille", "Nice",
+    "Montreal", "Edinburgh", "Glasgow", "Cork", "Galway", "Manchester",
+    "Birmingham", "Leeds", "Bristol", "Liverpool", "Valencia", "Zurich",
+    "Percentile", "Wi-Fi / internet", "Selfie",
   ]);
   const untouched = Object.entries(L.ui).filter(([k, v]) => k === v && !SAME.has(k));
   if (untouched.length) {

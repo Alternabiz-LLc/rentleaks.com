@@ -1,6 +1,6 @@
 # Locales
 
-French and German, as path-prefixed trees: `/fr/` and `/de/`.
+French, German and Italian, as path-prefixed trees: `/fr/`, `/de/` and `/it/`.
 
 ```
 locales/fr.json      the source of truth for French — edit this
@@ -62,7 +62,54 @@ its own word, and the market's own word is the one with search volume behind it.
 | broker fee | honoraires d'agence | Maklerprovision |
 | deposit | dépôt de garantie | Kaution |
 
+Italian is the one where a literal translation is actively wrong. **`affitto
+breve` is not "short-term" here** — in Italian law a *locazione breve* is a let
+of under 30 days (art. 4, DL 50/2017), the regime with the cedolare secca, the
+portal withholding and the CIN, which is exactly what this site refuses to
+list. The product is the *contratto di locazione transitoria*, 1 to 18 months
+under art. 5 of legge 431/1998. The Italian pages say **affitto transitorio**
+throughout, and the FAQ says outright that the 30-day floor keeps the site out
+of the *locazione breve* regime.
+
+Italian also uses `tu` where French uses *vous* and German *Sie*. That is
+deliberate: Italian consumer housing sites all address the renter informally.
+
 None of those is what a translation of the English produces.
+
+## Pages with no translated URL
+
+662 listing pages, 93 operator pages, `enterprise/` and `hire-a-broker/` are
+single-URL on purpose: their body is the host's own prose or jurisdiction-bound
+brokerage terms, and publishing three near-identical copies is duplicate
+content that hreflang does not rescue.
+
+But the valuable half of a listing page is not the host's paragraph — it is the
+fee ledger, the rules engine, the trust ledger and the takeover desk, all of
+which the dictionary covers. So `rentleaks-i18n.js` remembers the language a
+visitor was last reading (`rl_lang` in localStorage) and, on an English URL,
+loads that dictionary and translates the chrome and those panels on top of the
+English body. The canonical page stays English in the source, where a crawler
+reads it; nothing this does changes what is indexed. Choosing EN in the
+switcher on such a page clears the preference rather than navigating.
+
+## Listing titles
+
+All 662 are template output from `data.js` — see the `title = ...` assignments
+around lines 712-786 — not host prose, so they are translated by pattern, at
+build time *and* at runtime. `tools/add-title-patterns.py` holds the five
+shapes. The neighbourhood inside each title is a proper noun and stays put.
+
+The same applies to the `alt` text, which wraps a title inside a sentence; the
+`{1:t}` helper sends a capture back through the full lookup so the inner title
+is matched by its own rule.
+
+## City names
+
+`cityNames` in each locale file maps the exonyms that genuinely differ —
+Cologne/Köln, Rome/Roma, Geneva/Genève. `data.js` stores the English name, so
+without this the German tree said "Flexibles Wohnen in Cologne". Only names
+that actually change are listed; a map full of identities is a map nobody
+trusts.
 
 ## What is deliberately not translated
 
@@ -87,7 +134,8 @@ Where a rule *is* named, it is named as the law names it — *bail mobilité*,
 1. Copy `locales/fr.json` to `locales/<code>.json` and translate it. The
    `_comment` block at the top says what each section feeds.
 2. Add the code to three lists — `LOCALE_DIRS` in `script.js`, `LOCALES` in
-   `rentleaks-i18n.js`, and `LOCALES` in `tools/generate-seo-pages.js`. The
+   `rentleaks-i18n.js`, and `LOCALES` in `tools/generate-seo-pages.js`, plus the
+   two `sitemap-<code>.xml` lines in that file's sitemap index and robots.txt. The
    duplication is deliberate: they are small, they change together, and the
    alternative is a build dependency between generators that otherwise do not
    know about each other. `tools/check-locales.mjs` fails if they drift.

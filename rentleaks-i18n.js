@@ -34,12 +34,18 @@
   var CONF = window.RL_I18N || null;
   var DICT = (CONF && CONF.ui) || null;
 
+  /* Where the dictionaries live, relative to the site root. */
+  var DICT_URL = function (code) { return "/locales/" + code + ".ui.js"; };
+  var PREF_KEY = "rl_lang";
+  var borrowed = "";   // set when a dictionary is loaded for an English URL
+
   /* Locales that have a built tree. Kept here rather than inferred from the
      URL so the switcher on an English page knows what it can offer. */
   var LOCALES = [
     { code: "en", label: "English", dir: "" },
     { code: "fr", label: "Français", dir: "fr" },
-    { code: "de", label: "Deutsch", dir: "de" }
+    { code: "de", label: "Deutsch", dir: "de" },
+    { code: "it", label: "Italiano", dir: "it" }
   ];
 
   /* Pages that exist in every locale. A page outside this list has no
@@ -105,29 +111,33 @@
   });
   var MONTHS = (CONF && CONF.months) || {};
 
-  function expand(tpl, m) {
+  function expand(tpl, m, depth) {
+    depth = depth || 0;
     return tpl.replace(/\{(\d+)(?::(\w+))?\}/g, function (_, i, fn) {
       var v = m[Number(i)];
       if (v === undefined) return "";
       if (fn === "sqm") return String(Math.round(Number(v) * 0.092903));
       if (fn === "mon") return MONTHS[v] || v;
-      if (fn === "t") return (DICT && DICT[v] !== undefined) ? DICT[v] : v;
+      // Full lookup, not just the exact dictionary: an alt text wraps a card
+      // title, and a card title is itself pattern-matched. Depth-guarded
+      // because a rule that rewrote its own input would otherwise not stop.
+      if (fn === "t") { var r = depth < 3 ? one(v, depth + 1) : null; return r === null ? v : r; }
       return v;
     });
   }
 
-  function byRule(t) {
+  function byRule(t, depth) {
     for (var i = 0; i < RULES.length; i++) {
       var m = RULES[i].re.exec(t);
-      if (m) return expand(RULES[i].to, m);
+      if (m) return expand(RULES[i].to, m, depth);
     }
     return null;
   }
 
   /* One string, exact key first, then the rules. */
-  function one(t) {
+  function one(t, depth) {
     if (DICT && DICT[t] !== undefined) return DICT[t];
-    return byRule(t);
+    return byRule(t, depth || 0);
   }
 
   var SEP = " \u00b7 ";   // the middle dot these templates join fields with
@@ -226,8 +236,10 @@
      it, so the observer is not an optimisation, it is the mechanism.
      Only childList is observed: the sweep changes nodeValue and attributes,
      neither of which is reported here, so it cannot retrigger itself. */
+  var watching = false;
   function watch() {
-    if (!DICT || !window.MutationObserver) return;
+    if (!DICT || !window.MutationObserver || watching) return;
+    watching = true;
     var queue = [];
     var scheduled = false;
 
@@ -294,9 +306,23 @@
       a.lang = l.code;
       a.textContent = l.code.toUpperCase();
       a.title = l.label;
-      if (l.code === HERE.code) {
+      // On an English URL showing a borrowed dictionary, the language the
+      // visitor is actually reading is the borrowed one, not "en" — the
+      // switcher has to say so or it contradicts the page.
+      var showing = HERE.dir ? HERE.code : (borrowed || "en");
+      if (l.code === showing) {
         a.setAttribute("aria-current", "true");
         a.rel = "nofollow";      // self-link, nothing for a crawler to follow
+      }
+      // Choosing English on a page that has no English URL to go to means
+      // "stop translating this", so it clears the preference rather than
+      // navigating somewhere identical.
+      if (l.code === "en" && !HERE.dir && borrowed) {
+        a.addEventListener("click", function (ev) {
+          ev.preventDefault();
+          try { localStorage.removeItem(PREF_KEY); } catch (e) { /* ignore */ }
+          window.location.reload();
+        });
       }
       nav.appendChild(a);
     });
@@ -326,6 +352,57 @@
    * Start
    * ------------------------------------------------------------------ */
 
+  /* ------------------------------------------------------------------ *
+   * Carrying the language onto the pages that have no translated URL
+   * ------------------------------------------------------------------ *
+   * 662 listing pages, 93 operator pages, enterprise and hire-a-broker are
+   * deliberately single-URL: their body is the host's own English prose or
+   * jurisdiction-bound brokerage terms, and publishing three near-identical
+   * copies would be duplicate content that hreflang does not rescue.
+   *
+   * But the valuable half of a listing page is not the host's paragraph — it
+   * is the fee ledger, the rules engine, the trust ledger and the takeover
+   * desk, all of which this file can translate. So the canonical page stays
+   * English in the source, where a crawler reads it, and a visitor who has
+   * been reading /fr/ gets the chrome and those panels in French on top of it.
+   *
+   * This is a preference, not a URL: nothing here changes what is indexed. */
+
+  function remember(code) {
+    try { localStorage.setItem(PREF_KEY, code); } catch (e) { /* private mode */ }
+  }
+
+  function preferred() {
+    try { return localStorage.getItem(PREF_KEY) || ""; } catch (e) { return ""; }
+  }
+
+  /* Loads a dictionary that this page did not ship with, then sweeps. The
+     flash of English is real and is the price of not duplicating the page;
+     it is one frame on a warm cache. */
+  function borrowDictionary(code, then) {
+    if (!code || code === "en" || DICT) return;
+    var el = document.createElement("script");
+    el.src = DICT_URL(code);
+    el.async = false;
+    el.onload = function () {
+      CONF = window.RL_I18N || null;
+      DICT = (CONF && CONF.ui) || null;
+      RULES = ((CONF && CONF.patterns) || []).map(function (r) {
+        return { re: new RegExp(r.re), to: r.to };
+      });
+      MONTHS = (CONF && CONF.months) || {};
+      if (DICT) {
+        borrowed = code;
+        // The switcher may already be on screen showing EN as current.
+        var nav = document.querySelector(".rl-lang");
+        if (nav) { nav.remove(); addSwitcher(); }
+        if (typeof then === "function") then();
+      }
+    };
+    el.onerror = function () { /* stay English; nothing is broken by that */ };
+    document.head.appendChild(el);
+  }
+
   function start() {
     sweep(document.body);
     // The chrome is injected by script.js on DOMContentLoaded too, and the
@@ -343,6 +420,20 @@
   // Before any listener runs, and in particular before script.js builds the
   // header and reads the currency out of storage.
   seedCurrency();
+
+  if (HERE.dir) {
+    // On a translated URL the language is not a guess — record it, so the
+    // English-URL pages this visitor opens next follow them.
+    remember(HERE.code);
+  } else if (!DICT) {
+    var want = preferred();
+    if (want && want !== "en" && LOCALES.some(function (l) { return l.code === want; })) {
+      borrowDictionary(want, function () {
+        sweep(document.body);
+        watch();
+      });
+    }
+  }
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", start);
