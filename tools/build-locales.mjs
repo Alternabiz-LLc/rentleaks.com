@@ -310,8 +310,19 @@ ${ALL.filter((c) => c !== L.locale && TRANSLATED_PATHS.has(neutral))
 /* depth is how far below the site root the file sits: /fr/index.html is 1,
    /fr/cities/paris.html is 2. Assets are always at the root, so every src
    here climbs all the way back up. */
-function chrome(L, depth, main, bodyAttrs) {
+/* Pages that need more than the base script set. The English tree carries
+   these per page; the locale tree was emitting only the base set, which left
+   /fr/list.html with a hero, an empty container and no composer — the page
+   looked fine and did nothing. */
+const EXTRA_JS = {
+  "list.html": ["rentleaks-verify.js", "rentleaks-list.js"],
+};
+
+function chrome(L, depth, main, bodyAttrs, page) {
   const up = "../".repeat(depth);
+  const extra = (EXTRA_JS[page] || [])
+    .map((f) => `\n  <script src="${up}${f}"></script>`)
+    .join("");
   return `
 <body class="tahoe-body" ${bodyAttrs}>
   <div class="tahoe-bg" aria-hidden="true"><div class="tahoe-orb tahoe-orb--1"></div><div class="tahoe-orb tahoe-orb--2"></div><div class="tahoe-orb tahoe-orb--3"></div><div class="tahoe-orb tahoe-orb--4"></div><div class="tahoe-noise"></div></div>
@@ -328,7 +339,7 @@ function chrome(L, depth, main, bodyAttrs) {
   <script src="${up}rentleaks-i18n.js"></script>
   <script src="${up}rentleaks-rules.js?v=20260913b"></script>
   <script src="${up}rentleaks-x.js?v=20260918" defer></script>
-  <script src="${up}rentleaks-social.js?v=20260915-rentleaks.official" defer></script>
+  <script src="${up}rentleaks-social.js?v=20260915-rentleaks.official" defer></script>${extra}
 </body>
 </html>`;
 }
@@ -709,7 +720,7 @@ function simplePage(L, out, key, { bodyAttrs, main, extra, robots }) {
       neutral,
       robots,
       extra: css(1) + jsonLd(website(L)) + (extra || ""),
-    }) + chrome(L, 1, main, bodyAttrs);
+    }) + chrome(L, 1, main, bodyAttrs, P.file);
   write(out, P.file, html);
 }
 

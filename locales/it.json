@@ -876,7 +876,21 @@
     "One price for every listing type — rooms, co-living, furnished and lease-breaks alike. Renters are never charged.": "Un solo prezzo per ogni tipo di annuncio — stanze, co-living, arredati e subentri. Agli inquilini non viene mai addebitato nulla.",
     "Built for room hosts, co-living operators, furnished portfolios, and tenants posting a lease-break. One price, whatever you are listing.": "Pensato per chi affitta stanze, per i gestori di co-living, per i portafogli di arredati e per gli inquilini che pubblicano un subentro. Un solo prezzo, qualunque cosa tu pubblichi.",
     "Rooms, operators and lease-breaks all get an All-in preview, so renters see the real number before they ask.": "Stanze, gestori e subentri ottengono tutti un'anteprima del tutto compreso, così chi cerca vede il numero vero prima ancora di chiedere.",
-    "Lease Clock on every takeover": "Contatore del contratto su ogni subentro"
+    "Lease Clock on every takeover": "Contatore del contratto su ogni subentro",
+    "First week free on every listing": "Prima settimana gratis su ogni annuncio",
+    "Your first week is free, on every listing. After that, one price for every type — rooms, co-living, furnished and lease-breaks alike. Renters are never charged.": "La tua prima settimana è gratis, su ogni annuncio. Poi un solo prezzo per ogni tipo — stanze, co-living, arredati e subentri. Agli inquilini non viene mai addebitato nulla.",
+    "Built for room hosts, co-living operators, furnished portfolios, and tenants posting a lease-break. Your first week is free, whatever you are listing.": "Pensato per chi affitta stanze, per i gestori di co-living, per i portafogli di arredati e per gli inquilini che pubblicano un subentro. La tua prima settimana è gratis, qualunque cosa tu pubblichi.",
+    "Your first week is free, on every kind of listing. Rooms, operators and lease-breaks all get an All-in preview too, so renters see the real number before they ask.": "La tua prima settimana è gratis, su ogni tipo di annuncio. Stanze, gestori e subentri ottengono anche un'anteprima del tutto compreso, così chi cerca vede il numero vero prima ancora di chiedere.",
+    "Due now": "Da pagare ora",
+    "Then per week": "Poi a settimana",
+    "Then per month": "Poi al mese",
+    "First 7 days": "Primi 7 giorni",
+    "Nothing is charged to renters, ever.": "Agli inquilini non viene mai addebitato nulla.",
+    "week": "settimana",
+    "month": "mese",
+    "on any plan and any kind of listing. Billing starts the day after, and taking the listing down before then costs nothing.": "su qualsiasi piano e qualsiasi tipo di annuncio. La fatturazione parte dal giorno dopo, e togliere l'annuncio prima non costa nulla.",
+    "Top of results in": "In cima ai risultati a",
+    ", and only there. A paid slot in a market the searcher is not looking at is worth nothing to you and is noise to them, so the boost applies when the search resolves to your city and stays out of the way otherwise. It buys position, not a badge: promoted cards are labelled as sponsored, and the same verification and compliance checks apply. A listing that has not earned its badges shows up without them, in a paid slot.": ", e solo lì. Uno spazio a pagamento in un mercato che chi cerca non sta guardando non ti serve a nulla ed è rumore per l'altro, quindi la spinta vale quando la ricerca riguarda la tua città e per il resto resta da parte. Compra posizione, non un distintivo: gli annunci promossi sono indicati come sponsorizzati e valgono le stesse verifiche. Un annuncio che non si è guadagnato i suoi distintivi compare senza, in uno spazio a pagamento."
   },
   "nav": {
     "languageLabel": "Lingua",
@@ -980,7 +994,7 @@
         "subtitle": "Stanze in affitto, residenze di co-living, appartamenti arredati, soggiorni da un mese in su e subentri. Ogni canone è tutto compreso. Ogni breve durata parte da 30 giorni.",
         "liveHomes": "case online",
         "markets": "mercati",
-        "freeLeaseBreak": "Contatore del contratto su ogni subentro",
+        "freeLeaseBreak": "Prima settimana gratis su ogni annuncio",
         "hint": "Non sai quale tipo scegliere? <a href=\"match.html\">Avvia Stay DNA</a> · Premi <a href=\"#\" class=\"js-cmd\">⌘K</a> per andare ovunque · <a href=\"list.html?kind=lease-break\">Pubblica un subentro</a>"
       },
       "compliance": "Il divieto di discriminazione nell'alloggio vale su ogni mercato che pubblichiamo. <a href=\"faq.html\">Come trattiamo stanze, subentri e soggiorni di 30 giorni</a>",
@@ -1057,7 +1071,7 @@
     "list": {
       "file": "list.html",
       "title": "Pubblica una stanza, un arredato o un subentro | RentLeaks",
-      "description": "Metti online stanze, camere in co-living, appartamenti arredati, soggiorni da un mese in su e subentri, ognuno con il suo affitto tutto compreso.",
+      "description": "La tua prima settimana è gratis su ogni annuncio. Pubblica stanze, camere in co-living, appartamenti arredati, soggiorni da un mese in su e subentri, ognuno con il suo affitto tutto compreso.",
       "keywords": "pubblicare annuncio stanza, annuncio subentro, affittare appartamento arredato, annuncio co-living gestore",
       "h1": "Pubblica un annuncio",
       "sub": "Stanze, gestori e subentri ottengono tutti un'anteprima del tutto compreso, così chi cerca vede il numero vero prima ancora di chiedere."
@@ -1065,7 +1079,7 @@
     "professionals": {
       "file": "professionals.html",
       "title": "Piani per host e gestori — stanze, co-living, arredati | RentLeaks",
-      "description": "Strumenti per chi affitta stanze, per i gestori di co-living, per i portafogli di arredati e per gli inquilini che pubblicano un subentro.",
+      "description": "Strumenti per chi affitta stanze, per i gestori di co-living, per i portafogli di arredati e per gli inquilini che pubblicano un subentro. Prima settimana gratis su ogni nuovo annuncio.",
       "keywords": "pubblicare affitto, software gestore co-living, annuncio appartamento arredato, annuncio subentro",
       "h1": "Fatto per il portafoglio flessibile",
       "sub": "Chi affitta stanze, gestori di co-living, portafogli di arredati e inquilini che cercano un subentro.",
@@ -1135,7 +1149,7 @@
           "style": "btn--outline"
         }
       ],
-      "note": "Disdici quando vuoi. Il divieto di discriminazione vale per ogni host. Non vendiamo notti d'albergo."
+      "note": "La tua prima settimana è gratis su ogni nuovo annuncio. Disdici quando vuoi. Il divieto di discriminazione vale per ogni host. Non vendiamo notti d'albergo."
     },
     "faq": {
       "file": "faq.html",
@@ -1167,7 +1181,7 @@
         },
         {
           "q": "Come pubblico un annuncio?",
-          "a": "Da «Pubblica un annuncio». Stanze, appartamenti arredati, gestori di co-living e subentri pubblicano tutti dallo stesso percorso, alle stesse condizioni. I piani per gli host stanno in Piani e strumenti."
+          "a": "Da «Pubblica un annuncio». Stanze, appartamenti arredati, gestori di co-living e subentri pubblicano tutti dallo stesso percorso, alle stesse condizioni. La tua prima settimana è gratis su ognuno di essi: la fatturazione parte dall'ottavo giorno, e togliere l'annuncio prima non costa nulla. I piani per gli host stanno in Piani e strumenti."
         },
         {
           "q": "Stay DNA è una verifica creditizia?",
@@ -1240,6 +1254,38 @@
     "byType": "Per tipo di soggiorno"
   },
   "patterns": [
+    {
+      "re": "^Total per (week|month)$",
+      "to": "Totale a {1:t}"
+    },
+    {
+      "re": "^Listing, per (week|month)$",
+      "to": "Annuncio, a {1:t}"
+    },
+    {
+      "re": "^Then per (week|month)$",
+      "to": "Poi a {1:t}"
+    },
+    {
+      "re": "^Sponsored placement — \\+\\$(\\d+) per (week|month)$",
+      "to": "Posizionamento sponsorizzato — +{1} $ a {2:t}"
+    },
+    {
+      "re": "^\\$(\\d+) per (week|month)$",
+      "to": "{1} $ a {2:t}"
+    },
+    {
+      "re": "^Free for the first (\\d+) days, then \\$(\\d+) per (week|month)\\. Nothing is charged to renters, ever\\.$",
+      "to": "Gratis per i primi {1} giorni, poi {2} $ a {3:t}. Agli inquilini non viene mai addebitato nulla."
+    },
+    {
+      "re": "^First (\\d+) days$",
+      "to": "Primi {1} giorni"
+    },
+    {
+      "re": "^Your first (\\d+) days are free$",
+      "to": "I tuoi primi {1} giorni sono gratis"
+    },
     {
       "re": "^(.+), ([^,]+) — slide (\\d+) of (\\d+)$",
       "to": "{1:t}, {2:t} — immagine {3} di {4}"

@@ -690,7 +690,7 @@ ${imageUrls.join("\n")}
     "",
     "> Flexible housing marketplace for rooms, co-living buildings, furnished apartments, 1-month+ stays (30-day minimum), and lease-breaks in the United States and major cities across the UK, Ireland, France, Spain, the Netherlands, Switzerland, Germany, and Italy.",
     "",
-    "RentLeaks is housing, not hotels. Short-term means 30 days or more. Prices are All-in (base rent plus listed utilities, wifi, and cleaning). Every listing type is priced the same, lease-breaks included.",
+    "RentLeaks is housing, not hotels. Short-term means 30 days or more. Prices are All-in (base rent plus listed utilities, wifi, and cleaning). Every listing type is priced the same, lease-breaks included, and the first week is free.",
     "",
     "## Primary indexes",
     `- [Home](${SITE}/): Product overview and featured inventory`,
@@ -1029,10 +1029,10 @@ function writeCoreHeads() {
     "Rank rooms, co-living, furnished apartments, and lease-breaks by budget, stay length, vibe, and must-haves.",
     "apartment matching, roommate compatibility, rental quiz, stay DNA", "/match.html");
   pack("list.html", "List a Room, Furnished Stay, or Lease-Break | RentLeaks",
-    "List rooms, co-living rooms, furnished apartments, 1-month+ stays and lease-breaks, each with all-in rent.",
+    "Your first week is free on every listing. Post rooms, co-living rooms, furnished apartments, 1-month+ stays and lease-breaks, each with all-in rent.",
     "list a room, post lease break, list furnished apartment, coliving operator listing", "/list.html");
   pack("professionals.html", "Host & Operator Plans — Rooms, Co-living, Furnished | RentLeaks",
-    "Tools for room hosts, co-living operators, furnished portfolios, and tenants posting a lease-break.",
+    "Tools for room hosts, co-living operators, furnished portfolios, and tenants posting a lease-break. First week free on every new listing.",
     "list rental, coliving operator software, furnished apartment listing, lease break post", "/professionals.html");
   pack("faq.html", "FAQ — rooms, co-living, furnished, 1-month stays, lease-breaks | RentLeaks",
     "How RentLeaks works: 30-day minimum, all-in rent, lease assignment vs sublet, rooms vs co-living, and Fair Housing.",

@@ -117,6 +117,33 @@ for (const l of ALL.filter((x) => x.dir)) {
 }
 if (!deep) console.log("  PASS  asset depth, script order and html lang");
 
+/* 3b · a locale page must load the same scripts its English twin does.
+   /fr/list.html shipped without rentleaks-list.js once: a hero, an empty
+   container and no composer. It rendered, so nothing looked wrong. */
+let js = 0;
+const BASE_JS = /(data|data-source|script|rentleaks-i18n|rentleaks-rules|rentleaks-x|rentleaks-social)\.js/;
+for (const n of P.core.concat(P.types)) {
+  const enFile = n || "index.html";
+  if (!exists(enFile)) continue;
+  const want = new Set(
+    [...read(enFile).matchAll(/<script src="([a-z0-9.\-\/]+\.js)/g)]
+      .map((m) => m[1].split("/").pop())
+      .filter((f) => !BASE_JS.test(f) || true)
+  );
+  for (const l of ALL.filter((x) => x.dir)) {
+    const f = fileFor(l.dir, n);
+    if (!exists(f)) continue;
+    const got = new Set(
+      [...read(f).matchAll(/<script src="([a-z0-9.\-\/]+\.js)/g)]
+        .map((m) => m[1].split("/").pop())
+    );
+    for (const w of want) {
+      if (!got.has(w)) { fail(`${f} does not load ${w} (${enFile} does)`); js++; }
+    }
+  }
+}
+if (!js) console.log("  PASS  locale pages load the same scripts as their English twins");
+
 /* 4 · sitemaps line up with what is on disk */
 let sm = 0;
 for (const c of CODES) {

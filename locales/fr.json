@@ -872,7 +872,21 @@
     "One price for every listing type — rooms, co-living, furnished and lease-breaks alike. Renters are never charged.": "Un seul prix pour tous les types d'annonce — chambres, coliving, meublés et reprises de bail. Les locataires ne paient jamais.",
     "Built for room hosts, co-living operators, furnished portfolios, and tenants posting a lease-break. One price, whatever you are listing.": "Pensé pour les loueurs de chambres, les exploitants de coliving, les parcs de meublés et les locataires qui publient une reprise de bail. Un seul prix, quel que soit ce que vous publiez.",
     "Rooms, operators and lease-breaks all get an All-in preview, so renters see the real number before they ask.": "Chambres, exploitants et reprises de bail obtiennent tous un aperçu du loyer tout compris, pour que les locataires voient le vrai chiffre avant même de demander.",
-    "Lease Clock on every takeover": "Compteur de bail sur chaque reprise"
+    "Lease Clock on every takeover": "Compteur de bail sur chaque reprise",
+    "First week free on every listing": "Première semaine offerte sur chaque annonce",
+    "Your first week is free, on every listing. After that, one price for every type — rooms, co-living, furnished and lease-breaks alike. Renters are never charged.": "Votre première semaine est offerte, sur chaque annonce. Ensuite, un seul prix pour tous les types — chambres, coliving, meublés et reprises de bail. Les locataires ne paient jamais.",
+    "Built for room hosts, co-living operators, furnished portfolios, and tenants posting a lease-break. Your first week is free, whatever you are listing.": "Pensé pour les loueurs de chambres, les exploitants de coliving, les parcs de meublés et les locataires qui publient une reprise de bail. Votre première semaine est offerte, quel que soit ce que vous publiez.",
+    "Your first week is free, on every kind of listing. Rooms, operators and lease-breaks all get an All-in preview too, so renters see the real number before they ask.": "Votre première semaine est offerte, sur tous les types d'annonce. Chambres, exploitants et reprises de bail obtiennent aussi un aperçu du loyer tout compris, pour que les locataires voient le vrai chiffre avant même de demander.",
+    "Due now": "À payer maintenant",
+    "Then per week": "Puis par semaine",
+    "Then per month": "Puis par mois",
+    "First 7 days": "7 premiers jours",
+    "Nothing is charged to renters, ever.": "Les locataires ne paient jamais rien.",
+    "week": "semaine",
+    "month": "mois",
+    "on any plan and any kind of listing. Billing starts the day after, and taking the listing down before then costs nothing.": "sur n'importe quelle formule et n'importe quel type d'annonce. La facturation commence le lendemain, et retirer l'annonce avant ne coûte rien.",
+    "Top of results in": "En tête des résultats à",
+    ", and only there. A paid slot in a market the searcher is not looking at is worth nothing to you and is noise to them, so the boost applies when the search resolves to your city and stays out of the way otherwise. It buys position, not a badge: promoted cards are labelled as sponsored, and the same verification and compliance checks apply. A listing that has not earned its badges shows up without them, in a paid slot.": ", et nulle part ailleurs. Une place payante sur un marché que la personne ne regarde pas ne vous rapporte rien et la dérange, donc la mise en avant s'applique quand la recherche porte sur votre ville et s'efface sinon. Elle achète une position, pas un label : les annonces sponsorisées sont signalées comme telles, et les mêmes vérifications s'appliquent. Une annonce qui n'a pas mérité ses badges s'affiche sans eux, sur un emplacement payant."
   },
   "nav": {
     "languageLabel": "Langue",
@@ -947,7 +961,7 @@
         "subtitle": "Chambres en colocation, résidences de coliving, appartements meublés, séjours d'un mois et plus et reprises de bail. Chaque loyer est tout compris. Chaque courte durée commence à 30 jours.",
         "liveHomes": "logements en ligne",
         "markets": "marchés",
-        "freeLeaseBreak": "Compteur de bail sur chaque reprise",
+        "freeLeaseBreak": "Première semaine offerte sur chaque annonce",
         "hint": "Vous hésitez sur le type ? <a href=\"match.html\">Lancez Stay DNA</a> · Appuyez sur <a href=\"#\" class=\"js-cmd\">⌘K</a> pour aller n'importe où · <a href=\"list.html?kind=lease-break\">Publiez une reprise de bail</a>"
       },
       "compliance": "La non-discrimination au logement s'applique sur tous les marchés que nous publions. <a href=\"faq.html\">Comment nous traitons les chambres, les reprises de bail et les séjours de 30 jours</a>",
@@ -1024,7 +1038,7 @@
     "list": {
       "file": "list.html",
       "title": "Publier une chambre, un meublé ou une reprise de bail | RentLeaks",
-      "description": "Mettez en ligne chambres, logements en coliving, appartements meublés, séjours d'un mois et plus et reprises de bail, chacun avec son loyer tout compris.",
+      "description": "Votre première semaine est offerte sur chaque annonce. Publiez chambres, logements en coliving, appartements meublés, séjours d'un mois et plus et reprises de bail, chacun avec son loyer tout compris.",
       "keywords": "publier une chambre, annonce reprise de bail, louer son meublé, annonce coliving exploitant",
       "h1": "Publier une annonce",
       "sub": "Chambres, exploitants et reprises de bail obtiennent tous un aperçu du loyer tout compris, pour que les locataires voient le vrai chiffre avant même de demander."
@@ -1032,7 +1046,7 @@
     "professionals": {
       "file": "professionals.html",
       "title": "Offres hôtes et exploitants — chambres, coliving, meublés | RentLeaks",
-      "description": "Des outils pour les loueurs de chambres, les exploitants de coliving, les parcs de meublés et les locataires qui publient une reprise de bail.",
+      "description": "Des outils pour les loueurs de chambres, les exploitants de coliving, les parcs de meublés et les locataires qui publient une reprise de bail. Première semaine offerte sur chaque nouvelle annonce.",
       "keywords": "publier une location, logiciel exploitant coliving, annonce appartement meublé, annonce reprise de bail",
       "h1": "Conçu pour le parc flexible",
       "sub": "Loueurs de chambres, exploitants de coliving, parcs de meublés et locataires qui publient une reprise de bail.",
@@ -1102,7 +1116,7 @@
           "style": "btn--outline"
         }
       ],
-      "note": "Résiliable à tout moment. La non-discrimination au logement s'applique à tous les hôtes. Nous ne vendons pas de nuitées d'hôtel."
+      "note": "Votre première semaine est offerte sur chaque nouvelle annonce. Résiliable à tout moment. La non-discrimination au logement s'applique à tous les hôtes. Nous ne vendons pas de nuitées d'hôtel."
     },
     "faq": {
       "file": "faq.html",
@@ -1134,7 +1148,7 @@
         },
         {
           "q": "Comment publier une annonce ?",
-          "a": "Passez par « Publier une annonce ». Chambres, appartements meublés, exploitants de coliving et reprises de bail publient tous depuis le même parcours, aux mêmes conditions. Les offres pour les hôtes sont sur la page Offres et outils."
+          "a": "Passez par « Publier une annonce ». Chambres, appartements meublés, exploitants de coliving et reprises de bail publient tous depuis le même parcours, aux mêmes conditions. Votre première semaine est offerte sur n'importe laquelle : la facturation commence le huitième jour, et retirer l'annonce avant ne coûte rien. Les offres pour les hôtes sont sur la page Offres et outils."
         },
         {
           "q": "Stay DNA est-il une enquête de solvabilité ?",
@@ -1211,6 +1225,38 @@
     "switch": "English"
   },
   "patterns": [
+    {
+      "re": "^Total per (week|month)$",
+      "to": "Total par {1:t}"
+    },
+    {
+      "re": "^Listing, per (week|month)$",
+      "to": "Annonce, par {1:t}"
+    },
+    {
+      "re": "^Then per (week|month)$",
+      "to": "Puis par {1:t}"
+    },
+    {
+      "re": "^Sponsored placement — \\+\\$(\\d+) per (week|month)$",
+      "to": "Mise en avant sponsorisée — +{1} $ par {2:t}"
+    },
+    {
+      "re": "^\\$(\\d+) per (week|month)$",
+      "to": "{1} $ par {2:t}"
+    },
+    {
+      "re": "^Free for the first (\\d+) days, then \\$(\\d+) per (week|month)\\. Nothing is charged to renters, ever\\.$",
+      "to": "Offert les {1} premiers jours, puis {2} $ par {3:t}. Les locataires ne paient jamais rien."
+    },
+    {
+      "re": "^First (\\d+) days$",
+      "to": "{1} premiers jours"
+    },
+    {
+      "re": "^Your first (\\d+) days are free$",
+      "to": "Vos {1} premiers jours sont offerts"
+    },
     {
       "re": "^(.+), ([^,]+) — slide (\\d+) of (\\d+)$",
       "to": "{1:t}, {2:t} — diapositive {3} sur {4}"

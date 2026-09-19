@@ -129,11 +129,30 @@
     month: { label: 'Monthly', listing: 60, sponsored: 120, per: 'month' }
   };
 
+  /* The first seven days of a new listing are free, on every plan and every
+     housing type. A standing trial rather than a campaign: there is no window
+     to open and close, nothing to expire, and no arrival date to remember.
+
+     It covers the LISTING FEE only. A sponsored placement is a paid promotion
+     and is charged from day one — otherwise the offer stops being "free to
+     list" and becomes "free advertising", which is a much larger promise than
+     the one being made. */
+  var FREE_TRIAL_DAYS = 7;
+
   function planCost() {
     var pl = PLANS[draft.plan] || PLANS.week;
     var listing = pl.listing;
     var sponsored = draft.sponsored ? pl.sponsored : 0;
-    return { plan: pl, listing: listing, sponsored: sponsored, total: listing + sponsored };
+    var trial = FREE_TRIAL_DAYS > 0;
+    return {
+      plan: pl,
+      listing: listing,
+      sponsored: sponsored,
+      total: listing + sponsored,      // what recurs once the trial is over
+      trial: trial,
+      trialDays: FREE_TRIAL_DAYS,
+      dueNow: trial ? sponsored : listing + sponsored
+    };
   }
 
   var ROOM_LABELS = ['Bedroom', 'Bathroom', 'Kitchen', 'Living room', 'Workspace', 'Building', 'Outdoor', 'Floor plan', 'Other'];
@@ -572,6 +591,7 @@
     var cityName = (cityOf(draft.cityId) || {}).name || 'your market';
     var planBlock =
       '<h3 style="font-size:var(--text-md);margin:var(--s-6) 0 var(--s-3);color:var(--ink)">What this costs you</h3>' +
+      (cost.trial ? '<p class="v-note" style="margin:0 0 var(--s-3)"><b>Your first ' + cost.trialDays + ' days are free</b> <span>on any plan and any kind of listing. Billing starts the day after, and taking the listing down before then costs nothing.</span></p>' : '') +
       '<div class="c-plans">' +
         Object.keys(PLANS).map(function (k) {
           var pl = PLANS[k];
@@ -592,9 +612,11 @@
         ? '<p class="v-note" style="margin-top:var(--s-2)">Where it will appear: the <b>' + esc(cityName) + '</b> city page, and search results filtered to ' + esc(cityName) + ' \u2014 including when a renter narrows by stay type or dates within that market. It will not surface in another city\u2019s results, or in an unfiltered browse where there is no market in scope.</p>'
         : '') +
       '<div class="c-review-nums" style="margin-top:var(--s-4)">' +
-        '<div class="c-allin__row" style="color:var(--ink-2)"><span>Listing, per ' + cost.plan.per + '</span><span>' + (cost.listing ? '$' + cost.listing : 'Free') + '</span></div>' +
+        '<div class="c-allin__row" style="color:var(--ink-2)"><span>Listing, per ' + cost.plan.per + '</span><span>$' + cost.listing + '</span></div>' +
+        (cost.trial ? '<div class="c-allin__row" style="color:var(--ink-2)"><span>First ' + cost.trialDays + ' days</span><span>Free</span></div>' : '') +
         (cost.sponsored ? '<div class="c-allin__row" style="color:var(--ink-2)"><span>Sponsored placement</span><span>+$' + cost.sponsored + '</span></div>' : '') +
-        '<div class="c-allin__row" style="font-weight:600;color:var(--ink);border-top:1px solid var(--x-rule);padding-top:0.4rem;margin-top:0.3rem"><span>Total per ' + cost.plan.per + '</span><span>' + (cost.total ? '$' + cost.total : 'Free') + '</span></div>' +
+        '<div class="c-allin__row" style="font-weight:600;color:var(--ink);border-top:1px solid var(--x-rule);padding-top:0.4rem;margin-top:0.3rem"><span>Due now</span><span>' + (cost.dueNow ? '$' + cost.dueNow : 'Nothing') + '</span></div>' +
+        '<div class="c-allin__row" style="color:var(--ink-2)"><span>Then per ' + cost.plan.per + '</span><span>$' + cost.total + '</span></div>' +
         '<div class="c-allin__row" style="color:var(--ink-3)"><span>What the renter pays us</span><span>Nothing</span></div>' +
       '</div>';
 
@@ -951,7 +973,9 @@
           (blocked.length ? blocked.length + ' thing' + (blocked.length === 1 ? '' : 's') + ' to fix' : 'Publish listing') + '</button>' +
         '<button type="button" class="btn btn--ghost btn--sm" id="c-preview">Preview as a renter</button>' +
         '<p class="v-note" style="margin-top:var(--s-2)">' +
-          '$' + planCost().total + ' per ' + planCost().plan.per + (draft.sponsored ? ', sponsored included' : '') + '. Nothing is charged to renters, ever.' +
+          (planCost().trial
+            ? 'Free for the first ' + planCost().trialDays + ' days, then $' + planCost().total + ' per ' + planCost().plan.per + (draft.sponsored ? ', sponsored included' : '') + '. Nothing is charged to renters, ever.'
+            : '$' + planCost().total + ' per ' + planCost().plan.per + (draft.sponsored ? ', sponsored included' : '') + '. Nothing is charged to renters, ever.') +
         '</p>' +
       '</div>';
   }

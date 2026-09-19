@@ -876,7 +876,21 @@
     "One price for every listing type — rooms, co-living, furnished and lease-breaks alike. Renters are never charged.": "Ein Preis für jede Inseratsart — WG-Zimmer, Co-Living, möbliert und Nachmieter gleichermaßen. Mietern wird nie etwas berechnet.",
     "Built for room hosts, co-living operators, furnished portfolios, and tenants posting a lease-break. One price, whatever you are listing.": "Gemacht für Zimmeranbieter, Co-Living-Betreiber, möblierte Bestände und Mieter, die einen Nachmieter suchen. Ein Preis, was immer Sie inserieren.",
     "Rooms, operators and lease-breaks all get an All-in preview, so renters see the real number before they ask.": "Zimmer, Betreiber und Nachmieter-Inserate bekommen alle eine Warmmiete-Vorschau, damit Mieter die echte Zahl sehen, bevor sie fragen.",
-    "Lease Clock on every takeover": "Vertragsuhr bei jeder Übernahme"
+    "Lease Clock on every takeover": "Vertragsuhr bei jeder Übernahme",
+    "First week free on every listing": "Erste Woche kostenlos bei jedem Inserat",
+    "Your first week is free, on every listing. After that, one price for every type — rooms, co-living, furnished and lease-breaks alike. Renters are never charged.": "Ihre erste Woche ist kostenlos, bei jedem Inserat. Danach ein Preis für jede Art — WG-Zimmer, Co-Living, möbliert und Nachmieter gleichermaßen. Mietern wird nie etwas berechnet.",
+    "Built for room hosts, co-living operators, furnished portfolios, and tenants posting a lease-break. Your first week is free, whatever you are listing.": "Gemacht für Zimmeranbieter, Co-Living-Betreiber, möblierte Bestände und Mieter, die einen Nachmieter suchen. Ihre erste Woche ist kostenlos, was immer Sie inserieren.",
+    "Your first week is free, on every kind of listing. Rooms, operators and lease-breaks all get an All-in preview too, so renters see the real number before they ask.": "Ihre erste Woche ist kostenlos, bei jeder Art von Inserat. Zimmer, Betreiber und Nachmieter-Inserate bekommen außerdem eine Warmmiete-Vorschau, damit Mieter die echte Zahl sehen, bevor sie fragen.",
+    "Due now": "Jetzt fällig",
+    "Then per week": "Danach pro Woche",
+    "Then per month": "Danach pro Monat",
+    "First 7 days": "Erste 7 Tage",
+    "Nothing is charged to renters, ever.": "Mietern wird niemals etwas berechnet.",
+    "week": "Woche",
+    "month": "Monat",
+    "on any plan and any kind of listing. Billing starts the day after, and taking the listing down before then costs nothing.": "bei jedem Tarif und jeder Art von Inserat. Die Abrechnung beginnt am Tag darauf, und das Inserat vorher zurückzuziehen kostet nichts.",
+    "Top of results in": "Ganz oben in den Ergebnissen für",
+    ", and only there. A paid slot in a market the searcher is not looking at is worth nothing to you and is noise to them, so the boost applies when the search resolves to your city and stays out of the way otherwise. It buys position, not a badge: promoted cards are labelled as sponsored, and the same verification and compliance checks apply. A listing that has not earned its badges shows up without them, in a paid slot.": ", und nur dort. Ein bezahlter Platz in einem Markt, in dem niemand sucht, bringt Ihnen nichts und stört die Suchenden, also greift die Hervorhebung, wenn sich die Suche auf Ihre Stadt bezieht, und hält sich sonst heraus. Sie kauft Position, kein Siegel: Beworbene Inserate sind als Anzeige gekennzeichnet, und dieselben Prüfungen gelten. Ein Inserat, das seine Siegel nicht verdient hat, erscheint ohne sie, auf einem bezahlten Platz."
   },
   "nav": {
     "languageLabel": "Sprache",
@@ -951,7 +965,7 @@
         "subtitle": "WG-Zimmer, Co-Living-Häuser, möblierte Wohnungen, Aufenthalte ab einem Monat und Nachmieter-Angebote. Jeder Preis ist eine Warmmiete. Jede Kurzzeitmiete beginnt bei 30 Tagen.",
         "liveHomes": "Wohnungen online",
         "markets": "Märkte",
-        "freeLeaseBreak": "Vertragsuhr bei jeder Übernahme",
+        "freeLeaseBreak": "Erste Woche kostenlos bei jedem Inserat",
         "hint": "Unsicher, welche Wohnform? <a href=\"match.html\">Stay DNA starten</a> · <a href=\"#\" class=\"js-cmd\">⌘K</a> drücken, um überallhin zu springen · <a href=\"list.html?kind=lease-break\">Nachmieter inserieren</a>"
       },
       "compliance": "Diskriminierungsfreie Wohnungsvermittlung gilt auf jedem Markt, den wir führen. <a href=\"faq.html\">Wie wir mit Zimmern, Übernahmen und 30-Tage-Aufenthalten umgehen</a>",
@@ -1028,7 +1042,7 @@
     "list": {
       "file": "list.html",
       "title": "WG-Zimmer, möblierte Wohnung oder Nachmieter inserieren | RentLeaks",
-      "description": "Inserieren Sie WG-Zimmer, Co-Living-Zimmer, möblierte Wohnungen, Aufenthalte ab einem Monat und Nachmieter-Angebote, jedes mit seiner Warmmiete.",
+      "description": "Ihre erste Woche ist bei jedem Inserat kostenlos. Inserieren Sie WG-Zimmer, Co-Living-Zimmer, möblierte Wohnungen, Aufenthalte ab einem Monat und Nachmieter-Angebote, jedes mit seiner Warmmiete.",
       "keywords": "WG-Zimmer inserieren, Nachmieter Inserat, möblierte Wohnung vermieten, Co-Living Betreiber Inserat",
       "h1": "Inserat aufgeben",
       "sub": "Zimmer, Betreiber und Nachmieter-Inserate bekommen alle eine Warmmiete-Vorschau, damit Mieter die echte Zahl sehen, bevor sie fragen."
@@ -1036,7 +1050,7 @@
     "professionals": {
       "file": "professionals.html",
       "title": "Tarife für Anbieter und Betreiber — WG-Zimmer, Co-Living, möbliert | RentLeaks",
-      "description": "Werkzeuge für Zimmeranbieter, Co-Living-Betreiber, möblierte Bestände und Mieter, die einen Nachmieter suchen.",
+      "description": "Werkzeuge für Zimmeranbieter, Co-Living-Betreiber, möblierte Bestände und Mieter, die einen Nachmieter suchen. Erste Woche bei jedem neuen Inserat kostenlos.",
       "keywords": "Wohnung inserieren, Co-Living Software, möblierte Wohnung inserieren, Nachmieter inserieren",
       "h1": "Gebaut für flexible Bestände",
       "sub": "Zimmeranbieter, Co-Living-Betreiber, möblierte Bestände und Mieter, die einen Nachmieter suchen.",
@@ -1106,7 +1120,7 @@
           "style": "btn--outline"
         }
       ],
-      "note": "Jederzeit kündbar. Diskriminierungsfreie Vermietung gilt für jeden Anbieter. Wir verkaufen keine Hotelnächte."
+      "note": "Ihre erste Woche ist bei jedem neuen Inserat kostenlos. Jederzeit kündbar. Diskriminierungsfreie Vermietung gilt für jeden Anbieter. Wir verkaufen keine Hotelnächte."
     },
     "faq": {
       "file": "faq.html",
@@ -1138,7 +1152,7 @@
         },
         {
           "q": "Wie inseriere ich eine Wohnung?",
-          "a": "Über „Inserat aufgeben“. Zimmer, möblierte Wohnungen, Co-Living-Betreiber und Nachmieter-Inserate veröffentlichen alle über denselben Weg, zu denselben Bedingungen. Die Tarife für Anbieter stehen unter Tarife und Werkzeuge."
+          "a": "Über „Inserat aufgeben“. Zimmer, möblierte Wohnungen, Co-Living-Betreiber und Nachmieter-Inserate veröffentlichen alle über denselben Weg, zu denselben Bedingungen. Ihre erste Woche ist bei jedem davon kostenlos: Die Abrechnung beginnt am achten Tag, und wer das Inserat vorher zurückzieht, zahlt nichts. Die Tarife für Anbieter stehen unter Tarife und Werkzeuge."
         },
         {
           "q": "Ist Stay DNA eine Bonitätsprüfung?",
@@ -1215,6 +1229,38 @@
     "switch": "English"
   },
   "patterns": [
+    {
+      "re": "^Total per (week|month)$",
+      "to": "Gesamt pro {1:t}"
+    },
+    {
+      "re": "^Listing, per (week|month)$",
+      "to": "Inserat, pro {1:t}"
+    },
+    {
+      "re": "^Then per (week|month)$",
+      "to": "Danach pro {1:t}"
+    },
+    {
+      "re": "^Sponsored placement — \\+\\$(\\d+) per (week|month)$",
+      "to": "Gesponserte Platzierung — +{1} $ pro {2:t}"
+    },
+    {
+      "re": "^\\$(\\d+) per (week|month)$",
+      "to": "{1} $ pro {2:t}"
+    },
+    {
+      "re": "^Free for the first (\\d+) days, then \\$(\\d+) per (week|month)\\. Nothing is charged to renters, ever\\.$",
+      "to": "Die ersten {1} Tage kostenlos, danach {2} $ pro {3:t}. Mietern wird niemals etwas berechnet."
+    },
+    {
+      "re": "^First (\\d+) days$",
+      "to": "Erste {1} Tage"
+    },
+    {
+      "re": "^Your first (\\d+) days are free$",
+      "to": "Ihre ersten {1} Tage sind kostenlos"
+    },
     {
       "re": "^(.+), ([^,]+) — slide (\\d+) of (\\d+)$",
       "to": "{1:t}, {2:t} — Bild {3} von {4}"

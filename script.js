@@ -2616,7 +2616,7 @@
         </div>
         <div class="form-group"><label>Description</label><textarea name="description" class="form-input" rows="4" required placeholder="Who lives here, what is included, what is not."></textarea></div>
         <p class="rl-allin-live">All-in preview: <strong id="rl-allin-preview">$1,400</strong> /mo</p>
-        <p class="pricing-note">One price for every listing type — rooms, co-living, furnished and lease-breaks alike. Renters are never charged.</p>
+        <p class="pricing-note">Your first week is free, on every listing. After that, one price for every type — rooms, co-living, furnished and lease-breaks alike. Renters are never charged.</p>
         <button class="btn btn--primary" type="submit">Publish listing</button>
       </form>`;
     const form = $('#rl-wizard');
@@ -2738,7 +2738,7 @@
   function renderProfessionalsCopy() {
     const note = $('#rl-pro-note');
     if (note) {
-      note.textContent = 'Built for room hosts, co-living operators, furnished portfolios, and tenants posting a lease-break. One price, whatever you are listing.';
+      note.textContent = 'Built for room hosts, co-living operators, furnished portfolios, and tenants posting a lease-break. Your first week is free, whatever you are listing.';
     }
   }
 
