@@ -157,9 +157,41 @@ def cover_linkedin(size, kicker, headline, points):
     return img
 
 
-def post_card(size, kicker, headline, sub, chips, theme="night", footer="rentleaks.com/hire-a-broker"):
+def photo_bg(size, path):
+    """A photograph, cropped to fill, darkened enough to carry type.
+
+    The scrim is a vertical gradient rather than a flat wash: the picture stays
+    a picture at the top, and the bottom — where the headline, the sub and the
+    chips sit — goes dark enough for white text to clear WCAG AA at these
+    sizes. Returns None when the file isn't there, so a missing photo falls
+    back to the painted card instead of breaking the build.
+    """
+    if not path or not os.path.exists(path):
+        return None
+    w, h = size
+    src = Image.open(path).convert("RGB")
+    scale = max(w / src.width, h / src.height)
+    src = src.resize((max(w, int(src.width * scale)), max(h, int(src.height * scale))), Image.LANCZOS)
+    img = src.crop(((src.width - w) // 2, (src.height - h) // 2, (src.width - w) // 2 + w, (src.height - h) // 2 + h))
+
+    scrim = Image.new("L", (1, h))
+    for y in range(h):
+        t = y / max(1, h - 1)
+        # Barely there at the top so the room still reads as a room, and dark
+        # enough by the lower third that white type clears AA over any of it.
+        scrim.putpixel((0, y), int(255 * min(0.90, 0.12 + 0.80 * (t ** 1.8))))
+    img = Image.composite(Image.new("RGB", (w, h), NIGHT), img, scrim.resize((w, h)))
+    return img, ImageDraw.Draw(img)
+
+
+def post_card(size, kicker, headline, sub, chips, theme="night", footer="rentleaks.com/hire-a-broker", photo=None):
     """One card, any aspect: type shrinks until the whole block fits the frame."""
-    img, d = (night_bg(size) if theme == "night" else paper_bg(size))
+    shot = photo_bg(size, photo)
+    if shot:
+        img, d = shot
+        theme = "night"  # white type over a photograph, whatever the spec said
+    else:
+        img, d = (night_bg(size) if theme == "night" else paper_bg(size))
     w, h = size
     on_night = theme == "night"
     base = min(w, int(h * 1.5))
@@ -209,11 +241,20 @@ def post_card(size, kicker, headline, sub, chips, theme="night", footer="rentlea
     y = top
     slack = (floor - top) - height
     if slack > 0:
-        y += int(slack * (0.42 if h > w else 0.18))
-    d.text((pad, y), kicker.upper(), font=fk, fill=kick_c)
+        y += int(slack * (0.94 if shot else (0.42 if h > w else 0.18)))
+    # Over a photograph the top of the block can land on a light part of the
+    # room, so the kicker and headline carry a soft shadow. On a painted card
+    # there is nothing to separate them from, and a shadow would just be grubby.
+    def line(xy, txt, f, fill):
+        if shot:
+            off = max(1, int(f.size * 0.055))
+            d.text((xy[0] + off, xy[1] + off), txt, font=f, fill=(6, 18, 22))
+        d.text(xy, txt, font=f, fill=fill)
+
+    line((pad, y), kicker.upper(), fk, kick_c)
     y += int(fk.size * 1.9)
     for ln in hl:
-        d.text((pad, y), ln, font=fh, fill=head_c)
+        line((pad, y), ln, fh, head_c)
         y += int(fh.size * 1.16)
     y += int(base * 0.028)
     for ln in sl:

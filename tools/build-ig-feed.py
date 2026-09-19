@@ -30,6 +30,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SPEC = os.path.join(ROOT, "tools", "social", "ig-posts.json")
 QUEUE = os.path.join(ROOT, "tools", "social", "ig-queue.json")
 OUT = os.path.join(ROOT, "images", "social", "ig")
+PHOTOS = os.path.join(ROOT, "images", "social", "photos")
 DOC = os.path.join(ROOT, "marketing", "social", "IG-FEED.md")
 SITE = "https://rentleaks.com"
 SIZE = (1080, 1350)          # 4:5, the tallest Instagram allows in the feed
@@ -86,6 +87,7 @@ def main():
                 post.get("chips", []),
                 theme=post.get("theme", "night"),
                 footer=post.get("footer", defaults.get("footer", "rentleaks.com")),
+                photo=os.path.join(PHOTOS, f"{post['photo']}.jpg") if post.get("photo") else None,
             )
             img.save(path, "JPEG", quality=88, optimize=True, progressive=True)
             made.append(name)
@@ -127,7 +129,10 @@ def main():
     ]
     open(DOC, "w", encoding="utf-8").write("\n".join(head + lines))
 
+    have = sum(1 for p_ in posts if p_.get("photo") and os.path.exists(os.path.join(PHOTOS, f"{p_['photo']}.jpg")))
     print(f"Rendered {len(made)} of {len(posts)} images into images/social/ig/")
+    if have < len(posts):
+        print(f"  {len(posts) - have} drawn as painted cards — run tools/fetch-ig-photos.sh for the interiors")
     print(f"  captions  -> {os.path.relpath(DOC, ROOT)}")
     print(f"  queue     -> {os.path.relpath(QUEUE, ROOT)} ({len(queue)} posts)")
     longest = max(queue, key=lambda q: len(q["caption"]))

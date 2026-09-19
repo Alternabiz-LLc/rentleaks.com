@@ -1,0 +1,59 @@
+{
+  "_comment": [
+    "The photo library behind the Instagram feed. Eight interiors — aparthotel,",
+    "co-living, furnished and bedroom — cycled across the 20 posts so no two",
+    "neighbouring tiles repeat.",
+    "",
+    "Generated images, not photographs of real listings, and deliberately empty:",
+    "a housing post that pictures who lives somewhere is a fair-housing problem,",
+    "and a generated interior must never be passed off as an actual home. They",
+    "illustrate the categories RentLeaks lists; they never stand in for a listing.",
+    "",
+    "The files are not in the repository — they are fetched once:",
+    "",
+    "    bash tools/fetch-ig-photos.sh",
+    "",
+    "which downloads them into images/social/photos/ and re-renders the feed.",
+    "Until then tools/build-ig-feed.py draws the painted cards instead, so the",
+    "feed always renders and nothing is ever half-made.",
+    "",
+    "To swap one for a real photograph, drop your own JPEG in at the same file",
+    "name and re-run tools/build-ig-feed.py. Landscape or portrait both work —",
+    "the renderer crops to fill — but portrait 4:5 loses the least."
+  ],
+  "dir": "images/social/photos",
+  "photos": {
+    "aparthotel-studio": {
+      "what": "Serviced aparthotel studio — bed, kitchenette, dining table, city light",
+      "url": "https://cdn.gamma.app/awiu7b5j5s2bhx5/design-anything/4fbJ7XKGncMz3ek0kzt1b/3SnYzLYtnsEqzIXmKke6d.jpg"
+    },
+    "coliving-lounge": {
+      "what": "Co-living shared lounge — communal table, modular sofa, tall windows",
+      "url": "https://cdn.gamma.app/awiu7b5j5s2bhx5/design-anything/jx4lZe8XVkvX7uryc0cgg/Nq8tVMOQCb8MiSPT6AmS3.jpg"
+    },
+    "furnished-living": {
+      "what": "Furnished apartment living room — linen sofa, travertine table, olive tree",
+      "url": "https://cdn.gamma.app/awiu7b5j5s2bhx5/design-anything/x0sHnVM2sGPRBSe4PEC4A/JbJcg1phkAsDsl4v9bX46.jpg"
+    },
+    "bedroom-shared": {
+      "what": "Private bedroom in a shared home — double bed, rattan chair, tall window",
+      "url": "https://cdn.gamma.app/awiu7b5j5s2bhx5/design-anything/FSzeJSZX9R9gYaI18EdIt/bP-outVDLQmHlhpnOvWbk.jpg"
+    },
+    "studio-compact": {
+      "what": "Compact furnished studio — bed, desk by the window, open shelving",
+      "url": "https://cdn.gamma.app/awiu7b5j5s2bhx5/design-anything/MsfbkXfWrrptXwNmw03rc/qcpqosHYO2aWTfBRhrdW0.jpg"
+    },
+    "coliving-kitchen": {
+      "what": "Co-living studio kitchen corner — oak cabinetry, breakfast bar",
+      "url": "https://cdn.gamma.app/awiu7b5j5s2bhx5/design-anything/V2JNy8EyEdZawGIP4xAKW/TL7bbtrTQd_YUS6CL47hX.jpg"
+    },
+    "bedroom-window": {
+      "what": "Bright bedroom — low platform bed, teal throw, morning light",
+      "url": "https://cdn.gamma.app/awiu7b5j5s2bhx5/design-anything/L6tCG2UTESspY3LeSVrmi/NnhWbT1X_cLzaxt0UbKOh.jpg"
+    },
+    "aparthotel-lounge": {
+      "what": "Aparthotel residents' lounge — travertine counter, soft seating, terrazzo",
+      "url": "https://cdn.gamma.app/awiu7b5j5s2bhx5/design-anything/4j4Qp2OhaCdehjwn1zvqA/HLSCm6pEinqfP92HYAXJm.jpg"
+    }
+  }
+}

@@ -12,7 +12,11 @@
     "the queue to tools/social/ig-queue.json.",
     "",
     "theme: night (dark) or paper (light) — alternate so the grid has rhythm.",
-    "chips: short facts that sit as pills under the headline. Keep to 4."
+    "chips: short facts that sit as pills under the headline. Keep to 4.",
+    "",
+    "photo: a slug from tools/social/ig-photos.json. The picture fills the frame",
+    "under a gradient scrim; if the file isn't in images/social/photos/ yet, the",
+    "painted card is drawn instead, so the feed always renders."
   ],
   "defaults": {
     "footer": "rentleaks.com",
@@ -22,30 +26,47 @@
     {
       "id": "welcome",
       "theme": "night",
+      "photo": "furnished-living",
       "kicker": "RentLeaks",
       "headline": "Housing, not hotels",
       "sub": "Rooms, co-living, furnished homes, 1-month-plus stays and lease-breaks — at all-in prices, in 79 markets.",
-      "chips": ["30 days minimum", "All-in prices", "79 markets", "No booking fee"],
+      "chips": [
+        "30 days minimum",
+        "All-in prices",
+        "79 markets",
+        "No booking fee"
+      ],
       "link": "https://rentleaks.com/",
       "caption": "Somewhere to live for three months is a genuinely hard thing to find. Hotels price by the night and aren't homes. Year leases don't bend. Everything in between is a mess of screenshots and deposits paid to strangers.\n\nRentLeaks is the in-between, done properly: private rooms, co-living buildings, furnished apartments, 1-month-plus stays and lease takeovers — 30 days minimum, never nightly — across 79 markets in the US, UK, Ireland, France, Spain, the Netherlands, Switzerland, Germany and Italy.\n\nEvery price is all-in. Link in bio."
     },
     {
       "id": "all-in",
       "theme": "paper",
+      "photo": "studio-compact",
       "kicker": "How we price",
       "headline": "All-in means all in",
       "sub": "Base rent plus the utilities, wifi and cleaning the listing includes — one number, before you enquire.",
-      "chips": ["Rent", "+ Utilities", "+ Wifi", "+ Cleaning"],
+      "chips": [
+        "Rent",
+        "+ Utilities",
+        "+ Wifi",
+        "+ Cleaning"
+      ],
       "link": "https://rentleaks.com/",
       "caption": "The cheapest listing is usually the one hiding the most.\n\nAll-in is a number you can compare: base rent plus whatever utilities, wifi and cleaning that listing includes, shown before you contact anyone. If something isn't included, it says so.\n\nIt makes the comparison boring, which is the point — you should be choosing between homes, not decoding them."
     },
     {
       "id": "fare-who-pays",
       "theme": "night",
+      "photo": "bedroom-window",
       "kicker": "New York · FARE Act",
       "headline": "Whoever hires the broker pays the broker",
       "sub": "In effect since 11 June 2025. A landlord's agent can't move their fee onto you.",
-      "chips": ["Landlord hires, landlord pays", "You hire, you pay", "Fee in writing, first"],
+      "chips": [
+        "Landlord hires, landlord pays",
+        "You hire, you pay",
+        "Fee in writing, first"
+      ],
       "source": "NYC FARE Act, Local Law 119 of 2024 — in effect 11 June 2025",
       "link": "https://rentleaks.com/hire-a-broker/guide.html",
       "caption": "The rule most New York renters still haven't been told.\n\nSince the FARE Act took effect on 11 June 2025, the person who hires the broker pays the broker. If a landlord hired an agent to list and show an apartment, that agent's fee is the landlord's cost — it can't be passed to you, and every fee you do pay has to be itemised in writing before you sign.\n\nThe one time a renter pays is when the renter hires their own agent. That's a service you choose, at a price you agree first.\n\nFree 5-page playbook — link in bio.\n\nGeneral information, not legal advice."
@@ -53,80 +74,127 @@
     {
       "id": "fee-maths",
       "theme": "paper",
+      "photo": "aparthotel-studio",
       "kicker": "The maths",
       "headline": "One month or 15%?<br/>$2,880 apart",
       "sub": "Same apartment, same agent, three ways of saying the fee. One month is about 8.33% of a year.",
-      "chips": ["$3,600 rent", "1 month = $3,600", "12% = $5,184", "15% = $6,480"],
+      "chips": [
+        "$3,600 rent",
+        "1 month = $3,600",
+        "12% = $5,184",
+        "15% = $6,480"
+      ],
       "link": "https://rentleaks.com/hire-a-broker/guide.html",
       "caption": "Convert before you compare.\n\nBroker fees get quoted three ways — months of rent, a percentage of the first year, or a flat fee — and people trade them as if they were the same thing. On a $3,600 apartment: one month is $3,600, 12% of the year is $5,184, 15% is $6,480.\n\nSame apartment. $2,880 between the cheapest and the dearest way of saying it.\n\nThe conversion table is in the free fee-negotiation guide — link in bio.\n\nWorked examples, not offers."
     },
     {
       "id": "fee-cap",
       "theme": "night",
+      "photo": "coliving-lounge",
       "kicker": "Hire a broker",
       "headline": "Name your number before anyone shows you anything",
       "sub": "Set the most you'll pay. Verified licensed agents then propose at or under it — above your cap, a proposal can't even be sent.",
-      "chips": ["One month", "A percentage", "A flat fee", "Or nothing at all"],
+      "chips": [
+        "One month",
+        "A percentage",
+        "A flat fee",
+        "Or nothing at all"
+      ],
       "link": "https://rentleaks.com/hire-a-broker/",
       "caption": "A cap turns an awkward negotiation into a simple comparison.\n\nYou decide the most you'd pay a broker — one month, a percentage, a flat fee, or nothing at all — and up to three verified licensed agents pitch at or under it. A proposal above your cap can't be sent to you at all.\n\nNo lease, no fee. Nothing owed to us, ever.\n\nLink in bio."
     },
     {
       "id": "three-steps",
       "theme": "paper",
+      "photo": "bedroom-shared",
       "kicker": "How it works",
       "headline": "Three steps, about two minutes of typing",
       "sub": "Tell us what you need · pick your broker · sign in the app.",
-      "chips": ["1 · Your brief", "2 · Up to 3 pitches", "3 · One clear agreement"],
+      "chips": [
+        "1 · Your brief",
+        "2 · Up to 3 pitches",
+        "3 · One clear agreement"
+      ],
       "link": "https://rentleaks.com/hire-a-broker/",
       "caption": "Hiring a broker, start to finish.\n\n1 · Tell us the area, the kind of home, the dates and your fee cap.\n2 · Up to three verified agents come back with a fee and a short pitch. You compare and pick one — or none.\n3 · One plain-English agreement, signed in the app before the search starts.\n\nEvery agent's licence is checked with the state before they see a single lead, and your name, email and phone stay private until you choose someone.\n\nLink in bio."
     },
     {
       "id": "agreement",
       "theme": "night",
+      "photo": "coliving-kitchen",
       "kicker": "Before you sign",
       "headline": "What a fair broker agreement says",
       "sub": "If your agreement is missing these, that's the conversation to have before you sign — not after.",
-      "chips": ["A fee in dollars", "No lease, no fee", "90 days, endable", "Only homes they introduced"],
+      "chips": [
+        "A fee in dollars",
+        "No lease, no fee",
+        "90 days, endable",
+        "Only homes they introduced"
+      ],
       "link": "https://rentleaks.com/hire-a-broker/guide.html",
       "caption": "Save this before your next viewing.\n\nA fair representation and fee agreement says the fee as a number in dollars — \"standard\" is not a number. It says the fee is owed on a signed lease and nothing else. It applies only to homes that agent introduced, with a list you both keep. It runs 90 days or less and either side can end it in writing. And it charges you nothing for homes their own brokerage represents for the landlord.\n\nThe full checklist is in the free playbook — link in bio.\n\nGeneral information, not legal advice."
     },
     {
       "id": "walk-away",
       "theme": "paper",
+      "photo": "aparthotel-lounge",
       "kicker": "Four reasons to walk",
       "headline": "Don't sign that",
       "sub": "Any one of these is enough. The last one is prohibited outright.",
-      "chips": ["The fee isn't a number", "Six months, no exit", "Money before you've seen it", "\"Only if you sign with me\""],
+      "chips": [
+        "The fee isn't a number",
+        "Six months, no exit",
+        "Money before you've seen it",
+        "\"Only if you sign with me\""
+      ],
       "link": "https://rentleaks.com/hire-a-broker/guide.html",
       "caption": "Four things that mean you should not sign that broker agreement.\n\nOne: the fee isn't a number. \"Standard\" isn't a number.\nTwo: it locks you in for six months with no way out. Ninety days, endable in writing, is normal.\nThree: money is asked for before you've seen anything. Rent and deposits go to the landlord against a signed lease — never to an agent's personal account.\nFour: an apartment is available to you only if you sign with them. That one is prohibited outright.\n\nLink in bio for the full checklist."
     },
     {
       "id": "guides",
       "theme": "night",
+      "photo": "studio-compact",
       "kicker": "Free, no strings",
       "headline": "Three guides we wish every renter had",
       "sub": "The renter's broker playbook, how to negotiate a fee, and — for licensed agents — the referral partner kit.",
-      "chips": ["5 pages each", "Free PDF", "A person follows up", "No marketing lists"],
+      "chips": [
+        "5 pages each",
+        "Free PDF",
+        "A person follows up",
+        "No marketing lists"
+      ],
       "link": "https://rentleaks.com/hire-a-broker/guide.html",
       "caption": "Three PDFs, free, and worth the five minutes.\n\n· The New York renter's broker playbook — who pays a fee now, what one should cost, what your agreement must say, and 12 questions to ask before you hire anyone.\n· How to negotiate a broker fee — how to tell whether there's a fee to negotiate at all, six levers that move one, and the words to use.\n· The referral partner kit — for licensed agents, how our referral program works and what it pays.\n\nLink in bio. You'll hear from a person, not a drip sequence."
     },
     {
       "id": "scam-shield",
       "theme": "paper",
+      "photo": "bedroom-window",
       "kicker": "Scam Shield",
       "headline": "Never pay before you've seen it",
       "sub": "Rent and deposits go to the landlord, against a signed lease. Never to a personal account.",
-      "chips": ["No wire transfers", "No gift cards", "No crypto", "See it first — in person or live"],
+      "chips": [
+        "No wire transfers",
+        "No gift cards",
+        "No crypto",
+        "See it first — in person or live"
+      ],
       "link": "https://rentleaks.com/",
       "caption": "The single rule that prevents almost every rental scam: see the home — in person or on a live video call — before any money moves.\n\nRent and deposits are paid to the landlord or the management company against a signed lease. Never to an agent's personal account, never by wire transfer, gift card or crypto, and never to hold a home you haven't seen.\n\nRentLeaks never takes a payment and will never ask you for one."
     },
     {
       "id": "nyc-fees",
       "theme": "night",
+      "photo": "furnished-living",
       "kicker": "New York",
       "headline": "Application fees are capped at $20 — and mostly banned",
       "sub": "Deposit: one month, maximum. A credit report you supply, dated within 30 days, has to be accepted.",
-      "chips": ["Deposit ≤ 1 month", "Screening ≤ $20", "Bring your own report", "No move-in fees"],
+      "chips": [
+        "Deposit ≤ 1 month",
+        "Screening ≤ $20",
+        "Bring your own report",
+        "No move-in fees"
+      ],
       "source": "NY Real Property Law § 238-a · General Obligations Law § 7-108 (HSTPA)",
       "link": "https://rentleaks.com/",
       "caption": "New York renters pay fees that the law stopped allowing in 2019.\n\nThe security deposit is capped at one month's rent. Application and move-in charges are barred, and a background or credit check can cost you no more than $20 — which you don't have to pay at all if you hand over a consumer report you already have, dated within the last 30 days.\n\nIf a landlord or agent asks for more, the correct response is to ask which statute allows it.\n\nGeneral information, not legal advice; rules vary by city and state."
@@ -134,10 +202,16 @@
     {
       "id": "nyc-sublet",
       "theme": "paper",
+      "photo": "coliving-lounge",
       "kicker": "New York · § 226-b",
       "headline": "Silence is consent",
       "sub": "In a building of four or more units, a landlord who doesn't answer a proper sublet request in 30 days has consented.",
-      "chips": ["10 days: they may ask for more", "30 days: decide", "No answer = consent", "Buildings of 4+"],
+      "chips": [
+        "10 days: they may ask for more",
+        "30 days: decide",
+        "No answer = consent",
+        "Buildings of 4+"
+      ],
       "source": "NY Real Property Law § 226-b — sublet and assignment",
       "link": "https://rentleaks.com/lease-break.html",
       "caption": "Breaking a New York lease is less hopeless than it feels.\n\nIn a building with four or more units, you send a proper written sublet request. The landlord has 10 days to ask for more information and 30 days from that to decide — and if they don't answer, consent is deemed given. Assignment is the harder route: it needs written consent, which can be refused without a reason, but then your remedy is release from the lease on 30 days' notice.\n\nLease-break posts are free on RentLeaks. Link in bio.\n\nGeneral information, not legal advice."
@@ -145,10 +219,16 @@
     {
       "id": "paris",
       "theme": "night",
+      "photo": "aparthotel-studio",
       "kicker": "Paris",
       "headline": "The bail mobilité takes no deposit at all",
       "sub": "One to ten months, non-renewable — for tenants in study, training, apprenticeship or a temporary posting.",
-      "chips": ["1–10 months", "No deposit permitted", "Non-renewable", "Eligibility at application"],
+      "chips": [
+        "1–10 months",
+        "No deposit permitted",
+        "Non-renewable",
+        "Eligibility at application"
+      ],
       "source": "France — bail mobilité (loi ELAN)",
       "link": "https://rentleaks.com/cities.html",
       "caption": "If you're moving to Paris for a few months, ask for the bail mobilité by name.\n\nIt runs one to ten months, can't be renewed, and — unusually — no deposit is permitted at all. It's limited to tenants in training, study, an apprenticeship, a professional assignment or a temporary posting, and that eligibility is captured when you apply.\n\nWe hold the rules for every market we list, so the contract type is decided before anyone signs.\n\nGeneral information, not legal advice."
@@ -156,10 +236,16 @@
     {
       "id": "amsterdam",
       "theme": "paper",
+      "photo": "bedroom-shared",
       "kicker": "Amsterdam",
       "headline": "Thirty days makes it a tenancy",
       "sub": "With full protection — and since July 2024, fixed terms are largely unavailable.",
-      "chips": ["30 days = tenancy", "Deposit ≤ 2 months", "Agent's fee: not yours", "Full protection"],
+      "chips": [
+        "30 days = tenancy",
+        "Deposit ≤ 2 months",
+        "Agent's fee: not yours",
+        "Full protection"
+      ],
       "source": "Netherlands — Wet goed verhuurderschap",
       "link": "https://rentleaks.com/cities.html",
       "caption": "Amsterdam is one of the strongest positions a mid-term renter can be in, and most people don't know it.\n\nA stay of 30 days or more is a tenancy with full protection. The deposit is capped at two months. And under the good landlordship act, a letting agent working for the landlord cannot charge the tenant a fee — the same principle New York adopted five years later.\n\nSince July 2024, fixed terms are largely unavailable, so \"it's only a six-month contract\" is usually not the whole story.\n\nGeneral information, not legal advice."
@@ -167,10 +253,16 @@
     {
       "id": "berlin",
       "theme": "night",
+      "photo": "coliving-kitchen",
       "kicker": "Berlin",
       "headline": "Three months, not thirty days",
       "sub": "The misappropriation ban is the binding constraint, and a temporary purpose has to be documented in the contract.",
-      "chips": ["~90 days in practice", "Registration required", "Zeitmietvertrag", "Purpose documented"],
+      "chips": [
+        "~90 days in practice",
+        "Registration required",
+        "Zeitmietvertrag",
+        "Purpose documented"
+      ],
       "source": "Berlin — Zweckentfremdungsverbot",
       "link": "https://rentleaks.com/cities.html",
       "caption": "Berlin is the market where the usual 30-day rule doesn't apply.\n\nThe Zweckentfremdungsverbot — the ban on misappropriating housing — is what actually binds, and in practice the threshold sits nearer three months than thirty days. A shorter let needs registration, and the contract has to be a Zeitmietvertrag with a documented temporary purpose.\n\nThis is why \"it works in Amsterdam\" is not a plan for Berlin. We keep the rules per market so a listing is written to the right regime from the start.\n\nGeneral information, not legal advice."
@@ -178,10 +270,16 @@
     {
       "id": "london",
       "theme": "paper",
+      "photo": "aparthotel-lounge",
       "kicker": "London",
       "headline": "The advertised rent is a ceiling",
       "sub": "Accepting more than the stated rent is prohibited, and no more than one month's rent may be taken in advance.",
-      "chips": ["No bidding above ad", "≤ 1 month in advance", "Periodic tenancy", "Fixed terms abolished"],
+      "chips": [
+        "No bidding above ad",
+        "≤ 1 month in advance",
+        "Periodic tenancy",
+        "Fixed terms abolished"
+      ],
       "source": "UK — Renters' Rights Act",
       "link": "https://rentleaks.com/cities.html",
       "caption": "Rental bidding in London is over.\n\nThe advertised rent is now a ceiling: a landlord or agent can't accept more than the rent they stated, and no more than one month's rent may be taken in advance. Assured tenancies are periodic, with fixed terms abolished.\n\nIf you're being asked to bid up, or to pay six months up front to \"strengthen\" an application, that's the rule to quote.\n\nGeneral information, not legal advice."
@@ -189,10 +287,16 @@
     {
       "id": "barcelona",
       "theme": "night",
+      "photo": "studio-compact",
       "kicker": "Barcelona",
       "headline": "A season contract has to say what the season is for",
       "sub": "Catalonia's seasonal and room-rental regime reaches mid-term lets, not only tourist lets — and rent caps can apply.",
-      "chips": ["Contracte de temporada", "Purpose in the contract", "Registration required", "Rent caps can apply"],
+      "chips": [
+        "Contracte de temporada",
+        "Purpose in the contract",
+        "Registration required",
+        "Rent caps can apply"
+      ],
       "source": "Catalonia — seasonal and room-rental regime",
       "link": "https://rentleaks.com/cities.html",
       "caption": "A Barcelona mid-term let is not a tourist let, and not an ordinary tenancy either.\n\nIt's a contracte de temporada, and the temporary purpose has to be documented in the contract itself — study, work, a posting. Catalonia's seasonal and room-rental rules reach mid-term lets rather than only tourist stays, registration is required, and rent caps can apply.\n\nA contract that doesn't say why it's seasonal is the one to ask about.\n\nGeneral information, not legal advice."
@@ -200,30 +304,48 @@
     {
       "id": "canada-minimums",
       "theme": "paper",
+      "photo": "bedroom-window",
       "kicker": "Canada",
       "headline": "The minimum stay changes at the city line",
       "sub": "Toronto 28 days · Vancouver 30 · Montreal and Quebec City 31.",
-      "chips": ["Toronto · 28", "Vancouver · 30", "Montréal · 31", "Québec · 31"],
+      "chips": [
+        "Toronto · 28",
+        "Vancouver · 30",
+        "Montréal · 31",
+        "Québec · 31"
+      ],
       "link": "https://rentleaks.com/cities.html",
       "caption": "Four Canadian cities, four different floors for a short stay.\n\nToronto is 28 days. Vancouver is 30. Montréal and Québec City are 31 — which matters more than the single day suggests, because a calendar month of 30 days doesn't clear it.\n\nWe hold the minimum for every market we list, so a stay is priced and contracted against the right one rather than the one that was true in the last city.\n\nGeneral information, not legal advice."
     },
     {
       "id": "lease-break",
       "theme": "night",
+      "photo": "furnished-living",
       "kicker": "Lease-break",
       "headline": "Posting a takeover is free",
       "sub": "Remaining term, whether it's an assignment or a sublet, and what the landlord's consent needs — stated up front.",
-      "chips": ["Free to post", "Remaining term shown", "Assignment vs sublet", "Consent rules per city"],
+      "chips": [
+        "Free to post",
+        "Remaining term shown",
+        "Assignment vs sublet",
+        "Consent rules per city"
+      ],
       "link": "https://rentleaks.com/lease-break.html",
       "caption": "Leaving a lease early is a bad week that doesn't need to become a bad year.\n\nPosting a lease-break on RentLeaks is free. The listing shows the remaining term, whether it's an assignment or a sublet, and what consent the landlord's rules actually require in that city — because those are the three things every serious replacement asks in the first message.\n\nLink in bio."
     },
     {
       "id": "for-agents",
       "theme": "paper",
+      "photo": "coliving-lounge",
       "kicker": "For licensed agents",
       "headline": "Leads that already want a broker",
       "sub": "Area, budget, dates and the fee they'll pay — before you spend a minute on them.",
-      "chips": ["$0 to join", "Nothing per lead", "24h to answer", "25% after a lease"],
+      "chips": [
+        "$0 to join",
+        "Nothing per lead",
+        "24h to answer",
+        "25% after a lease"
+      ],
       "link": "https://rentleaks.com/hire-a-broker/agents.html",
       "caption": "Agents: this is what a lead should look like before you pay for it.\n\nEvery one is a renter who has already decided to hire a broker — with the area, the budget, the move-in date and the fee they're willing to pay. You accept with your fee and two lines about why you. They compare up to three of you and choose.\n\nNothing to join. No charge per lead. A broker-to-broker referral fee only after a lease is signed, invoiced to your brokerage. Licence checked with the state, 24 hours to answer a lead, ten spots on the page.\n\nApply in two minutes — link in bio."
     }

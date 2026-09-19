@@ -228,6 +228,21 @@ python3 tools/build-ig-feed.py          # art + captions + queue
 python3 tools/build-ig-feed.py fee-maths   # re-render one while editing it
 ```
 
+The posts are illustrated with eight interiors — aparthotel, co-living,
+furnished and bedroom — cycled so no two neighbouring tiles repeat. The files
+aren't in the repository; fetch them once:
+
+```bash
+bash tools/fetch-ig-photos.sh        # downloads them and re-renders the feed
+```
+
+Until that has run, every post is drawn as a painted brand card instead, so the
+feed always renders. To swap one for a real photograph, drop your own JPEG into
+`images/social/photos/` under the same name and re-run the feed builder. The
+interiors are generated and deliberately empty of people: a housing post that
+pictures who lives somewhere is a fair-housing problem, and a generated room is
+never shown as an actual listing.
+
 It writes the art to `images/social/ig/` **in the website repo**, on purpose:
 Instagram's publishing API fetches a post's picture by public URL, so it has to
 be a real JPEG on rentleaks.com. Deploy the static site before the first post is
