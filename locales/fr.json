@@ -73,7 +73,6 @@
     "Find": "Trouver",
     "Stay DNA match": "Correspondance Stay DNA",
     "Hosts": "Hôtes",
-    "Post a lease-break free": "Publier une reprise de bail gratuitement",
     "List a room": "Publier une chambre",
     "Co-living operators": "Exploitants de coliving",
     "Operator boutiques": "Vitrines d'exploitants",
@@ -201,7 +200,6 @@
     "Homes listed right now": "Logements en ligne actuellement",
     "Markets covered": "Marchés couverts",
     "Listings with zero broker fee": "Annonces sans honoraires d'agence",
-    "Lease-breaks posted free": "Reprises de bail publiées gratuitement",
     "Featured homes": "Logements à la une",
     "Previous home": "Logement précédent",
     "Next home": "Logement suivant",
@@ -399,7 +397,6 @@
     "Browse 1-month+": "Parcourir les séjours d'un mois et plus",
     "Takeovers · assignment vs sublet": "Reprises · cession ou sous-location",
     "Take the rest of the lease": "Reprenez la fin du bail",
-    "See the Lease Clock, months left, and whether it is an assignment or a sublet. Posting a lease-break is free.": "Consultez le compteur de bail, les mois restants et s'il s'agit d'une cession ou d'une sous-location. Publier une reprise de bail est gratuit.",
     "See takeovers": "Voir les reprises",
     "Remaining terms with takeover math before you send money.": "Les durées restantes et le calcul de la reprise, avant tout versement.",
     "Browse lease-breaks": "Parcourir les reprises de bail",
@@ -450,7 +447,6 @@
     "Serviced apartments from hotel operators — housekeeping in, nightly rates out.": "Des résidences services d'opérateurs hôteliers — le ménage compris, les tarifs à la nuit exclus.",
     "Hotel groups can list here, but only stays of 30 days or more. Still no nightly bookings.": "Les groupes hôteliers peuvent publier ici, mais seulement des séjours de 30 jours ou plus. Toujours pas de réservation à la nuit.",
     "Take over a remaining lease. See days left, assignment vs sublet.": "Reprenez la fin d'un bail. Jours restants, cession ou sous-location.",
-    "Lease Clock, takeover math, and free posting so good homes stay filled.": "Compteur de bail, calcul de la reprise et publication gratuite, pour que les bons logements ne restent pas vides.",
     "Kitchen": "Cuisine",
     "Living room": "Salon",
     "Street": "Rue",
@@ -478,7 +474,6 @@
     "Min stay (months)": "Séjour min. (mois)",
     "Description": "Description",
     "All-in preview:": "Aperçu tout compris :",
-    "Lease-break posts are free. Rooms and furnished stays can start free while we seed a city.": "Les reprises de bail sont gratuites. Les chambres et les meublés peuvent démarrer gratuitement le temps que nous lancions une ville.",
     "Publish listing": "Publier l'annonce",
     "Add up to 3 homes from search, then come back.": "Ajoutez jusqu'à 3 logements depuis la recherche, puis revenez ici.",
     "flexible homes": "logements flexibles",
@@ -869,7 +864,15 @@
     "The rent, the term, the deposit and the fees on my listing are accurate and complete.": "Le loyer, la durée, le dépôt de garantie et les frais indiqués dans mon annonce sont exacts et complets.",
     "I will not hand over keys before the landlord’s consent is settled.": "Je ne remettrai pas les clés avant que l'accord du propriétaire soit réglé.",
     "Broker acts for the landlord": "L'agent agit pour le propriétaire",
-    "Broker acts for you": "L'agent agit pour vous"
+    "Broker acts for you": "L'agent agit pour vous",
+    "Post a lease-break": "Publier une reprise de bail",
+    "Lease takeovers listed": "Reprises de bail publiées",
+    "See the Lease Clock, months left, and whether it is an assignment or a sublet. It lists on the same terms as every other home.": "Consultez le compteur de bail, les mois restants et s'il s'agit d'une cession ou d'une sous-location. Elle se publie aux mêmes conditions que tout autre logement.",
+    "Lease Clock, takeover math, and the remaining term shown before anyone has to ask.": "Compteur de bail, calcul de la reprise et durée restante affichée avant même qu'on la demande.",
+    "One price for every listing type — rooms, co-living, furnished and lease-breaks alike. Renters are never charged.": "Un seul prix pour tous les types d'annonce — chambres, coliving, meublés et reprises de bail. Les locataires ne paient jamais.",
+    "Built for room hosts, co-living operators, furnished portfolios, and tenants posting a lease-break. One price, whatever you are listing.": "Pensé pour les loueurs de chambres, les exploitants de coliving, les parcs de meublés et les locataires qui publient une reprise de bail. Un seul prix, quel que soit ce que vous publiez.",
+    "Rooms, operators and lease-breaks all get an All-in preview, so renters see the real number before they ask.": "Chambres, exploitants et reprises de bail obtiennent tous un aperçu du loyer tout compris, pour que les locataires voient le vrai chiffre avant même de demander.",
+    "Lease Clock on every takeover": "Compteur de bail sur chaque reprise"
   },
   "nav": {
     "languageLabel": "Langue",
@@ -925,7 +928,7 @@
       "file": "lease-break.html",
       "h1": "Reprises de bail : cession et sous-location",
       "title": "Reprise de bail — cession ou sous-location | RentLeaks",
-      "description": "Reprenez le bail d'un locataire qui part, à Paris, Lyon, Berlin, Londres, Amsterdam et dans les grandes villes nord-américaines. Compteur de bail, mois restants, cession ou sous-location. La publication d'une reprise de bail est gratuite.",
+      "description": "Reprenez le bail d'un locataire qui part, à Paris, Lyon, Berlin, Londres, Amsterdam et dans les grandes villes nord-américaines. Compteur de bail, mois restants, cession ou sous-location. Une reprise de bail se publie aux mêmes conditions que tout autre logement.",
       "keywords": "reprise de bail, cession de bail, sous-location, bail à reprendre Paris, transfert de bail, quitter son bail avant terme",
       "blurb": "Une reprise de bail, c'est la fin du bail de quelqu'un d'autre. Nous affichons les mois restants et s'il s'agit d'une cession ou d'une sous-location. Vérifiez les documents avant tout versement.",
       "countLabel": "reprises de bail en ligne"
@@ -944,8 +947,8 @@
         "subtitle": "Chambres en colocation, résidences de coliving, appartements meublés, séjours d'un mois et plus et reprises de bail. Chaque loyer est tout compris. Chaque courte durée commence à 30 jours.",
         "liveHomes": "logements en ligne",
         "markets": "marchés",
-        "freeLeaseBreak": "Les reprises de bail sont gratuites",
-        "hint": "Vous hésitez sur le type ? <a href=\"match.html\">Lancez Stay DNA</a> · Appuyez sur <a href=\"#\" class=\"js-cmd\">⌘K</a> pour aller n'importe où · <a href=\"list.html?kind=lease-break\">Publiez une reprise de bail gratuitement</a>"
+        "freeLeaseBreak": "Compteur de bail sur chaque reprise",
+        "hint": "Vous hésitez sur le type ? <a href=\"match.html\">Lancez Stay DNA</a> · Appuyez sur <a href=\"#\" class=\"js-cmd\">⌘K</a> pour aller n'importe où · <a href=\"list.html?kind=lease-break\">Publiez une reprise de bail</a>"
       },
       "compliance": "La non-discrimination au logement s'applique sur tous les marchés que nous publions. <a href=\"faq.html\">Comment nous traitons les chambres, les reprises de bail et les séjours de 30 jours</a>",
       "sections": {
@@ -985,7 +988,7 @@
           "Gratuit : le guide du locataire pour choisir son agent"
         ],
         "hostKicker": "Hôtes et exploitants",
-        "hostTitle": "Vous partez plus tôt ? Publiez gratuitement le reste de votre bail.",
+        "hostTitle": "Vous partez plus tôt ? Publiez le reste de votre bail.",
         "hostBody": "Les chambres, les exploitants de meublés et les résidences de coliving publient aussi ici — avec de vrais outils, pas une petite annonce. <a href=\"professionals.html\">Voir les outils pour les hôtes</a>.",
         "hostCta": "Publier une annonce"
       },
@@ -1021,32 +1024,32 @@
     "list": {
       "file": "list.html",
       "title": "Publier une chambre, un meublé ou une reprise de bail | RentLeaks",
-      "description": "Publiez gratuitement une reprise de bail. Mettez en ligne chambres, logements en coliving, appartements meublés et séjours d'un mois et plus, avec le loyer tout compris.",
+      "description": "Mettez en ligne chambres, logements en coliving, appartements meublés, séjours d'un mois et plus et reprises de bail, chacun avec son loyer tout compris.",
       "keywords": "publier une chambre, annonce reprise de bail, louer son meublé, annonce coliving exploitant",
       "h1": "Publier une annonce",
-      "sub": "Les reprises de bail sont gratuites — un logement vide n'arrange personne. Les chambres et les exploitants obtiennent un aperçu du loyer tout compris, pour que les locataires voient le vrai chiffre."
+      "sub": "Chambres, exploitants et reprises de bail obtiennent tous un aperçu du loyer tout compris, pour que les locataires voient le vrai chiffre avant même de demander."
     },
     "professionals": {
       "file": "professionals.html",
       "title": "Offres hôtes et exploitants — chambres, coliving, meublés | RentLeaks",
-      "description": "Des outils pour les loueurs de chambres, les exploitants de coliving, les parcs de meublés et les reprises de bail gratuites.",
-      "keywords": "publier une location, logiciel exploitant coliving, annonce appartement meublé, reprise de bail gratuite",
+      "description": "Des outils pour les loueurs de chambres, les exploitants de coliving, les parcs de meublés et les locataires qui publient une reprise de bail.",
+      "keywords": "publier une location, logiciel exploitant coliving, annonce appartement meublé, annonce reprise de bail",
       "h1": "Conçu pour le parc flexible",
       "sub": "Loueurs de chambres, exploitants de coliving, parcs de meublés et locataires qui publient une reprise de bail.",
       "plans": [
         {
-          "badge": "Gratuit",
+          "badge": "",
           "title": "Reprise de bail",
           "desc": "Locataires qui partent avant terme",
-          "amount": "0 €",
-          "period": "",
+          "amount": "60 €",
+          "period": "/mois par annonce",
           "features": [
             "Compteur de bail + cession ou sous-location",
             "Aperçu du loyer tout compris",
             "Candidatures avec passeport",
             "Check-list anti-arnaque"
           ],
-          "cta": "Publier gratuitement",
+          "cta": "Publier une reprise de bail",
           "href": "list.html?kind=lease-break",
           "style": "btn--primary"
         },
@@ -1131,7 +1134,7 @@
         },
         {
           "q": "Comment publier une annonce ?",
-          "a": "Passez par « Publier une annonce ». Les reprises de bail sont gratuites. Chambres, appartements meublés et exploitants de coliving publient depuis le même parcours. Les offres pour les hôtes sont sur la page Offres et outils."
+          "a": "Passez par « Publier une annonce ». Chambres, appartements meublés, exploitants de coliving et reprises de bail publient tous depuis le même parcours, aux mêmes conditions. Les offres pour les hôtes sont sur la page Offres et outils."
         },
         {
           "q": "Stay DNA est-il une enquête de solvabilité ?",

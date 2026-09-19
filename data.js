@@ -114,7 +114,7 @@
       short: 'Lease-break',
       href: 'lease-break.html',
       blurb: 'Take over a remaining lease. See days left, assignment vs sublet.',
-      promise: 'Lease Clock, takeover math, and free posting so good homes stay filled.'
+      promise: 'Lease Clock, takeover math, and the remaining term shown before anyone has to ask.'
     }
   ];
 

@@ -2,7 +2,7 @@
 
 > Flexible housing marketplace for rooms, co-living buildings, furnished apartments, 1-month+ stays (30-day minimum), and lease-breaks in the United States and major cities across the UK, Ireland, France, Spain, the Netherlands, Switzerland, Germany, and Italy.
 
-RentLeaks is housing, not hotels. Short-term means 30 days or more. Prices are All-in (base rent plus listed utilities, wifi, and cleaning). Lease-break posts are free.
+RentLeaks is housing, not hotels. Short-term means 30 days or more. Prices are All-in (base rent plus listed utilities, wifi, and cleaning). Every listing type is priced the same, lease-breaks included.
 
 ## Primary indexes
 - [Home](https://rentleaks.com/): Product overview and featured inventory

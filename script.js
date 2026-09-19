@@ -592,7 +592,7 @@
       crumb: 'Lease-break',
       kicker: 'Takeovers · assignment vs sublet',
       title: 'Take the rest of the lease',
-      blurb: 'See the Lease Clock, months left, and whether it is an assignment or a sublet. Posting a lease-break is free.',
+      blurb: 'See the Lease Clock, months left, and whether it is an assignment or a sublet. It lists on the same terms as every other home.',
       film: 'See takeovers',
       filmSub: 'Remaining terms with takeover math before you send money.',
       cta: 'Browse lease-breaks',
@@ -891,7 +891,7 @@
                 <div class="footer__col"><h4>Find</h4><ul>${typeLinks}<li><a href="${base}match.html">Stay DNA match</a></li></ul></div>
                 <div class="footer__col"><h4>Cities</h4><ul>${cityLinks}<li><a href="${base}cities.html">All ${(DATA.cities || []).length} markets</a></li></ul></div>
                 <div class="footer__col"><h4>Hosts</h4><ul>
-                  <li><a href="${base}list.html?kind=lease-break">Post a lease-break free</a></li>
+                  <li><a href="${base}list.html?kind=lease-break">Post a lease-break</a></li>
                   <li><a href="${base}list.html?kind=room">List a room</a></li>
                   <li><a href="${base}list.html?kind=coliving">Co-living operators</a></li>
                   <li><a href="${base}operators.html">Operator boutiques</a></li>
@@ -2251,7 +2251,7 @@
         <div class="hero-proof__row"><span class="hero-proof__k">Homes listed right now</span><span class="hero-proof__v">${listings.length.toLocaleString()}</span></div>
         <div class="hero-proof__row"><span class="hero-proof__k">Markets covered</span><span class="hero-proof__v">${cities.length}</span></div>
         <div class="hero-proof__row"><span class="hero-proof__k">Listings with zero broker fee</span><span class="hero-proof__v">${noFeePct}%</span></div>
-        <div class="hero-proof__row"><span class="hero-proof__k">Lease-breaks posted free</span><span class="hero-proof__v">${breaks.length}</span></div>
+        <div class="hero-proof__row"><span class="hero-proof__k">Lease takeovers listed</span><span class="hero-proof__v">${breaks.length}</span></div>
         <div style="padding-top:.5rem">
           <p class="hero-proof__note">Cheapest ${escapeHtml(nyc.name || 'New York')} room vs. the ${escapeHtml(nyc.name || 'local')} median</p>
           <div class="hero-proof__bar"><span class="hero-proof__fill" style="width:${pct}%"></span></div>
@@ -2616,7 +2616,7 @@
         </div>
         <div class="form-group"><label>Description</label><textarea name="description" class="form-input" rows="4" required placeholder="Who lives here, what is included, what is not."></textarea></div>
         <p class="rl-allin-live">All-in preview: <strong id="rl-allin-preview">$1,400</strong> /mo</p>
-        <p class="pricing-note">Lease-break posts are free. Rooms and furnished stays can start free while we seed a city.</p>
+        <p class="pricing-note">One price for every listing type — rooms, co-living, furnished and lease-breaks alike. Renters are never charged.</p>
         <button class="btn btn--primary" type="submit">Publish listing</button>
       </form>`;
     const form = $('#rl-wizard');
@@ -2738,7 +2738,7 @@
   function renderProfessionalsCopy() {
     const note = $('#rl-pro-note');
     if (note) {
-      note.textContent = 'Built for room hosts, co-living operators, furnished portfolios, and tenants posting a lease-break. Lease-break listings are free.';
+      note.textContent = 'Built for room hosts, co-living operators, furnished portfolios, and tenants posting a lease-break. One price, whatever you are listing.';
     }
   }
 

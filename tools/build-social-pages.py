@@ -130,7 +130,7 @@ PAGES = {
             ("What is the minimum stay?", "Thirty days. This is housing, not hotel nights — there are no nightly bookings."),
             ("What does an all-in price include?", "Base rent plus the utilities, wifi and cleaning that listing includes, shown as one number before you enquire."),
             ("Who pays the broker fee?", "Whoever hired the broker. Since 11 June 2025 in New York City, a landlord's agent cannot charge the renter; you pay only a broker you hired yourself, at a fee agreed in writing first."),
-            ("Can I take over someone's lease?", "Yes. Lease-break posts are free, and each one shows the remaining term and whether it is an assignment or a sublet."),
+            ("Can I take over someone's lease?", "Yes. Each lease-break shows the remaining term and whether it is an assignment or a sublet."),
             ("How quickly will someone reply?", "Within one business day, by email, phone or text."),
         ],
         "photo": "coliving-lounge",

@@ -84,10 +84,10 @@ T = {
  "Reprenez la fin d'un bail. Jours restants, cession ou sous-location.",
  "Übernehmen Sie einen laufenden Mietvertrag. Resttage, Vertragsübernahme oder Untermiete.",
  "Subentra in un contratto in corso. Giorni residui, cessione o subaffitto."),
-"Lease Clock, takeover math, and free posting so good homes stay filled.": (
- "Compteur de bail, calcul de la reprise et publication gratuite, pour que les bons logements ne restent pas vides.",
- "Vertragsuhr, die Rechnung zur Übernahme und kostenloses Inserieren, damit gute Wohnungen nicht leer stehen.",
- "Contatore del contratto, i conti del subentro e pubblicazione gratuita, così le case buone non restano vuote."),
+"Lease Clock, takeover math, and the remaining term shown before anyone has to ask.": (
+ "Compteur de bail, calcul de la reprise et durée restante affichée avant même qu'on la demande.",
+ "Vertragsuhr, die Rechnung zur Übernahme und die Restlaufzeit, bevor jemand danach fragen muss.",
+ "Contatore del contratto, i conti del subentro e la durata residua mostrata prima che qualcuno la chieda."),
 "Kitchen": ("Cuisine", "Küche", "Cucina"),
 "Living room": ("Salon", "Wohnzimmer", "Soggiorno"),
 "Street": ("Rue", "Straße", "Strada"),
@@ -135,10 +135,10 @@ T = {
 "Min stay (months)": ("Séjour min. (mois)", "Mindestdauer (Monate)", "Durata min. (mesi)"),
 "Description": ("Description", "Beschreibung", "Descrizione"),
 "All-in preview:": ("Aperçu tout compris :", "Vorschau Warmmiete:", "Anteprima tutto compreso:"),
-"Lease-break posts are free. Rooms and furnished stays can start free while we seed a city.": (
- "Les reprises de bail sont gratuites. Les chambres et les meublés peuvent démarrer gratuitement le temps que nous lancions une ville.",
- "Nachmieter-Inserate sind kostenlos. Zimmer und möblierte Wohnungen können kostenlos starten, solange wir eine Stadt aufbauen.",
- "I subentri sono gratis. Stanze e arredati possono partire gratis mentre avviamo una città."),
+"One price for every listing type — rooms, co-living, furnished and lease-breaks alike. Renters are never charged.": (
+ "Un seul prix pour tous les types d'annonce — chambres, coliving, meublés et reprises de bail. Les locataires ne paient jamais.",
+ "Ein Preis für jede Inseratsart — WG-Zimmer, Co-Living, möbliert und Nachmieter gleichermaßen. Mietern wird nie etwas berechnet.",
+ "Un solo prezzo per ogni tipo di annuncio — stanze, co-living, arredati e subentri. Agli inquilini non viene mai addebitato nulla."),
 "Publish listing": ("Publier l'annonce", "Inserat veröffentlichen", "Pubblica l'annuncio"),
 "Add up to 3 homes from search, then come back.": (
  "Ajoutez jusqu'à 3 logements depuis la recherche, puis revenez ici.",

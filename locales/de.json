@@ -77,7 +77,6 @@
     "Find": "Finden",
     "Stay DNA match": "Stay-DNA-Abgleich",
     "Hosts": "Anbieter",
-    "Post a lease-break free": "Nachmieter-Inserat kostenlos aufgeben",
     "List a room": "WG-Zimmer inserieren",
     "Co-living operators": "Co-Living-Betreiber",
     "Operator boutiques": "Betreiber-Profile",
@@ -205,7 +204,6 @@
     "Homes listed right now": "Aktuell inserierte Wohnungen",
     "Markets covered": "Abgedeckte Märkte",
     "Listings with zero broker fee": "Provisionsfreie Inserate",
-    "Lease-breaks posted free": "Kostenlos aufgegebene Nachmieter-Inserate",
     "Featured homes": "Empfohlene Wohnungen",
     "Previous home": "Vorherige Wohnung",
     "Next home": "Nächste Wohnung",
@@ -403,7 +401,6 @@
     "Browse 1-month+": "Ab 1 Monat durchsuchen",
     "Takeovers · assignment vs sublet": "Übernahmen · Vertragsübernahme oder Untermiete",
     "Take the rest of the lease": "Übernehmen Sie den Rest des Mietvertrags",
-    "See the Lease Clock, months left, and whether it is an assignment or a sublet. Posting a lease-break is free.": "Sehen Sie die Vertragsuhr, die verbleibenden Monate und ob es eine Vertragsübernahme oder eine Untermiete ist. Ein Nachmieter-Inserat ist kostenlos.",
     "See takeovers": "Übernahmen ansehen",
     "Remaining terms with takeover math before you send money.": "Restlaufzeiten samt Rechnung, bevor Sie Geld überweisen.",
     "Browse lease-breaks": "Nachmieter-Inserate durchsuchen",
@@ -454,7 +451,6 @@
     "Serviced apartments from hotel operators — housekeeping in, nightly rates out.": "Serviced Apartments von Hotelbetreibern — Reinigung drin, Nachtpreise draußen.",
     "Hotel groups can list here, but only stays of 30 days or more. Still no nightly bookings.": "Hotelgruppen dürfen hier inserieren, aber nur Aufenthalte ab 30 Tagen. Nach wie vor keine Buchung pro Nacht.",
     "Take over a remaining lease. See days left, assignment vs sublet.": "Übernehmen Sie einen laufenden Mietvertrag. Resttage, Vertragsübernahme oder Untermiete.",
-    "Lease Clock, takeover math, and free posting so good homes stay filled.": "Vertragsuhr, die Rechnung zur Übernahme und kostenloses Inserieren, damit gute Wohnungen nicht leer stehen.",
     "Kitchen": "Küche",
     "Living room": "Wohnzimmer",
     "Street": "Straße",
@@ -482,7 +478,6 @@
     "Min stay (months)": "Mindestdauer (Monate)",
     "Description": "Beschreibung",
     "All-in preview:": "Vorschau Warmmiete:",
-    "Lease-break posts are free. Rooms and furnished stays can start free while we seed a city.": "Nachmieter-Inserate sind kostenlos. Zimmer und möblierte Wohnungen können kostenlos starten, solange wir eine Stadt aufbauen.",
     "Publish listing": "Inserat veröffentlichen",
     "Add up to 3 homes from search, then come back.": "Fügen Sie bis zu 3 Wohnungen aus der Suche hinzu und kommen Sie zurück.",
     "flexible homes": "flexible Wohnungen",
@@ -873,7 +868,15 @@
     "The rent, the term, the deposit and the fees on my listing are accurate and complete.": "Miete, Laufzeit, Kaution und Gebühren in meinem Inserat sind richtig und vollständig.",
     "I will not hand over keys before the landlord’s consent is settled.": "Ich übergebe keine Schlüssel, bevor die Zustimmung des Vermieters geklärt ist.",
     "Broker acts for the landlord": "Der Makler handelt für den Vermieter",
-    "Broker acts for you": "Der Makler handelt für Sie"
+    "Broker acts for you": "Der Makler handelt für Sie",
+    "Post a lease-break": "Nachmieter inserieren",
+    "Lease takeovers listed": "Inserierte Mietübernahmen",
+    "See the Lease Clock, months left, and whether it is an assignment or a sublet. It lists on the same terms as every other home.": "Sehen Sie die Vertragsuhr, die verbleibenden Monate und ob es eine Vertragsübernahme oder eine Untermiete ist. Es wird zu denselben Bedingungen inseriert wie jede andere Wohnung.",
+    "Lease Clock, takeover math, and the remaining term shown before anyone has to ask.": "Vertragsuhr, die Rechnung zur Übernahme und die Restlaufzeit, bevor jemand danach fragen muss.",
+    "One price for every listing type — rooms, co-living, furnished and lease-breaks alike. Renters are never charged.": "Ein Preis für jede Inseratsart — WG-Zimmer, Co-Living, möbliert und Nachmieter gleichermaßen. Mietern wird nie etwas berechnet.",
+    "Built for room hosts, co-living operators, furnished portfolios, and tenants posting a lease-break. One price, whatever you are listing.": "Gemacht für Zimmeranbieter, Co-Living-Betreiber, möblierte Bestände und Mieter, die einen Nachmieter suchen. Ein Preis, was immer Sie inserieren.",
+    "Rooms, operators and lease-breaks all get an All-in preview, so renters see the real number before they ask.": "Zimmer, Betreiber und Nachmieter-Inserate bekommen alle eine Warmmiete-Vorschau, damit Mieter die echte Zahl sehen, bevor sie fragen.",
+    "Lease Clock on every takeover": "Vertragsuhr bei jeder Übernahme"
   },
   "nav": {
     "languageLabel": "Sprache",
@@ -929,7 +932,7 @@
       "file": "lease-break.html",
       "h1": "Nachmieter gesucht: Vertragsübernahme und Untermiete",
       "title": "Nachmieter & Mietübernahme — Vertragsübernahme oder Untermiete | RentLeaks",
-      "description": "Übernehmen Sie einen laufenden Mietvertrag in Berlin, München, Hamburg, Frankfurt, Köln, Zürich, London, Paris und Amsterdam sowie in Nordamerika. Vertragsuhr, Restmonate, Vertragsübernahme oder Untermiete. Ein Nachmieter-Inserat ist kostenlos.",
+      "description": "Übernehmen Sie einen laufenden Mietvertrag in Berlin, München, Hamburg, Frankfurt, Köln, Zürich, London, Paris und Amsterdam sowie in Nordamerika. Vertragsuhr, Restmonate, Vertragsübernahme oder Untermiete. Ein Nachmieter-Inserat läuft zu denselben Bedingungen wie jedes andere.",
       "keywords": "Nachmieter gesucht, Mietvertrag übernehmen, Untermiete Berlin, Zwischenmiete, Nachmieter Berlin, Wohnung übernehmen",
       "blurb": "Ein Nachmieter-Inserat ist der Rest eines fremden Mietvertrags. Wir zeigen die verbleibenden Monate und ob es um eine Vertragsübernahme oder eine Untermiete geht. Prüfen Sie die Unterlagen, bevor Sie Geld überweisen.",
       "countLabel": "Nachmieter-Inserate online"
@@ -948,8 +951,8 @@
         "subtitle": "WG-Zimmer, Co-Living-Häuser, möblierte Wohnungen, Aufenthalte ab einem Monat und Nachmieter-Angebote. Jeder Preis ist eine Warmmiete. Jede Kurzzeitmiete beginnt bei 30 Tagen.",
         "liveHomes": "Wohnungen online",
         "markets": "Märkte",
-        "freeLeaseBreak": "Nachmieter-Inserate sind kostenlos",
-        "hint": "Unsicher, welche Wohnform? <a href=\"match.html\">Stay DNA starten</a> · <a href=\"#\" class=\"js-cmd\">⌘K</a> drücken, um überallhin zu springen · <a href=\"list.html?kind=lease-break\">Nachmieter kostenlos inserieren</a>"
+        "freeLeaseBreak": "Vertragsuhr bei jeder Übernahme",
+        "hint": "Unsicher, welche Wohnform? <a href=\"match.html\">Stay DNA starten</a> · <a href=\"#\" class=\"js-cmd\">⌘K</a> drücken, um überallhin zu springen · <a href=\"list.html?kind=lease-break\">Nachmieter inserieren</a>"
       },
       "compliance": "Diskriminierungsfreie Wohnungsvermittlung gilt auf jedem Markt, den wir führen. <a href=\"faq.html\">Wie wir mit Zimmern, Übernahmen und 30-Tage-Aufenthalten umgehen</a>",
       "sections": {
@@ -989,7 +992,7 @@
           "Kostenlos: der Maklerleitfaden für Mieter"
         ],
         "hostKicker": "Für Anbieter und Betreiber",
-        "hostTitle": "Sie ziehen früher aus? Inserieren Sie den Rest des Vertrags kostenlos.",
+        "hostTitle": "Sie ziehen früher aus? Inserieren Sie den Rest des Vertrags.",
         "hostBody": "WG-Zimmer, Betreiber möblierter Bestände und Co-Living-Häuser inserieren ebenfalls hier — mit echten Werkzeugen, nicht als Kleinanzeige. <a href=\"professionals.html\">Werkzeuge für Anbieter ansehen</a>.",
         "hostCta": "Inserat aufgeben"
       },
@@ -1025,32 +1028,32 @@
     "list": {
       "file": "list.html",
       "title": "WG-Zimmer, möblierte Wohnung oder Nachmieter inserieren | RentLeaks",
-      "description": "Nachmieter-Inserate sind kostenlos. Inserieren Sie WG-Zimmer, Co-Living-Zimmer, möblierte Wohnungen und Aufenthalte ab einem Monat mit Warmmiete.",
+      "description": "Inserieren Sie WG-Zimmer, Co-Living-Zimmer, möblierte Wohnungen, Aufenthalte ab einem Monat und Nachmieter-Angebote, jedes mit seiner Warmmiete.",
       "keywords": "WG-Zimmer inserieren, Nachmieter Inserat, möblierte Wohnung vermieten, Co-Living Betreiber Inserat",
       "h1": "Inserat aufgeben",
-      "sub": "Nachmieter-Inserate sind kostenlos — leerstehende Monate nützen niemandem. Zimmer und Betreiber bekommen eine Warmmiete-Vorschau, damit Mieter die echte Zahl sehen."
+      "sub": "Zimmer, Betreiber und Nachmieter-Inserate bekommen alle eine Warmmiete-Vorschau, damit Mieter die echte Zahl sehen, bevor sie fragen."
     },
     "professionals": {
       "file": "professionals.html",
       "title": "Tarife für Anbieter und Betreiber — WG-Zimmer, Co-Living, möbliert | RentLeaks",
-      "description": "Werkzeuge für Zimmeranbieter, Co-Living-Betreiber, möblierte Bestände und kostenlose Nachmieter-Inserate.",
-      "keywords": "Wohnung inserieren, Co-Living Software, möblierte Wohnung inserieren, Nachmieter kostenlos inserieren",
+      "description": "Werkzeuge für Zimmeranbieter, Co-Living-Betreiber, möblierte Bestände und Mieter, die einen Nachmieter suchen.",
+      "keywords": "Wohnung inserieren, Co-Living Software, möblierte Wohnung inserieren, Nachmieter inserieren",
       "h1": "Gebaut für flexible Bestände",
       "sub": "Zimmeranbieter, Co-Living-Betreiber, möblierte Bestände und Mieter, die einen Nachmieter suchen.",
       "plans": [
         {
-          "badge": "Kostenlos",
+          "badge": "",
           "title": "Nachmieter",
           "desc": "Mieter, die früher ausziehen",
-          "amount": "0 €",
-          "period": "",
+          "amount": "60 €",
+          "period": "/Monat pro Inserat",
           "features": [
             "Vertragsuhr + Vertragsübernahme oder Untermiete",
             "Warmmiete-Vorschau",
             "Bewerbungen mit Mieterprofil",
             "Betrugsschutz-Checkliste"
           ],
-          "cta": "Kostenlos inserieren",
+          "cta": "Nachmieter inserieren",
           "href": "list.html?kind=lease-break",
           "style": "btn--primary"
         },
@@ -1135,7 +1138,7 @@
         },
         {
           "q": "Wie inseriere ich eine Wohnung?",
-          "a": "Über „Inserat aufgeben“. Nachmieter-Inserate sind kostenlos. Zimmer, möblierte Wohnungen und Co-Living-Betreiber veröffentlichen über denselben Weg. Die Tarife für Anbieter stehen unter Tarife und Werkzeuge."
+          "a": "Über „Inserat aufgeben“. Zimmer, möblierte Wohnungen, Co-Living-Betreiber und Nachmieter-Inserate veröffentlichen alle über denselben Weg, zu denselben Bedingungen. Die Tarife für Anbieter stehen unter Tarife und Werkzeuge."
         },
         {
           "q": "Ist Stay DNA eine Bonitätsprüfung?",

@@ -77,7 +77,6 @@
     "Find": "Trova",
     "Stay DNA match": "Corrispondenza Stay DNA",
     "Hosts": "Chi affitta",
-    "Post a lease-break free": "Pubblica un subentro gratis",
     "List a room": "Pubblica una stanza",
     "Co-living operators": "Gestori di co-living",
     "Operator boutiques": "Vetrine dei gestori",
@@ -210,7 +209,6 @@
     "Homes listed right now": "Case pubblicate in questo momento",
     "Markets covered": "Mercati coperti",
     "Listings with zero broker fee": "Annunci senza provvigione",
-    "Lease-breaks posted free": "Subentri pubblicati gratis",
     "Featured homes": "Case in evidenza",
     "Previous home": "Casa precedente",
     "Next home": "Casa successiva",
@@ -416,7 +414,6 @@
     "Browse 1-month+": "Sfoglia da 1 mese in su",
     "Takeovers · assignment vs sublet": "Subentri · cessione o subaffitto",
     "Take the rest of the lease": "Prenditi il resto del contratto",
-    "See the Lease Clock, months left, and whether it is an assignment or a sublet. Posting a lease-break is free.": "Guarda il contatore del contratto, i mesi che restano e se si tratta di cessione o di subaffitto. Pubblicare un subentro è gratis.",
     "See takeovers": "Guarda i subentri",
     "Remaining terms with takeover math before you send money.": "Le durate residue e i conti del subentro, prima di versare denaro.",
     "Browse lease-breaks": "Sfoglia i subentri",
@@ -453,7 +450,6 @@
     "Serviced apartments from hotel operators — housekeeping in, nightly rates out.": "Appartamenti con servizi di operatori alberghieri — pulizie incluse, tariffe a notte escluse.",
     "Hotel groups can list here, but only stays of 30 days or more. Still no nightly bookings.": "I gruppi alberghieri possono pubblicare qui, ma solo soggiorni di 30 giorni o più. Niente prenotazioni a notte.",
     "Take over a remaining lease. See days left, assignment vs sublet.": "Subentra in un contratto in corso. Giorni residui, cessione o subaffitto.",
-    "Lease Clock, takeover math, and free posting so good homes stay filled.": "Contatore del contratto, i conti del subentro e pubblicazione gratuita, così le case buone non restano vuote.",
     "Kitchen": "Cucina",
     "Living room": "Soggiorno",
     "Street": "Strada",
@@ -481,7 +477,6 @@
     "Min stay (months)": "Durata min. (mesi)",
     "Description": "Descrizione",
     "All-in preview:": "Anteprima tutto compreso:",
-    "Lease-break posts are free. Rooms and furnished stays can start free while we seed a city.": "I subentri sono gratis. Stanze e arredati possono partire gratis mentre avviamo una città.",
     "Publish listing": "Pubblica l'annuncio",
     "Add up to 3 homes from search, then come back.": "Aggiungi fino a 3 case dalla ricerca, poi torna qui.",
     "flexible homes": "case flessibili",
@@ -873,7 +868,15 @@
     "I will not hand over keys before the landlord’s consent is settled.": "Non consegnerò le chiavi prima che il consenso del proprietario sia definito.",
     "Lease-breaks": "Subentri",
     "Broker acts for the landlord": "L'agente agisce per il proprietario",
-    "Broker acts for you": "L'agente agisce per te"
+    "Broker acts for you": "L'agente agisce per te",
+    "Post a lease-break": "Pubblica un subentro",
+    "Lease takeovers listed": "Subentri pubblicati",
+    "See the Lease Clock, months left, and whether it is an assignment or a sublet. It lists on the same terms as every other home.": "Guarda il contatore del contratto, i mesi che restano e se si tratta di cessione o di subaffitto. Si pubblica alle stesse condizioni di qualsiasi altra casa.",
+    "Lease Clock, takeover math, and the remaining term shown before anyone has to ask.": "Contatore del contratto, i conti del subentro e la durata residua mostrata prima che qualcuno la chieda.",
+    "One price for every listing type — rooms, co-living, furnished and lease-breaks alike. Renters are never charged.": "Un solo prezzo per ogni tipo di annuncio — stanze, co-living, arredati e subentri. Agli inquilini non viene mai addebitato nulla.",
+    "Built for room hosts, co-living operators, furnished portfolios, and tenants posting a lease-break. One price, whatever you are listing.": "Pensato per chi affitta stanze, per i gestori di co-living, per i portafogli di arredati e per gli inquilini che pubblicano un subentro. Un solo prezzo, qualunque cosa tu pubblichi.",
+    "Rooms, operators and lease-breaks all get an All-in preview, so renters see the real number before they ask.": "Stanze, gestori e subentri ottengono tutti un'anteprima del tutto compreso, così chi cerca vede il numero vero prima ancora di chiedere.",
+    "Lease Clock on every takeover": "Contatore del contratto su ogni subentro"
   },
   "nav": {
     "languageLabel": "Lingua",
@@ -958,7 +961,7 @@
       "file": "lease-break.html",
       "h1": "Subentro nel contratto: cessione e subaffitto",
       "title": "Subentro in affitto — cessione del contratto o subaffitto | RentLeaks",
-      "description": "Subentra nel contratto di chi lascia casa, a Roma, Milano, Firenze, Torino, Berlino, Londra, Parigi e Amsterdam, oltre che in Nord America. Contatore del contratto, mesi residui, cessione o subaffitto. Pubblicare un subentro è gratis.",
+      "description": "Subentra nel contratto di chi lascia casa, a Roma, Milano, Firenze, Torino, Berlino, Londra, Parigi e Amsterdam, oltre che in Nord America. Contatore del contratto, mesi residui, cessione o subaffitto. Un subentro si pubblica alle stesse condizioni di qualsiasi altro annuncio.",
       "keywords": "subentro affitto, cerco subentro, cessione contratto di locazione, subaffitto, subentro stanza Milano, lasciare casa prima della scadenza",
       "blurb": "Un subentro è quello che resta del contratto di qualcun altro. Mostriamo i mesi residui e se si tratta di una cessione o di un subaffitto. Controlla i documenti prima di versare qualsiasi somma.",
       "countLabel": "subentri online"
@@ -977,8 +980,8 @@
         "subtitle": "Stanze in affitto, residenze di co-living, appartamenti arredati, soggiorni da un mese in su e subentri. Ogni canone è tutto compreso. Ogni breve durata parte da 30 giorni.",
         "liveHomes": "case online",
         "markets": "mercati",
-        "freeLeaseBreak": "Pubblicare un subentro è gratis",
-        "hint": "Non sai quale tipo scegliere? <a href=\"match.html\">Avvia Stay DNA</a> · Premi <a href=\"#\" class=\"js-cmd\">⌘K</a> per andare ovunque · <a href=\"list.html?kind=lease-break\">Pubblica un subentro gratis</a>"
+        "freeLeaseBreak": "Contatore del contratto su ogni subentro",
+        "hint": "Non sai quale tipo scegliere? <a href=\"match.html\">Avvia Stay DNA</a> · Premi <a href=\"#\" class=\"js-cmd\">⌘K</a> per andare ovunque · <a href=\"list.html?kind=lease-break\">Pubblica un subentro</a>"
       },
       "compliance": "Il divieto di discriminazione nell'alloggio vale su ogni mercato che pubblichiamo. <a href=\"faq.html\">Come trattiamo stanze, subentri e soggiorni di 30 giorni</a>",
       "sections": {
@@ -1018,7 +1021,7 @@
           "Gratis: la guida dell'inquilino per scegliere l'agente"
         ],
         "hostKicker": "Per host e gestori",
-        "hostTitle": "Parti prima? Pubblica gratis quello che resta del contratto.",
+        "hostTitle": "Parti prima? Pubblica quello che resta del contratto.",
         "hostBody": "Stanze, gestori di arredati e residenze di co-living pubblicano anche loro qui — con strumenti veri, non un annuncio economico. <a href=\"professionals.html\">Guarda gli strumenti per gli host</a>.",
         "hostCta": "Pubblica un annuncio"
       },
@@ -1054,32 +1057,32 @@
     "list": {
       "file": "list.html",
       "title": "Pubblica una stanza, un arredato o un subentro | RentLeaks",
-      "description": "Pubblicare un subentro è gratis. Metti online stanze, camere in co-living, appartamenti arredati e soggiorni da un mese in su, con l'affitto tutto compreso.",
+      "description": "Metti online stanze, camere in co-living, appartamenti arredati, soggiorni da un mese in su e subentri, ognuno con il suo affitto tutto compreso.",
       "keywords": "pubblicare annuncio stanza, annuncio subentro, affittare appartamento arredato, annuncio co-living gestore",
       "h1": "Pubblica un annuncio",
-      "sub": "I subentri sono gratis — i mesi vuoti non fanno comodo a nessuno. Stanze e gestori ottengono un'anteprima del tutto compreso, così chi cerca vede il numero vero."
+      "sub": "Stanze, gestori e subentri ottengono tutti un'anteprima del tutto compreso, così chi cerca vede il numero vero prima ancora di chiedere."
     },
     "professionals": {
       "file": "professionals.html",
       "title": "Piani per host e gestori — stanze, co-living, arredati | RentLeaks",
-      "description": "Strumenti per chi affitta stanze, per i gestori di co-living, per i portafogli di arredati e per i subentri gratuiti.",
-      "keywords": "pubblicare affitto, software gestore co-living, annuncio appartamento arredato, subentro gratis",
+      "description": "Strumenti per chi affitta stanze, per i gestori di co-living, per i portafogli di arredati e per gli inquilini che pubblicano un subentro.",
+      "keywords": "pubblicare affitto, software gestore co-living, annuncio appartamento arredato, annuncio subentro",
       "h1": "Fatto per il portafoglio flessibile",
       "sub": "Chi affitta stanze, gestori di co-living, portafogli di arredati e inquilini che cercano un subentro.",
       "plans": [
         {
-          "badge": "Gratis",
+          "badge": "",
           "title": "Subentro",
           "desc": "Inquilini che lasciano prima della scadenza",
-          "amount": "0 €",
-          "period": "",
+          "amount": "60 €",
+          "period": "/mese per annuncio",
           "features": [
             "Contatore del contratto + cessione o subaffitto",
             "Anteprima del tutto compreso",
             "Candidature con profilo inquilino",
             "Lista di controllo antitruffa"
           ],
-          "cta": "Pubblica gratis",
+          "cta": "Pubblica un subentro",
           "href": "list.html?kind=lease-break",
           "style": "btn--primary"
         },
@@ -1164,7 +1167,7 @@
         },
         {
           "q": "Come pubblico un annuncio?",
-          "a": "Da «Pubblica un annuncio». I subentri sono gratis. Stanze, appartamenti arredati e gestori di co-living pubblicano dallo stesso percorso. I piani per gli host stanno in Piani e strumenti."
+          "a": "Da «Pubblica un annuncio». Stanze, appartamenti arredati, gestori di co-living e subentri pubblicano tutti dallo stesso percorso, alle stesse condizioni. I piani per gli host stanno in Piani e strumenti."
         },
         {
           "q": "Stay DNA è una verifica creditizia?",

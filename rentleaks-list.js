@@ -116,9 +116,14 @@
 
   /* What the LISTER pays. Renters pay nothing, on any plan, ever — that is
      the whole monetisation position and it is why there is no renter-side
-     fee anywhere in this composer. Lease-breaks publish free: an empty month
-     helps nobody, and charging someone to escape a lease they cannot afford
-     is the wrong business. */
+     fee anywhere in this composer.
+
+     Every listing type is priced the same, lease-breaks included. A
+     lease-break is a listing: it occupies the same slot in search, carries
+     the same verification and compliance checks, and takes the same work to
+     publish. Pricing it at zero said otherwise, and meant the cost function
+     had a housing-type branch in it for no reason the billing could
+     justify. */
   var PLANS = {
     week:  { label: 'Weekly',  listing: 14, sponsored: 45,  per: 'week' },
     month: { label: 'Monthly', listing: 60, sponsored: 120, per: 'month' }
@@ -126,7 +131,7 @@
 
   function planCost() {
     var pl = PLANS[draft.plan] || PLANS.week;
-    var listing = isLeaseBreak() ? 0 : pl.listing;
+    var listing = pl.listing;
     var sponsored = draft.sponsored ? pl.sponsored : 0;
     return { plan: pl, listing: listing, sponsored: sponsored, total: listing + sponsored };
   }
@@ -573,7 +578,7 @@
           return '<label class="c-plan' + (draft.plan === k ? ' is-on' : '') + '">' +
             '<input type="radio" name="c-plan" value="' + k + '"' + (draft.plan === k ? ' checked' : '') + '>' +
             '<span><b>' + esc(pl.label) + '</b>' +
-            (isLeaseBreak() ? 'Free \u2014 lease-breaks always are' : '$' + pl.listing + ' per ' + pl.per) +
+            '$' + pl.listing + ' per ' + pl.per +
             '</span></label>';
         }).join('') +
       '</div>' +
@@ -946,9 +951,7 @@
           (blocked.length ? blocked.length + ' thing' + (blocked.length === 1 ? '' : 's') + ' to fix' : 'Publish listing') + '</button>' +
         '<button type="button" class="btn btn--ghost btn--sm" id="c-preview">Preview as a renter</button>' +
         '<p class="v-note" style="margin-top:var(--s-2)">' +
-          (isLeaseBreak()
-            ? 'Lease-breaks publish free. Empty months help nobody.'
-            : '$' + planCost().total + ' per ' + planCost().plan.per + (draft.sponsored ? ', sponsored included' : '') + '. Nothing is charged to renters, ever.') +
+          '$' + planCost().total + ' per ' + planCost().plan.per + (draft.sponsored ? ', sponsored included' : '') + '. Nothing is charged to renters, ever.' +
         '</p>' +
       '</div>';
   }
