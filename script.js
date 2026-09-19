@@ -362,7 +362,7 @@
     const from = sourceCurrency(ctx) || to;
     const value = DATA.convert ? DATA.convert(n, from, to) : Number(n || 0);
     try {
-      return new Intl.NumberFormat(undefined, {
+      return new Intl.NumberFormat(document.documentElement.lang || undefined, {
         style: 'currency', currency: to,
         minimumFractionDigits: 0, maximumFractionDigits: 0
       }).format(Math.round(value));
@@ -748,10 +748,39 @@
     return document.body.dataset.page || 'home';
   }
 
+  /* Locales that have a built tree under their own directory. Kept in step
+     with locales/*.json and with the list in rentleaks-i18n.js. */
+  const LOCALE_DIRS = ['fr', 'de'];
+
+  /* How far below the site root this page sits, counted rather than matched.
+     The old version tested a fixed list of folder names, which was already
+     one folder away from being wrong and became wrong the moment /fr/ and
+     /fr/cities/ existed — two different depths that no single regex covers. */
   function assetBase() {
-    const path = window.location.pathname || '';
-    if (/\/(listings|cities|operators|enterprise|hire-a-broker)\//.test(path)) return '../';
-    return '';
+    const parts = (window.location.pathname || '/').split('/').filter(Boolean);
+    const last = parts[parts.length - 1] || '';
+    const depth = /\.[a-z0-9]+$/i.test(last) ? parts.length - 1 : parts.length;
+    return depth > 0 ? '../'.repeat(depth) : '';
+  }
+
+  function localeDir() {
+    const first = (window.location.pathname || '/').split('/').filter(Boolean)[0] || '';
+    return LOCALE_DIRS.indexOf(first) !== -1 ? first + '/' : '';
+  }
+
+  /* Where a page that HAS a translation lives. Assets and the pages that are
+     English-only — listings, enterprise, hire-a-broker — use assetBase()
+     instead, so a French visitor follows those links out of /fr/ rather than
+     into a URL that was never built. */
+  function localeBase() {
+    const dir = localeDir();
+    if (!dir) return assetBase();
+    // Already inside the locale: climb to the locale's own root, not the
+    // site root and back down again.
+    const parts = (window.location.pathname || '/').split('/').filter(Boolean);
+    const last = parts[parts.length - 1] || '';
+    const depth = /\.[a-z0-9]+$/i.test(last) ? parts.length - 1 : parts.length;
+    return depth > 1 ? '../'.repeat(depth - 1) : '';
   }
 
   function listingHref(listing) {
@@ -761,12 +790,12 @@
 
   function cityHref(city) {
     const slug = city.slug || (DATA.slugify ? DATA.slugify(city.name) : city.id);
-    return assetBase() + 'cities/' + slug + '.html';
+    return localeBase() + 'cities/' + slug + '.html';
   }
 
   function typeHref(typeId) {
     const files = DATA.typeFiles || {};
-    return assetBase() + (files[typeId] || ('rent.html?type=' + encodeURIComponent(typeId)));
+    return localeBase() + (files[typeId] || ('rent.html?type=' + encodeURIComponent(typeId)));
   }
 
   function navLink(href, label, key) {
@@ -781,7 +810,8 @@
   function injectChrome() {
     const saved = savedIds().length;
     const user = session();
-    const base = assetBase();
+    const base = localeBase();   // pages that exist in every locale
+    const rbase = assetBase();   // assets, and the pages that are English-only
     const headerHost = $('#rl-header');
     if (headerHost) {
       headerHost.innerHTML = `
@@ -802,17 +832,17 @@
                 ${navLink(base + 'cities.html', 'Cities', 'cities')}
                 ${navLink(base + 'operators.html', 'Operators', 'operators')}
                 ${navLink(base + 'match.html', 'Stay DNA', 'match')}
-                ${navLink(base + 'hire-a-broker/', 'Hire a broker', 'hire-a-broker')}
-                ${navLink(base + 'enterprise/', 'Enterprise', 'enterprise')}
+                ${navLink(rbase + 'hire-a-broker/', 'Hire a broker', 'hire-a-broker')}
+                ${navLink(rbase + 'enterprise/', 'Enterprise', 'enterprise')}
               </ul>
             </nav>
             <div class="header__actions">
               <button type="button" class="header__link js-cmd" aria-label="Search everything">
                 <span class="js-cmd__label">Search everything</span><kbd>⌘K</kbd>
               </button>
-              <a href="${base}saved.html" class="header__link">Saved${saved ? ' <span class="rl-count">' + saved + '</span>' : ''}</a>
-              <a href="${base}hire-a-broker/" class="header__link header__link--hire${pageName() === 'hire-a-broker' ? ' is-on' : ''}">Hire a broker</a>
-              <a href="${base}enterprise/" class="header__link header__link--ent${pageName() === 'enterprise' ? ' is-on' : ''}">For owners</a>
+              <a href="${rbase}saved.html" class="header__link">Saved${saved ? ' <span class="rl-count">' + saved + '</span>' : ''}</a>
+              <a href="${rbase}hire-a-broker/" class="header__link header__link--hire${pageName() === 'hire-a-broker' ? ' is-on' : ''}">Hire a broker</a>
+              <a href="${rbase}enterprise/" class="header__link header__link--ent${pageName() === 'enterprise' ? ' is-on' : ''}">For owners</a>
               <a href="${appHref('/list', base + 'list.html')}" class="header__link">List a place</a>
               <label class="cur-select" title="Display currency">
                 <span class="sr-only">Display currency</span>
@@ -822,7 +852,7 @@
               </label>
               <button type="button" class="theme-toggle js-theme" aria-label="Switch colour theme">${iconSun()}${iconMoon()}</button>
               ${user
-                ? '<a href="' + base + 'saved.html" class="btn btn--primary btn--sm">' + escapeHtml(user.name.split(' ')[0]) + '</a>'
+                ? '<a href="' + rbase + 'saved.html" class="btn btn--primary btn--sm">' + escapeHtml(user.name.split(' ')[0]) + '</a>'
                 : '<a href="' + appHref('/login', base + 'index.html') + '" class="btn btn--primary btn--sm' + (appOrigin() ? '' : ' js-modal-trigger') + '" data-modal="auth">Sign in</a>'}
               <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false" aria-controls="rl-nav"><span></span><span></span><span></span></button>
             </div>
@@ -868,25 +898,25 @@
                   <li><a href="${base}professionals.html">Plans &amp; tools</a></li>
                 </ul></div>
                 <div class="footer__col"><h4>Enterprise</h4><ul>
-                  <li><a href="${base}enterprise/">For building owners</a></li>
-                  <li><a href="${base}enterprise/brokerage.html">Brokerage &amp; leasing</a></li>
-                  <li><a href="${base}enterprise/marketing.html">Marketing &amp; virtual tours</a></li>
-                  <li><a href="${base}enterprise/management.html">Property management</a></li>
-                  <li><a href="${base}enterprise/owners.html">Out-of-state owners</a></li>
+                  <li><a href="${rbase}enterprise/">For building owners</a></li>
+                  <li><a href="${rbase}enterprise/brokerage.html">Brokerage &amp; leasing</a></li>
+                  <li><a href="${rbase}enterprise/marketing.html">Marketing &amp; virtual tours</a></li>
+                  <li><a href="${rbase}enterprise/management.html">Property management</a></li>
+                  <li><a href="${rbase}enterprise/owners.html">Out-of-state owners</a></li>
                 </ul></div>
                 <div class="footer__col"><h4>Broker network</h4><ul>
-                  <li><a href="${base}hire-a-broker/">Hire a broker</a></li>
-                  <li><a href="${base}hire-a-broker/#how">How it works</a></li>
-                  <li><a href="${base}hire-a-broker/agents.html">Tenant leads for agents</a></li>
-                  <li><a href="${base}hire-a-broker/guide.html">Free guides</a></li>
-                  <li><a href="${base}hire-a-broker/agents.html#portal">Partner portal</a></li>
+                  <li><a href="${rbase}hire-a-broker/">Hire a broker</a></li>
+                  <li><a href="${rbase}hire-a-broker/#how">How it works</a></li>
+                  <li><a href="${rbase}hire-a-broker/agents.html">Tenant leads for agents</a></li>
+                  <li><a href="${rbase}hire-a-broker/guide.html">Free guides</a></li>
+                  <li><a href="${rbase}hire-a-broker/agents.html#portal">Partner portal</a></li>
                 </ul></div>
                 <div class="footer__col"><h4>Company</h4><ul>
                   <li><a href="${base}faq.html">FAQ</a></li>
                   <li><a href="${base}contact.html">Contact</a></li>
                   <li><a href="${base}privacy.html">Privacy</a></li>
                   <li><a href="${base}terms.html">Terms</a></li>
-                  <li><a href="${base}llms.txt">AI index</a></li>
+                  <li><a href="${rbase}llms.txt">AI index</a></li>
                 </ul></div>
               </nav>
             </div>

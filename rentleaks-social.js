@@ -76,9 +76,14 @@
 
   /* --- 1. footer links ---------------------------------------------------- */
 
-  /* Pages live one level down under these folders, same rule as script.js. */
+  /* How far below the site root this page sits, same rule as script.js. A
+     folder-name list cannot express two depths, and /fr/ plus /fr/cities/ are
+     two depths. */
   function base() {
-    return /\/(listings|cities|operators|enterprise|hire-a-broker)\//.test(location.pathname || "") ? "../" : "";
+    var parts = (location.pathname || "/").split("/").filter(Boolean);
+    var last = parts[parts.length - 1] || "";
+    var depth = /\.[a-z0-9]+$/i.test(last) ? parts.length - 1 : parts.length;
+    return depth > 0 ? new Array(depth + 1).join("../") : "";
   }
 
   var PROFILES = [

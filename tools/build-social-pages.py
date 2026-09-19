@@ -541,6 +541,7 @@ def body(slug, p, data):
   <script src="data.js"></script>
   <script src="data-source.js"></script>
   <script src="script.js"></script>
+  <script src="rentleaks-i18n.js"></script>
   <script src="rentleaks-rules.js?v={JS_RULES}"></script>
   <script src="rentleaks-x.js?v={JS_X}" defer></script>
   <script src="rentleaks-social.js?v={JS_SOCIAL}" defer></script>

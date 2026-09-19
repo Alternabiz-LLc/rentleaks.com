@@ -58,6 +58,52 @@ function jsonLd(obj) {
   return `<script type="application/ld+json">${JSON.stringify(obj)}</script>`;
 }
 
+/* ---------------------------------------------------------------------
+ * hreflang
+ * -------------------------------------------------------------------
+ * The French and German trees are built by tools/build-locales.mjs, which
+ * emits a cluster naming all three URLs. Google only honours a cluster whose
+ * members name each other, so the English page has to name them back — a
+ * one-way list is silently discarded. That reciprocity is the entire reason
+ * this block exists on the English side.
+ *
+ * LOCALES and TRANSLATED are duplicated in build-locales.mjs and in
+ * rentleaks-i18n.js. Three copies is two too many; they are small, they
+ * change together, and the alternative is a build dependency between two
+ * generators that otherwise do not know about each other.
+ * ------------------------------------------------------------------- */
+const LOCALES = [
+  { code: "en", tag: "en-US", dir: "" },
+  { code: "fr", tag: "fr", dir: "fr" },
+  { code: "de", tag: "de", dir: "de" },
+];
+
+const TRANSLATED = new Set([
+  "",
+  "rooms.html", "coliving.html", "furnished.html", "short-term.html",
+  "aparthotel.html", "lease-break.html",
+  "rent.html", "cities.html", "match.html", "list.html",
+  "professionals.html", "operators.html", "faq.html", "contact.html",
+  "privacy.html", "terms.html",
+  ...DATA.cities.map((c) => `cities/${c.slug}.html`),
+]);
+
+function neutralOf(canonical) {
+  return String(canonical || "").replace(SITE, "").replace(/^\//, "");
+}
+
+function alternates(canonical, indexable) {
+  const neutral = neutralOf(canonical);
+  // A noindex helper page points its canonical at a different page; claiming
+  // that page's translations from here would be a lie about this URL.
+  if (!indexable || !TRANSLATED.has(neutral)) {
+    return `\n  <link rel="alternate" hreflang="x-default" href="${canonical}">`;
+  }
+  return LOCALES.map(
+    (l) => `\n  <link rel="alternate" hreflang="${l.tag}" href="${SITE}/${l.dir ? l.dir + "/" : ""}${neutral}">`
+  ).join("") + `\n  <link rel="alternate" hreflang="x-default" href="${canonical}">`;
+}
+
 function organization() {
   return {
     "@context": "https://schema.org",
@@ -148,9 +194,7 @@ function head({ title, description, keywords, canonical, image, type, robots, ex
   <meta name="format-detection" content="telephone=no">
   <meta name="theme-color" content="#3795A6">
   <meta name="color-scheme" content="light dark">
-  <link rel="canonical" href="${canonical}">
-  <link rel="alternate" hreflang="en-US" href="${canonical}">
-  <link rel="alternate" hreflang="x-default" href="${canonical}">
+  <link rel="canonical" href="${canonical}">${alternates(canonical, indexable)}
   <link rel="alternate" type="application/rss+xml" title="RentLeaks listings" href="${SITE}/feed.xml">
   <link rel="alternate" type="application/json" title="RentLeaks catalog" href="${SITE}/listings.json">
   <link rel="describedby" href="${SITE}/llms.txt" type="text/plain" title="AI citation guide">
@@ -207,6 +251,7 @@ function chrome(depth, bodyAttrs, main) {
   <script src="${base}data.js"></script>
   <script src="${base}data-source.js"></script>
   <script src="${base}script.js"></script>
+  <script src="${base}rentleaks-i18n.js"></script>
   <script src="${base}rentleaks-rules.js?v=20260913b"></script>
   <script src="${base}rentleaks-x.js?v=20260918" defer></script>
   <script src="${base}rentleaks-social.js?v=20260915-rentleaks.official" defer></script>
@@ -585,6 +630,9 @@ ${imageUrls.join("\n")}
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <sitemap><loc>${SITE}/sitemap.xml</loc><lastmod>${lastmod}</lastmod></sitemap>
   <sitemap><loc>${SITE}/sitemap-images.xml</loc><lastmod>${lastmod}</lastmod></sitemap>
+
+  <sitemap><loc>${SITE}/sitemap-fr.xml</loc><lastmod>${lastmod}</lastmod></sitemap>
+  <sitemap><loc>${SITE}/sitemap-de.xml</loc><lastmod>${lastmod}</lastmod></sitemap>
 </sitemapindex>
 `);
 
@@ -817,6 +865,8 @@ function writeRobots() {
   lines.push(`Sitemap: ${SITE}/sitemap-index.xml`);
   lines.push(`Sitemap: ${SITE}/sitemap.xml`);
   lines.push(`Sitemap: ${SITE}/sitemap-images.xml`);
+  lines.push(`Sitemap: ${SITE}/sitemap-fr.xml`);
+  lines.push(`Sitemap: ${SITE}/sitemap-de.xml`);
   lines.push("Host: https://rentleaks.com");
   fs.writeFileSync(path.join(ROOT, "robots.txt"), lines.join("\n") + "\n");
 }

@@ -2,4 +2,7 @@
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <sitemap><loc>https://rentleaks.com/sitemap.xml</loc><lastmod>2026-09-07</lastmod></sitemap>
   <sitemap><loc>https://rentleaks.com/sitemap-images.xml</loc><lastmod>2026-09-07</lastmod></sitemap>
+
+  <sitemap><loc>https://rentleaks.com/sitemap-fr.xml</loc><lastmod>2026-09-07</lastmod></sitemap>
+  <sitemap><loc>https://rentleaks.com/sitemap-de.xml</loc><lastmod>2026-09-07</lastmod></sitemap>
 </sitemapindex>
