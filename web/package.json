@@ -12,6 +12,7 @@
     "vercel-build": "prisma generate && prisma migrate deploy && next build",
     "postinstall": "prisma generate",
     "start": "next start -p 3100",
+    "typecheck": "tsc --noEmit",
     "lint": "eslint",
     "db:up": "docker compose -f ../docker-compose.yml up -d",
     "db:down": "docker compose -f ../docker-compose.yml down",

@@ -15,7 +15,9 @@ npm test
 | `npm run sync-shared` | Copies `web/src/lib/{rules.json,listing-rules.ts,listing-evidence.ts}` into `src/shared/` |
 | `npm start` | Syncs, then starts Metro |
 | `npm run ios` / `npm run android` | Local native build (needs Xcode or Android Studio). On Xcode 26, `expo run:ios` may stop for code signing even for the Simulator — use `../Launch RentLeaks iOS.command`, which builds with `xcodebuild` |
-| `npx eas-cli build --profile development` | Dev client with push, maps and native modules |
+| `npm run build:production` | EAS cloud production build (`eas-cli` is a local dep — do not use bare `npx eas`) |
+| `npm run build:preview` | EAS internal preview build |
+| `npx eas build --profile development` | Same as `npm run build:development` — needs Expo login |
 
 ## Layout
 

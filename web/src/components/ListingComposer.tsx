@@ -30,6 +30,12 @@ import {
   type ListingDraft,
 } from "@/lib/listing-rules";
 import { persistMediaFiles } from "@/lib/media";
+import {
+  FEATURED_MONTHLY,
+  FEATURED_WEEKLY,
+  MONTHLY_PLAN,
+  WEEKLY_PLAN,
+} from "@/lib/plans";
 
 type City = { id: string; slug: string; name: string; state: string; country: string; currency: string };
 type HousingType = { id: string; label: string };
@@ -81,8 +87,18 @@ const ADDRESS_PRIVACY: Array<[string, string, string]> = [
 ];
 
 const PLANS = {
-  week: { label: "Weekly", listing: 14, sponsored: 45, per: "week" },
-  month: { label: "Monthly", listing: 60, sponsored: 120, per: "month" },
+  week: {
+    label: WEEKLY_PLAN.label,
+    listing: WEEKLY_PLAN.amountCents / 100,
+    sponsored: FEATURED_WEEKLY.amountCents / 100,
+    per: "week" as const,
+  },
+  month: {
+    label: MONTHLY_PLAN.label,
+    listing: MONTHLY_PLAN.amountCents / 100,
+    sponsored: FEATURED_MONTHLY.amountCents / 100,
+    per: "month" as const,
+  },
 } as const;
 
 type PlanId = keyof typeof PLANS;

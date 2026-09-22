@@ -38,7 +38,7 @@ export type SellerListing = {
 };
 
 const PLAN_COST = {
-  week: { listing: 14, sponsored: 45, per: "week" },
+  week: { listing: 14, sponsored: 30, per: "week" },
   month: { listing: 60, sponsored: 120, per: "month" },
 } as const;
 

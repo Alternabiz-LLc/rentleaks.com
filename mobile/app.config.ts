@@ -122,7 +122,10 @@ const config: ExpoConfig = {
   extra: {
     apiUrl: process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3100",
     webUrl: process.env.EXPO_PUBLIC_WEB_URL ?? "https://rentleaks.com",
-    eas: { projectId: process.env.EAS_PROJECT_ID },
+    eas: {
+      // Owned by @alternabiz/rentleaks — required for EAS Build and push tokens.
+      projectId: process.env.EAS_PROJECT_ID ?? "896a4288-9654-44db-b057-0a3a56523801",
+    },
   },
 };
 

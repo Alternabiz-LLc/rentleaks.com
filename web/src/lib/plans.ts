@@ -19,18 +19,18 @@ export const MONTHLY_PLAN = {
 
 export const FEATURED_WEEKLY = {
   id: "featured-week" as const,
-  label: "+$10/week",
+  label: "+$30/week",
   blurb: "Sponsored under the homepage hero and in stay results",
-  amountCents: 1000,
+  amountCents: 3000,
   days: 7,
   interval: "week" as const,
 };
 
 export const FEATURED_MONTHLY = {
   id: "featured-month" as const,
-  label: "+$35/month",
+  label: "+$120/month",
   blurb: "Sponsored under the homepage hero and in stay results",
-  amountCents: 3500,
+  amountCents: 12000,
   days: 30,
   interval: "month" as const,
 };

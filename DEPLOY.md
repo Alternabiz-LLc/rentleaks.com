@@ -97,9 +97,38 @@ npx wrangler secret put S3_PUBLIC_URL            # https://media.rentleaks.com
 npx wrangler secret put UPSTASH_REDIS_REST_URL
 npx wrangler secret put UPSTASH_REDIS_REST_TOKEN
 npx wrangler secret put RESEND_API_KEY           # password-reset email
-# when ready: STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, APPLE_TEAM_ID,
-# ANDROID_CERT_SHA256, FACEBOOK_DOMAIN_VERIFICATION, META_FEED_KEY
+npx wrangler secret put STRIPE_SECRET_KEY        # sk_live_… (host listing fees only)
+npx wrangler secret put STRIPE_WEBHOOK_SECRET    # whsec_… from Stripe webhook endpoint
+# Build / public: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_…
+# Optional price IDs (sandbox values are already in web/.env.example):
+# STRIPE_PRICE_LISTING_WEEK / _MONTH / STRIPE_PRICE_SPONSORED_WEEK / _MONTH
+# when ready: APPLE_TEAM_ID, ANDROID_CERT_SHA256, FACEBOOK_DOMAIN_VERIFICATION, META_FEED_KEY
 ```
+
+### Stripe (host fees only)
+
+RentLeaks never charges renters. Stripe Checkout collects **listing** and **sponsored** fees from hosts.
+
+| Plan | Amount | Sandbox price |
+|---|---|---|
+| Listing weekly | $14 | `price_1UIJavL7FHqV7UTB2g0XoMjq` |
+| Listing monthly | $60 | `price_1UIJavL7FHqV7UTBXJXpjpg2` |
+| Sponsored weekly | +$30 | `price_1UIJhJL7FHqV7UTBma8oNVSH` |
+| Sponsored monthly | +$120 | `price_1UIJjBL7FHqV7UTB44mXwMFO` |
+
+Local:
+
+```sh
+# 1. Paste test keys into web/.env from
+#    https://dashboard.stripe.com/test/apikeys
+# 2. Forward webhooks
+cd ~/Apps/rentleaks.com/web
+stripe listen --forward-to localhost:3100/api/stripe/webhook
+# put the printed whsec_… into STRIPE_WEBHOOK_SECRET, restart next
+```
+
+Webhook endpoint in production: `https://app.rentleaks.com/api/stripe/webhook`  
+Events: `checkout.session.completed`, `checkout.session.expired`.
 
 ## 6. Deploy
 
@@ -139,7 +168,14 @@ Every push to `main` then rebuilds the app; migrations run in GitHub Actions.
    - upload a photo; its address starts with `https://media.rentleaks.com/`
    - Worker → **Logs** shows the hourly `0 * * * *` cron without errors
 3. Mobile: production builds already call `https://app.rentleaks.com`
-   (`mobile/eas.json`): `eas build --profile production`.
+   (`mobile/eas.json`):
+
+   ```sh
+   cd ~/Apps/rentleaks.com/mobile
+   npm run build:production
+   ```
+
+   (`eas-cli` is installed in `mobile/`. Bare `npx eas` fails — use the script or `npx eas-cli`.)
 4. Resend: verify `rentleaks.com` (DNS records now go in Cloudflare).
 5. Meta catalog feed: `https://app.rentleaks.com/feeds/meta-home-listings.csv?key=<META_FEED_KEY>`.
 

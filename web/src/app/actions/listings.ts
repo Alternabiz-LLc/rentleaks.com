@@ -7,6 +7,8 @@ import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/site";
 import { allInOf, blockersFor, monthlyFees, rulesFor, toUsd, type Fee, type ListingDraft } from "@/lib/listing-rules";
 import { sanitiseMediaUrls } from "@/lib/media";
+import { createListingCheckoutSession, hostCheckoutLines } from "@/lib/checkout";
+import { stripeEnabled } from "@/lib/stripe";
 
 const TYPES = ["room", "coliving", "furnished", "short-term", "aparthotel", "lease-break"] as const;
 
@@ -211,6 +213,16 @@ export async function createListingFromComposer(payload: string): Promise<{ erro
   const jitter = (draft.title.length + draft.neighborhood.length) % 80;
   const status = STATUSES.includes(String(raw.status)) ? String(raw.status) : "active";
 
+  const plan = raw.plan === "month" ? "month" : "week";
+  const wantSponsored = raw.sponsored === true;
+  const chargeLines = hostCheckoutLines({
+    housingType,
+    plan,
+    sponsored: wantSponsored,
+    trialEndsAt: user.trialEndsAt,
+  });
+  const chargeNow = stripeEnabled() && chargeLines.length > 0;
+
   const listing = await prisma.listing.create({
     data: {
       id: `${cityId}-${housingType}-${slugify(draft.title) || "stay"}-${Date.now().toString(36)}`,
@@ -239,7 +251,7 @@ export async function createListingFromComposer(payload: string): Promise<{ erro
       furnishedLevel: String(raw.furnishedLevel || "fully"),
       verified: false,
       noFee: !fees.some((f) => f.type === "broker" && f.amount > 0),
-      featured: false,
+      featured: chargeNow ? false : wantSponsored,
 
       listedBy: draft.role,
       addressPrivacy: PRIVACY.includes(String(raw.addressPrivacy)) ? String(raw.addressPrivacy) : "street-only",
@@ -254,8 +266,8 @@ export async function createListingFromComposer(payload: string): Promise<{ erro
       feesJson: JSON.stringify(fees),
       amenitiesJson: JSON.stringify(Array.isArray(raw.amenities) ? raw.amenities.slice(0, 24) : []),
 
-      sponsored: raw.sponsored === true,
-      plan: raw.plan === "month" ? "month" : "week",
+      sponsored: chargeNow ? false : wantSponsored,
+      plan,
 
       petsPolicy: String(raw.pets || "none"),
       utilitiesIncl: monthlyFees(fees) === 0,
@@ -272,9 +284,45 @@ export async function createListingFromComposer(payload: string): Promise<{ erro
         ]
           .filter(Boolean)
           .join(" · "),
+        pendingSponsored: chargeNow ? wantSponsored : false,
       },
     },
   });
+
+  if (chargeNow) {
+    for (const line of chargeLines) {
+      await prisma.payment.create({
+        data: {
+          userId: user.id,
+          listingId: listing.id,
+          kind: line.kind,
+          amount: line.amountCents,
+          currency: "usd",
+          status: "pending",
+          planId: line.planId,
+        },
+      });
+    }
+
+    const session = await createListingCheckoutSession({
+      userId: user.id,
+      email: user.email,
+      listingId: listing.id,
+      lines: chargeLines,
+    });
+
+    /* Re-build lines with sponsored intent even though the row is not sponsored yet. */
+    if (!session?.url) {
+      return { error: "Listing saved, but checkout could not start. Open Your listings and try Pay again." };
+    }
+
+    await prisma.payment.updateMany({
+      where: { listingId: listing.id, userId: user.id, status: "pending", stripeSessionId: null },
+      data: { stripeSessionId: session.id },
+    });
+
+    redirect(session.url);
+  }
 
   redirect(`/listings/${listing.id}`);
 }

@@ -5,7 +5,7 @@ export const nowMs = () => Date.now();
 
 export const LISTING_WEEKLY = 14;
 export const LISTING_MONTHLY = 60;
-export const PROMO_WEEKLY = 45;
+export const PROMO_WEEKLY = 30;
 export const PROMO_MONTHLY = 120;
 
 /** Recurring revenue at posted rates. Lease-breaks publish free; paused listings are not billed. */
