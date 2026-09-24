@@ -310,7 +310,7 @@ SECTIONS = [
      "Take over a remaining lease. See days left, assignment vs sublet.",
      ["Months left, on a Lease Clock",
       "Assignment or sublet, stated up front",
-      "Posting a lease-break is free"],
+      "Your first week is free"],
      "rentleaks.com/lease-break", None),
     ("07-cities", "public", "Cities · U.S., Canada, Europe", "79 cities. Same rules everywhere.",
      "The U.S., Canada, the UK, Ireland, France, Spain, the Netherlands, Switzerland, Germany and Italy.",

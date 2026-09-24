@@ -46,7 +46,7 @@ Use A. B and C are alternatives.
 > • All-in rent: base rent plus the monthly extras we can see (utilities, wifi, cleaning), with one-time fees called out separately. No teaser prices.
 > • Search by your dates: put in move-in and move-out, and see homes that fit your window.
 > • 30-day minimum: housing, not hotel nights.
-> • Lease takeovers done properly: remaining term, a Lease Clock, and whether it's an assignment or a sublet. Posting a lease-break is free.
+> • Lease takeovers done properly: remaining term, a Lease Clock, and whether it's an assignment or a sublet. Your first week is free, on any listing.
 > • Fees checked against local rules: in New York, a broker hired by the landlord can't charge you the broker fee (FARE Act), and listings that break this are blocked.
 > • A person reviews every listing before it goes live.
 > • Stay DNA: a two-minute preference match scored in your browser. It isn't a credit check.
@@ -55,7 +55,7 @@ Use A. B and C are alternatives.
 >
 > **Your money stays with you.** RentLeaks never takes deposits, rent or application fees, and never asks for wire transfers, gift cards or crypto. Don't pay anyone before you have seen the home and read the lease. If someone asks you to pay RentLeaks, it's a scam: message us.
 >
-> **Hosts:** list a room, furnished units or a co-living building at rentleaks.com/list.html. Lease-break posts are free.
+> **Hosts:** list a room, furnished units or a co-living building at rentleaks.com/list.html. Your first week is free, whatever you list.
 >
 > Equal housing opportunity. Operated by Alternabiz LLC. Terms: rentleaks.com/terms.html · Privacy: rentleaks.com/privacy.html
 
@@ -66,7 +66,7 @@ Use A. B and C are alternatives.
 | Find me a home | Tell us your city, budget, move-in date and stay length. We reply with homes that fit. rentleaks.com/facebook.html?src=fb_page | Free |
 | Book a viewing | Pick a home and up to three times, in person or by live video. The host confirms. rentleaks.com/facebook.html?src=fb_page&tab=viewing | Free |
 | Request to book | Send your move-in and move-out dates for a home. The host accepts or declines. You never pay RentLeaks. rentleaks.com/facebook.html?src=fb_page&tab=stay | Free |
-| Post a lease-break | Leaving early? List the rest of your lease with the remaining term and takeover type. rentleaks.com/list.html | Free |
+| Post a lease-break | Leaving early? First week free. List the rest of your lease with the remaining term and takeover type. rentleaks.com/list.html | First week free |
 | List a room or furnished home | All-in price preview, fee checks for your city, and review before it goes live. rentleaks.com/professionals.html | "See plans" (don't type a figure until the price list is settled; see the note at the end) |
 | Co-living operators | Per-room inventory, multi-city buildings, bulk upload. rentleaks.com/professionals.html | "Contact us" |
 | Sponsored placement | Your live listing at the top of search results and between them, in your city. | "See plans" |
@@ -91,7 +91,7 @@ Post in this order. Each has its link. Add a photo or short video: the cover ima
 **Week 1: what it is**
 
 1. **Mon · Renters.** *Tired of "from $1,200" that turns into $1,650?* Every RentLeaks price is all-in: base rent plus the monthly extras we can see, with one-time fees shown separately. Look for the number you'll actually pay. → `https://rentleaks.com/rent.html?utm_source=facebook&utm_medium=organic&utm_campaign=wk1_allin`
-2. **Wed · Hosts.** *Leaving your lease early?* Post the rest of it on RentLeaks for free. Renters see the remaining months, the Lease Clock, and whether it's an assignment or a sublet. → `https://rentleaks.com/lease-break.html?utm_source=facebook&utm_medium=organic&utm_campaign=wk1_leasebreak`
+2. **Wed · Hosts.** *Leaving your lease early?* Post the rest of it on RentLeaks — your first week is free. Renters see the remaining months, the Lease Clock, and whether it's an assignment or a sublet. → `https://rentleaks.com/lease-break.html?utm_source=facebook&utm_medium=organic&utm_campaign=wk1_leasebreak`
 3. **Fri · Safety.** *The four steps that stop most rental scams:* 1) see it first, in person or on a live video call; 2) read the lease before any money moves; 3) pay traceably, to a named account (never wire, gift cards or crypto); 4) photograph the condition on move-in day. RentLeaks never takes deposits or rent.
 
 **Week 2: how to use it**
@@ -139,7 +139,7 @@ Post in this order. Each has its link. Add a photo or short video: the cover ima
 
 1. **I'm looking for a place** → "Tell us your city, budget and dates here and we'll match you: https://rentleaks.com/facebook.html?src=messenger"
 2. **How do I book a viewing?** → "Pick a home and up to three times, in person or by video: https://rentleaks.com/facebook.html?src=messenger&tab=viewing. It's free."
-3. **How do I list my place?** → "Start at https://rentleaks.com/list.html. Posting a lease-break is free. Plans for rooms, furnished homes and co-living: https://rentleaks.com/professionals.html"
+3. **How do I list my place?** → "Start at https://rentleaks.com/list.html. Your first week is free, on any listing. Plans for rooms, furnished homes and co-living: https://rentleaks.com/professionals.html"
 4. **Someone asked me to pay before a viewing** → "Don't pay. RentLeaks never takes deposits or rent, and nobody should ask for money before you've seen the home and read the lease. Send us the listing link and we'll look into it."
 
 **Saved replies**
@@ -155,7 +155,7 @@ Post in this order. Each has its link. Add a photo or short video: the cover ima
 1. **"The teaser vs the all-in."** A price tag grows as fees get added, then the RentLeaks all-in number.
 2. **"Two dates."** A screen recording: type move-in and move-out, and the results narrow.
 3. **"Four steps before you pay."** One step per card, from the safety post.
-4. **"Lease-break in 60 seconds."** Post the rest of your lease for free.
+4. **"Lease-break in 60 seconds."** Post the rest of your lease. First week free.
 5. **Story poll:** "Room or co-living?" with a link sticker to rentleaks.com/facebook.html?src=fb_page.
 6. **Story Q&A:** "Ask us anything about renting for 1–12 months."
 
@@ -363,7 +363,7 @@ For each section: a **short description** (Services entry, carousel card or Abou
 >
 > Confirm the paperwork with the landlord before any money moves.
 >
-> For tenants who need to leave: posting a lease-break is free. Empty months help no one.
+> For tenants who need to leave: the first week is free, like any listing. Empty months help no one.
 >
 > Browse takeovers: https://rentleaks.com/lease-break.html?utm_source=facebook&utm_medium=organic&utm_campaign=menu_leasebreak_post
 > Post yours free: https://rentleaks.com/list.html?utm_source=facebook&utm_medium=organic&utm_campaign=menu_leasebreak_post_list

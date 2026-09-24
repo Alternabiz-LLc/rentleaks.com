@@ -1,8 +1,8 @@
 /**
- * Loads the Instagram launch feed into the publishing queue — 20 posts, one a
+ * Loads the Instagram launch feed into the publishing queue — one post a
  * day, starting tomorrow.
  *
- *   npm run ig:queue                  # 20 posts, one a day at 15:00 UTC
+ *   npm run ig:queue                  # the whole feed, one a day at 15:00 UTC
  *   npm run ig:queue -- --hour 13     # a different hour
  *   npm run ig:queue -- --start 2026-10-01
  *   npm run ig:queue -- --dry         # print the plan, write nothing
@@ -20,7 +20,8 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { PrismaClient } from "@prisma/client";
 
-const BATCH = "ig-launch-20";
+// Not "-20": the batch is the launch feed, whatever length it grows to.
+const BATCH = "ig-launch";
 const QUEUE = join(process.cwd(), "..", "tools", "social", "ig-queue.json");
 
 type Entry = { day: number; id: string; image: string; link: string; caption: string };

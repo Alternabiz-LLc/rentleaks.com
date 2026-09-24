@@ -70,8 +70,14 @@ test("the publisher's limits are sane for a daily feed", () => {
 
 test("the Instagram launch queue is publishable as generated", () => {
   const entries: Entry[] = JSON.parse(readFileSync(QUEUE, "utf8"));
-  assert.equal(entries.length, 20, "twenty posts, one a day");
-  assert.deepEqual(entries.map((e) => e.day), Array.from({ length: 20 }, (_, i) => i + 1), "days run 1..20 in order");
+  assert.ok(entries.length >= 20, `at least twenty posts, got ${entries.length}`);
+  // Derived, not hard-coded: the feed grows, and a literal count here means a
+  // failing test every time a post is added rather than when something breaks.
+  assert.deepEqual(
+    entries.map((e) => e.day),
+    Array.from({ length: entries.length }, (_, i) => i + 1),
+    `days run 1..${entries.length} in order, with no gaps`,
+  );
   assert.equal(new Set(entries.map((e) => e.id)).size, entries.length, "ids are unique");
 
   for (const e of entries) {
