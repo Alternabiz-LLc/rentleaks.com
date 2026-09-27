@@ -14,10 +14,18 @@ const nodeConnect: SocketConnect = ({ hostname, port }) => {
 
 function fakeServer(opts: { auth?: string; rejectRcpt?: boolean } = {}) {
   const transcript: string[] = [];
+  const open = new Set<Socket>();
   let data = "";
   const server = createServer((c) => {
     let inData = false;
     let buf = "";
+    open.add(c);
+    c.on("close", () => open.delete(c));
+    /* The client under test closes by destroying its socket, so this end sees
+       ECONNRESET. That is a normal goodbye here, not a failure — and without a
+       listener it would surface as an uncaught exception, attributed to
+       whichever test had just finished. */
+    c.on("error", () => {});
     c.write("220 fake ESMTP\r\n");
     c.on("data", (chunk) => {
       buf += chunk.toString("utf8");
@@ -51,9 +59,18 @@ function fakeServer(opts: { auth?: string; rejectRcpt?: boolean } = {}) {
       }
     });
   });
-  return new Promise<{ port: number; transcript: string[]; data: () => string; close: () => void }>((resolve) =>
+  /* Closing waits for the listener AND tears down live connections: a
+     server.close() on its own leaves them open, and anything they emit
+     afterwards lands in the next test. */
+  const close = () =>
+    new Promise<void>((resolve) => {
+      for (const c of open) c.destroy();
+      open.clear();
+      server.close(() => resolve());
+    });
+  return new Promise<{ port: number; transcript: string[]; data: () => string; close: () => Promise<void> }>((resolve) =>
     server.listen(0, "127.0.0.1", () =>
-      resolve({ port: (server.address() as AddressInfo).port, transcript, data: () => data, close: () => server.close() }),
+      resolve({ port: (server.address() as AddressInfo).port, transcript, data: () => data, close }),
     ),
   );
 }
@@ -79,7 +96,7 @@ test("sends a message with AUTH PLAIN", async () => {
     assert.match(body, /^List-Unsubscribe: <https:\/\/x\.io\/u>/m);
     assert.match(body, /multipart\/alternative/);
   } finally {
-    s.close();
+    await s.close();
   }
 });
 
@@ -92,7 +109,7 @@ test("falls back to AUTH LOGIN and reports a rejected recipient", async () => {
     );
     assert.ok(s.transcript.includes("AUTH LOGIN"));
   } finally {
-    s.close();
+    await s.close();
   }
 });
 
@@ -104,7 +121,7 @@ test("bad password is reported, headers can't be injected, dots are stuffed", as
       /AUTH rejected: 535/,
     );
   } finally {
-    s.close();
+    await s.close();
   }
   const raw = buildMessage({ ...MSG, subject: "Hi\r\nBcc: evil@x.io", html: undefined });
   assert.doesNotMatch(raw, /^Bcc:/m);
