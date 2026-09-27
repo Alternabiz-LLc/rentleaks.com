@@ -6,7 +6,7 @@ import { Animated, FlatList, Pressable, Share, View, useWindowDimensions } from 
 import MapView, { Circle, Marker } from "react-native-maps";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useListing, useToggleSave } from "@/api/hooks";
-import { WEB_URL } from "@/api/config";
+import { API_URL } from "@/api/config";
 import type { Detail } from "@/api/types";
 import { useAuth } from "@/auth/AuthProvider";
 import { DealCard, FeeLedger, PriceTruth, RulesPanel, StayAndAfford, TakeoverDesk, TrustLedger } from "@/components/Evidence";
@@ -71,9 +71,13 @@ export default function ListingScreen() {
     save.mutate({ id: l.id, saved: viewer.saved });
   };
 
+  /* The app origin, not the marketing site: it serves /listings/:id for every
+     home — including ones a host just posted, which have no static page — and
+     it is an associated domain, so it still opens the app for anyone who has
+     it. `rentleaks.com/listings/<id>` is a 404 in a browser. */
   const onShare = () =>
     Share.share({
-      message: `${l.title} — ${money(l.allIn, l.currency)}/mo all-in on RentLeaks\n${WEB_URL}/listings/${encodeURIComponent(l.id)}`,
+      message: `${l.title} — ${money(l.allIn, l.currency)}/mo all-in on RentLeaks\n${API_URL}/listings/${encodeURIComponent(l.id)}`,
     }).catch(() => {});
 
   const onContact = () => {

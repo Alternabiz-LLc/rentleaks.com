@@ -2,7 +2,7 @@ import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useState } from "react";
 import { Alert, FlatList, Pressable, View } from "react-native";
-import { useQueue, useResolveReport, useReview } from "@/api/hooks";
+import { useMe, useQueue, useResolveReport, useReview } from "@/api/hooks";
 import type { QueueListing, QueueReport } from "@/api/types";
 import { isDeskRole, useAuth } from "@/auth/AuthProvider";
 import { Badge, Button, Card, EmptyState, ErrorState, Field, Notice, Segmented, Text } from "@/components/ui";
@@ -14,11 +14,26 @@ import { space } from "@/theme/tokens";
 export default function AdminQueue() {
   const t = useTheme();
   const { user } = useAuth();
-  const isAdmin = isDeskRole(user);
-  const q = useQueue(isAdmin);
+  const me = useMe();
+  /* The server decides: desk role, two-factor on this session, and the grant. */
+  const canReview = !!me.data?.desk.listings;
+  const q = useQueue(canReview);
   const [tab, setTab] = useState<"listings" | "reports">("listings");
 
-  if (!isAdmin) return <EmptyState icon="lock-closed-outline" title="Founder account only" />;
+  if (me.isLoading) return <EmptyState icon="hourglass-outline" title="Checking your access…" />;
+  if (!canReview) {
+    return (
+      <EmptyState
+        icon="lock-closed-outline"
+        title={isDeskRole(user) ? "Two-factor needed for the desk" : "Desk accounts only"}
+        body={
+          isDeskRole(user)
+            ? "Sign out and back in with your authenticator code. If you still can't get in, your access doesn't include listing review."
+            : "The review queue is for the founder and the team."
+        }
+      />
+    );
+  }
   if (q.isError) return <ErrorState error={q.error} onRetry={() => void q.refetch()} />;
 
   return (

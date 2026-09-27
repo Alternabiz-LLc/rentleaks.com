@@ -1,20 +1,25 @@
 import { prisma } from "@/lib/prisma";
 import { publicUser } from "@/lib/auth";
 import { fail, handle, ok, readJson, str } from "@/lib/v1/http";
-import { requireUser } from "@/lib/v1/session";
+import { optionalSession, requireUser, sessionCan } from "@/lib/v1/session";
 import { unreadCount } from "@/lib/v1/inbox";
 
 export const dynamic = "force-dynamic";
 
 export const GET = handle(async (req: Request) => {
   const user = await requireUser(req);
-  const [saved, unread, listings] = await Promise.all([
+  const [saved, unread, listings, session] = await Promise.all([
     prisma.savedListing.count({ where: { userId: user.id } }),
     unreadCount(user.id),
     prisma.listing.groupBy({ by: ["moderation"], where: { hostId: user.id }, _count: true }),
+    optionalSession(req),
   ]);
   return ok({
     user: { ...publicUser(user), createdAt: user.createdAt.toISOString() },
+    /* What this SESSION may open on the desk, not what the role suggests: a
+       staff account still needs its two-factor code and the module grant, so
+       the app must not offer a door the server will shut. */
+    desk: { listings: sessionCan(session, "listings"), reports: sessionCan(session, "reports") },
     counts: {
       saved,
       unread,

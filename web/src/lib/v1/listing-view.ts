@@ -201,3 +201,27 @@ export function toDetail(
 }
 
 export type MobileDetail = ReturnType<typeof toDetail>;
+
+/**
+ * The public site publishes a listing at `listings/<title-slug>-<id>.html`
+ * (see data.js), so a universal link arrives carrying the id as the tail of a
+ * longer slug. The id cannot be parsed out on the client: city ids and
+ * housing types both contain hyphens ("san-antonio", "short-term"), so
+ * counting segments is ambiguous. Resolving it here — against the real id
+ * space — is the only way that is always right.
+ *
+ * Returns the candidate ids a slug could end with, longest first, so the
+ * most specific match wins.
+ */
+export function idCandidatesFromSlug(slug: string) {
+  const clean = slug.replace(/\.html?$/i, "").replace(/^\/+|\/+$/g, "");
+  const parts = clean.split("-").filter(Boolean);
+  const out: string[] = [clean];
+  /* An id is <cityId>-<housingType>-<n>: 3 segments at least, and at most 6
+     once both halves are hyphenated ("oklahoma-city-short-term-2"). */
+  for (let take = Math.min(6, parts.length); take >= 3; take--) {
+    const candidate = parts.slice(parts.length - take).join("-");
+    if (candidate !== clean) out.push(candidate);
+  }
+  return out;
+}

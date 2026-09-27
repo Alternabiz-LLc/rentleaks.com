@@ -210,6 +210,8 @@ export type HostListing = Card & {
 
 export type Me = {
   user: User;
+  /** What this session may actually open on the desk (role + two-factor + grant). */
+  desk: { listings: boolean; reports: boolean };
   counts: { saved: number; unread: number; listings: Record<string, number> };
 };
 

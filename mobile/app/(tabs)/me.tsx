@@ -83,7 +83,15 @@ export default function MeTab() {
         </Card>
       </Section>
 
-      {user && !isHostRole(user) ? (
+      {me.data?.desk.listings ? (
+        <Section kicker="Desk" title={user?.role === "admin" ? "Founder" : "Your team access"}>
+          <Card padded={false} style={{ paddingHorizontal: space.lg }}>
+            <Row icon="checkmark-done-outline" label="Review queue" onPress={() => router.push("/admin")} last />
+          </Card>
+        </Section>
+      ) : null}
+
+      {user && !isHostRole(user) && !isDeskRole(user) ? (
         <Section kicker="Have a room to let?" title="Start hosting">
           <Card style={{ gap: space.md }}>
             <Text tone="ink2">Owners, agents and departing tenants list here. Every listing is checked by a person, every fee is checked against local law, and RentLeaks never takes a cut of rent.</Text>
@@ -101,9 +109,8 @@ export default function MeTab() {
               label="Dashboard"
               value={me.data ? `${me.data.counts.listings.approved ?? 0} live · ${me.data.counts.listings.pending ?? 0} in review` : undefined}
               onPress={() => router.push("/host")}
-              last={user?.role !== "admin"}
+              last
             />
-            {isDeskRole(user) ? <Row icon="checkmark-done-outline" label="Review queue" onPress={() => router.push("/admin")} last /> : null}
           </Card>
         </Section>
       ) : null}

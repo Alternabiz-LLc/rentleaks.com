@@ -175,3 +175,26 @@ test("int() treats a missing query value as absent, not zero", () => {
   assert.equal(int("250", 50, 1, 100), 100);
   assert.equal(int("abc", 50, 1, 100), 50);
 });
+
+/* --- deep links: the public site's page slug resolves to a listing id ---- */
+
+import { idCandidatesFromSlug } from "../src/lib/v1/listing-view";
+
+test("a site page slug offers its listing id as a candidate", () => {
+  /* listings/<title-slug>-<id>.html, as data.js writes it. */
+  const simple = idCandidatesFromSlug("sunny-private-room-in-bushwick-share-nyc-room-1.html");
+  assert.ok(simple.includes("nyc-room-1"), simple.join(","));
+
+  /* Both halves hyphenated — the case a client-side parse cannot count. */
+  const hard = idCandidatesFromSlug("bright-studio-near-the-river-oklahoma-city-short-term-2.html");
+  assert.ok(hard.includes("oklahoma-city-short-term-2"), hard.join(","));
+  assert.ok(hard.includes("city-short-term-2"), "shorter suffixes are offered too");
+
+  /* Longest first, so the most specific id wins the lookup. */
+  const order = idCandidatesFromSlug("a-b-san-antonio-lease-break-3");
+  assert.equal(order[0], "a-b-san-antonio-lease-break-3");
+  assert.ok(order.indexOf("san-antonio-lease-break-3") < order.indexOf("lease-break-3"));
+
+  /* A bare id is returned unchanged and stays first. */
+  assert.equal(idCandidatesFromSlug("nyc-room-3")[0], "nyc-room-3");
+});
