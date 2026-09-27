@@ -91,7 +91,6 @@ export default async function TrustPage({ searchParams }: { searchParams: SP }) 
                 {s.evidence.map((e, i) => (
                   <li key={`${s.id}-${i}`}>
                     {e.image && /^(https:|\/)/.test(e.image) ? (
-                      // eslint-disable-next-line @next/next/no-img-element -- evidence thumbnails from host uploads
                       <img src={e.image} alt="Shared photo" loading="lazy" />
                     ) : null}
                     <span>

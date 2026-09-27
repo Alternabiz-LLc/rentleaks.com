@@ -64,7 +64,6 @@ export function AgreementView({
             <div className="nw-sig__mark">
               {s.status === "signed" ? (
                 s.signatureImage ? (
-                  // eslint-disable-next-line @next/next/no-img-element -- a stored data-URL signature
                   <img src={s.signatureImage} alt={`Signature of ${s.name}`} />
                 ) : (
                   <span>{s.signedName}</span>

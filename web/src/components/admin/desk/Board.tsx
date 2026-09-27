@@ -147,7 +147,6 @@ export function Board({ mode, columns, cards: initial, empty = "Nothing here." }
                     }}
                   >
                     {c.image ? (
-                      // eslint-disable-next-line @next/next/no-img-element -- R2 and seeded images of any origin
                       <img className="dk-card__img" src={c.image} alt="" loading="lazy" />
                     ) : null}
                     <div className="dk-card__top">

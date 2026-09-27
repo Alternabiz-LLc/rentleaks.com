@@ -288,7 +288,7 @@ function Composer() {
             <Text variant="small" tone="ink3">
               {editingId
                 ? "Every listing is reviewed by a person before renters see it. Nothing here is charged to renters by RentLeaks."
-                : "Your first week is free \u2014 billing starts on day eight, and taking the listing down before then costs nothing. Every listing is reviewed by a person before renters see it, and nothing here is charged to renters by RentLeaks."}
+                : "Your first week is free \u2014 billing starts on day eight, and taking the listing down before then costs nothing. Listing fees are settled on rentleaks.com, never in the app. Every listing is reviewed by a person before renters see it, and nothing here is charged to renters by RentLeaks."}
             </Text>
           </Section>
         ) : null}

@@ -704,7 +704,7 @@ export default function ListingComposer({
               <article className="c-preview-card">
                 <div className="c-preview-card__img">
                   {draft.photos[0]
-                    /* eslint-disable-next-line @next/next/no-img-element */
+
                     ? <img src={draft.photos[0].src} alt={draft.title} />
                     : <div className="c-preview-card__empty">No cover photograph</div>}
                   <span className="c-preview-card__badge">{housingTypes.find((t) => t.id === draft.housingType)?.label || draft.housingType}</span>

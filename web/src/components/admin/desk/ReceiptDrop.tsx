@@ -178,7 +178,6 @@ export function ReceiptDrop({ entryId, existing = [] }: { entryId?: string; exis
                   onClick={(e) => !it.id && e.preventDefault()}
                 >
                   {it.preview || (it.id && it.contentType.startsWith("image/") && it.contentType !== "image/heic") ? (
-                    // eslint-disable-next-line @next/next/no-img-element -- private receipt served by an authenticated route
                     <img src={it.preview ?? `/api/admin/receipts/${it.id}`} alt="" />
                   ) : (
                     <span>{it.contentType === "application/pdf" ? "PDF" : it.contentType === "image/heic" ? "HEIC" : it.error ? "!" : "FILE"}</span>

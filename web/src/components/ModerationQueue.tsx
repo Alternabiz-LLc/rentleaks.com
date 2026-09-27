@@ -117,7 +117,6 @@ export default function ModerationQueue({ items }: { items: QueueItem[] }) {
                 {item.photos.length ? (
                   <div className="m-shots">
                     {item.photos.slice(0, 6).map((src, i) => (
-                      /* eslint-disable-next-line @next/next/no-img-element */
                       <img src={src} alt={`${item.title}, photograph ${i + 1}`} key={`${src}-${i}`} />
                     ))}
                   </div>

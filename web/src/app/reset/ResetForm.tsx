@@ -1,10 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 
 type Result = { ok?: boolean; message?: string; error?: { message: string } };
 
 export function ResetForm({ token }: { token: string }) {
+  const router = useRouter();
+  const goTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /* Don't navigate out from under someone who has already left the page. */
+  useEffect(() => () => void (goTimer.current && clearTimeout(goTimer.current)), []);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -33,7 +38,8 @@ export function ResetForm({ token }: { token: string }) {
     setBusy(false);
     if (r.error) return setNote({ tone: "error", text: r.error.message });
     setNote({ tone: "ok", text: "Password changed. You’ve been signed out everywhere — sign in with the new one." });
-    setTimeout(() => window.location.assign("/login"), 1800);
+    /* A client push, so the sign-in page arrives without a full reload. */
+    goTimer.current = setTimeout(() => router.push("/login"), 1800);
   };
 
   return (

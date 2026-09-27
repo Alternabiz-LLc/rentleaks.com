@@ -205,7 +205,6 @@ export default async function MatchPage({ searchParams }: { searchParams: SP }) 
                         <label className="dk-home">
                           <input type="checkbox" name="listingIds" value={home.id} defaultChecked={i < 3} />
                           {home.image && /^(https:|\/)/.test(home.image) ? (
-                            // eslint-disable-next-line @next/next/no-img-element -- listing photos come from many hosts
                             <img src={home.image} alt="" loading="lazy" />
                           ) : (
                             <span className="dk-home__ph" aria-hidden="true" />

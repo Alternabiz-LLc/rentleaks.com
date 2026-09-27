@@ -189,7 +189,6 @@ export default function VerifyDesk({ status, name }: { status: string; name: str
             <span>{docPreview ? "Retake the document photo" : "Photograph the document"}</span>
           </label>
           {docPreview ? (
-            /* eslint-disable-next-line @next/next/no-img-element */
             <img className="v-shot" src={docPreview} alt="The document you just photographed, shown for you to check" />
           ) : null}
 
@@ -221,9 +220,7 @@ export default function VerifyDesk({ status, name }: { status: string; name: str
           </label>
           {docPreview && selfiePreview ? (
             <div className="v-docgrid">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img className="v-shot" src={docPreview} alt="Your document" />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img className="v-shot" src={selfiePreview} alt="Your selfie" />
             </div>
           ) : null}
