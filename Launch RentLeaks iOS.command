@@ -51,7 +51,12 @@ echo "\n-- 4/5 Native build for the Simulator (first build takes several minutes
 if [ ! -d ios ]; then
   npx expo prebuild --platform ios --no-install
 fi
-(cd ios && pod install)
+# `pod install` refuses when a JS dependency's version has moved since the
+# lockfile was written — the podspecs under node_modules no longer match the
+# snapshot in Podfile.lock, and it names one pod at a time however many
+# changed. Re-resolving the lock against what is actually installed is the
+# fix, and it is safe: ios/ is generated, not source.
+(cd ios && { pod install || { echo "\nPod versions moved since the last build — re-resolving the lockfile."; pod update --no-repo-update; }; })
 UDID=$(xcrun simctl list devices available | grep -F "$SIM (" | head -1 | sed -E 's/.*\(([0-9A-F-]{36})\).*/\1/')
 if [ -z "$UDID" ]; then
   echo "No Simulator named \"$SIM\". Open Xcode → Settings → Components to add one, or set RENTLEAKS_SIM=\"<name>\"."; read -k1; exit 1
