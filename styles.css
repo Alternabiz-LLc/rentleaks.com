@@ -378,17 +378,32 @@ section { position: relative; }
   display: flex; align-items: center; gap: var(--s-6);
 }
 
-.logo { display: inline-flex; align-items: center; gap: var(--s-3); color: var(--ink); flex-shrink: 0; }
+.logo { display: inline-flex; align-items: center; color: var(--ink); flex-shrink: 0; }
 .logo:hover { color: var(--ink); }
-.logo__mark {
-  width: 30px; height: 30px; border-radius: 9px;
-  display: grid; place-items: center;
-  background: var(--ink); color: var(--paper);
-  font-size: 0.6875rem; font-weight: 800; letter-spacing: 0.04em;
-  transition: transform var(--t), background var(--t);
+/* One SVG, drawn in currentColor, so the header and the dark footer both get
+   the right ink without a second asset. Height drives it; width follows the
+   artwork's own 3.6:1. */
+.logo__lockup {
+  display: block; height: 30px; width: auto;
+  transition: transform var(--t);
 }
-.logo:hover .logo__mark { transform: rotate(-6deg) scale(1.05); }
-.logo__text { font-family: var(--font-display); font-size: 1.1875rem; font-weight: 600; letter-spacing: -0.025em; }
+.logo:hover .logo__lockup { transform: scale(1.03); }
+@media (prefers-reduced-motion: reduce) { .logo__lockup { transition: none; } }
+
+/* The compact badge the sub-brands use ("RL Enterprise", "RL Broker network").
+   It is the same mark, painted as a mask so it takes currentColor like the
+   full lockup; the "RL" in the markup stays as the text fallback and is
+   hidden here. Redefining the class rather than editing nine pages keeps the
+   sub-brands in step with the logo for free. */
+.logo__mark {
+  display: inline-block; width: 26px; height: 30px;
+  /* The sub-brand stylesheet re-sets font-size on this class, so the "RL"
+     fallback is pushed out of the box rather than shrunk to nothing. */
+  overflow: hidden; text-indent: -100em; white-space: nowrap;
+  background-color: currentColor;
+  -webkit-mask: url("images/rentleaks-mark.svg") no-repeat center / contain;
+          mask: url("images/rentleaks-mark.svg") no-repeat center / contain;
+}
 
 .nav { flex: 1; min-width: 0; }
 .nav__list { display: flex; align-items: center; gap: var(--s-1); overflow-x: auto; scrollbar-width: none; }
@@ -1892,9 +1907,7 @@ textarea { min-height: 118px; resize: vertical; }
 .footer__grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2.4fr); gap: var(--s-10); }
 .footer__brand { display: grid; gap: var(--s-4); align-content: start; }
 .logo--footer, .logo--footer:hover { color: var(--ink-on-dark); }
-.logo--footer .logo__mark { background: var(--paper); color: var(--ink); }
 :root[data-theme="dark"] .logo--footer { color: var(--ink); }
-:root[data-theme="dark"] .logo--footer .logo__mark { background: var(--celeste-300); color: #08181D; }
 .footer__tagline { font-size: var(--text-sm); max-width: 34ch; line-height: 1.6; }
 
 .footer__nav { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: var(--s-8) var(--s-6); }

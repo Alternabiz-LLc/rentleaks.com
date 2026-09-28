@@ -8,7 +8,7 @@ const vm = require("vm");
 const ROOT = path.join(__dirname, "..");
 const SITE = "https://rentleaks.com";
 const OG = SITE + "/images/og-default.jpg";
-const ICON = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%233795A6'/><text x='16' y='22' font-size='14' font-weight='bold' fill='%23F1F9FA' text-anchor='middle' font-family='system-ui'>RL</text></svg>";
+const ICON = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%230E67B4'/><path fill='%23F7F3E8' d='M16 5.5 4 16.4h3.6V26h5.9v-6.4h5V26h5.9v-9.6H28Z'/></svg>";
 
 const localStorage = { getItem() { return null; }, setItem() {} };
 const ctx = { window: {}, localStorage, console };

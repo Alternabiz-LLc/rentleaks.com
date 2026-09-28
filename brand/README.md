@@ -28,3 +28,23 @@ The in-app logo (`logo-lockup.png`) is white on transparency and tinted at
 runtime to the theme's ink, so the logo never carries a second background
 colour into a screen. The brand blue stays where it belongs — the icon and
 the launch screen.
+
+## The web logo
+
+`images/rentleaks-mark.svg` and `web/public/brand/rentleaks-logo.svg` are the
+mark and the full lockup as vectors, drawn in `currentColor` so one file
+serves light and dark. The static site inlines the lockup in `script.js`;
+the Next app paints it through a CSS mask, because `globals.css` needs the
+colour to follow the theme token rather than a fill baked into the file.
+
+## The favicon
+
+`images/rentleaks-favicon.svg` is not a reduction of the mark. At 16px the
+phone-and-house line art collapses into a blob — the hairlines merge and the
+house inside the phone disappears — so the favicon is the house alone, solid,
+cream on the brand blue. The same 194-byte file is inlined as a data URI in
+every generated page and served to the Next app as `web/src/app/icon.svg`,
+with `favicon.ico` (16/32/48) and `apple-icon.png` (180) rendered from it.
+
+The pages' `theme-color` stays `#3795A6`: that is the site's UI accent, not
+the logo's blue, and it is what the browser chrome should match.
