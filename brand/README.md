@@ -28,3 +28,11 @@ The in-app logo (`logo-lockup.png`) is white on transparency and tinted at
 runtime to the theme's ink, so the logo never carries a second background
 colour into a screen. The brand blue stays where it belongs — the icon and
 the launch screen.
+
+## The web logo
+
+`images/rentleaks-mark.svg` and `web/public/brand/rentleaks-logo.svg` are the
+mark and the full lockup as vectors, drawn in `currentColor` so one file
+serves light and dark. The static site inlines the lockup in `script.js`;
+the Next app paints it through a CSS mask, because `globals.css` needs the
+colour to follow the theme token rather than a fill baked into the file.

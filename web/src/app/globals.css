@@ -93,15 +93,18 @@ textarea {
   letter-spacing: -0.03em;
 }
 
-.rl-mark span {
-  width: 2rem;
-  height: 2rem;
-  display: grid;
-  place-items: center;
-  border-radius: 0.55rem;
-  background: var(--rl-accent);
-  color: var(--rl-accent-ink);
-  font-size: 0.78rem;
+/* The logo, painted as a mask so it takes the header's own ink. The "RL
+   RentLeaks" text in the markup stays as the fallback and is pushed out of
+   the box, so a browser without mask support still shows the wordmark. */
+.rl-mark {
+  overflow: hidden;
+  text-indent: -100em;
+  white-space: nowrap;
+  width: 7.75rem;
+  height: 2.15rem;
+  background-color: currentColor;
+  -webkit-mask: url("/brand/rentleaks-logo.svg") no-repeat left center / contain;
+          mask: url("/brand/rentleaks-logo.svg") no-repeat left center / contain;
 }
 
 .rl-nav {
