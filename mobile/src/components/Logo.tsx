@@ -1,19 +1,31 @@
-import { View, Text as RNText } from "react-native";
+import { Image } from "expo-image";
+import { View } from "react-native";
 import { useTheme } from "@/theme/ThemeProvider";
-import { font } from "@/theme/tokens";
 
 /**
- * The site's logo: `.logo__mark` (ink square, "RL" in paper, radius 9/30) next
- * to the Fraunces wordmark. Same proportions as styles.css, scaled by `size`.
+ * The RentLeaks logo: the line-art phone-and-house mark beside the script
+ * wordmark, taken from the brand artwork (Rentleaks_logo1.pdf).
+ *
+ * The asset is white on transparency and tinted at runtime, so one file
+ * serves both themes and the logo always sits in the app's own ink rather
+ * than carrying a second background colour into a screen. `size` is its
+ * height; the width follows the artwork's own proportions.
  */
-export function Logo({ size = 30, wordmark = true }: { size?: number; wordmark?: boolean }) {
+const LOCKUP = require("../../assets/logo-lockup.png");
+/** Intrinsic aspect of assets/logo-lockup.png (1800 x 498). */
+const ASPECT = 1800 / 498;
+
+export function Logo({ size = 30, tone }: { size?: number; tone?: string }) {
   const t = useTheme();
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: size * 0.4 }} accessibilityRole="image" accessibilityLabel="RentLeaks">
-      <View style={{ width: size, height: size, borderRadius: size * 0.3, backgroundColor: t.c.ink, alignItems: "center", justifyContent: "center" }}>
-        <RNText style={{ fontFamily: font.bold, fontSize: size * 0.37, letterSpacing: size * 0.015, color: t.c.bg, includeFontPadding: false }}>RL</RNText>
-      </View>
-      {wordmark ? <RNText style={{ fontFamily: font.display, fontSize: size * 0.63, letterSpacing: -0.5, color: t.c.ink }}>RentLeaks</RNText> : null}
+    <View accessibilityRole="image" accessibilityLabel="RentLeaks">
+      <Image
+        source={LOCKUP}
+        style={{ width: size * ASPECT, height: size }}
+        contentFit="contain"
+        tintColor={tone ?? t.c.ink}
+        accessibilityIgnoresInvertColors
+      />
     </View>
   );
 }

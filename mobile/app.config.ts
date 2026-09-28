@@ -53,7 +53,7 @@ const config: ExpoConfig = {
   android: {
     package: IS_DEV ? "com.alternabiz.rentleaks.dev" : "com.alternabiz.rentleaks",
     adaptiveIcon: {
-      backgroundColor: "#10242a",
+      backgroundColor: "#0E67B4",
       foregroundImage: "./assets/android-icon-foreground.png",
       backgroundImage: "./assets/android-icon-background.png",
       monochromeImage: "./assets/android-icon-monochrome.png",
@@ -83,10 +83,13 @@ const config: ExpoConfig = {
       "expo-splash-screen",
       {
         image: "./assets/splash-icon.png",
-        imageWidth: 160,
+        /* The lockup, not the bare mark, so the launch screen says the name. */
+        imageWidth: 220,
         resizeMode: "contain",
-        backgroundColor: "#f6fafb",
-        dark: { backgroundColor: "#0c1b20" },
+        /* The brand blue in both themes: the splash artwork is cream, and a
+           logo that inverts on launch reads as two different products. */
+        backgroundColor: "#0E67B4",
+        dark: { backgroundColor: "#0E67B4" },
       },
     ],
     [
