@@ -17,7 +17,7 @@
  * runs is, to a crawler, an English page. So the French is in the file.
  *
  * What is NOT translated, deliberately:
- *   listings/*.html   662 pages of host-written English prose. Machine-
+ *   listings/*.html   The English demo listing pages. Machine-
  *                     translating someone's description of their own flat and
  *                     publishing it under their name is not ours to do.
  *   enterprise/, hire-a-broker/

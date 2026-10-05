@@ -923,6 +923,14 @@
     });
   });
 
+  /* Pre-launch: keep every eighth demo home, then drop five more. */
+  (function thinDemoCatalogue() {
+    const everyEighth = listings.filter((_, i) => i % 8 === 0);
+    const target = Math.max(0, everyEighth.length - 5);
+    listings.length = 0;
+    everyEighth.slice(0, target).forEach((listing) => listings.push(listing));
+  })();
+
 
   /* Build the operator registry from the listings that reference them. */
   const operators = (function () {
