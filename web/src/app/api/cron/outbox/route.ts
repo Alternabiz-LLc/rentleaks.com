@@ -1,5 +1,6 @@
 import { processOutbox } from "@/lib/outbox";
 import { runOps } from "@/lib/ops/cron";
+import { bearerMatches } from "@/lib/security/bearer";
 import { fail, handle, ok } from "@/lib/v1/http";
 
 export const dynamic = "force-dynamic";
@@ -10,7 +11,7 @@ export const dynamic = "force-dynamic";
  */
 async function run(req: Request) {
   const secret = process.env.CRON_SECRET;
-  if (!secret || req.headers.get("authorization") !== `Bearer ${secret}`) {
+  if (!secret || !bearerMatches(req.headers.get("authorization"), secret)) {
     return fail(401, "unauthorized", "Missing or wrong cron secret.");
   }
   const outbox = await processOutbox();

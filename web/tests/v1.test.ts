@@ -11,7 +11,7 @@ import assert from "node:assert/strict";
 import { blockersFor, checkListing, rulesFor, type ListingDraft } from "../src/lib/listing-rules";
 import { scanMessage } from "../src/lib/v1/scam-guard";
 import { coerceSearch, parseSearch, searchOrder } from "../src/lib/v1/search";
-import { publicAddress } from "../src/lib/v1/listing-view";
+import { publicAddress, publicPoint } from "../src/lib/v1/listing-view";
 import { int } from "../src/lib/v1/http";
 
 const nyc = { cityId: "nyc", citySlug: "new-york", cityName: "New York", state: "NY", country: "US" };
@@ -127,6 +127,12 @@ test("publicAddress honours the lister's privacy choice", () => {
   assert.equal(publicAddress({ ...postal, addressPrivacy: "street-only" }), "Albert Cuypstraat, Amsterdam, Netherlands");
   assert.equal(publicAddress({ ...postal, addressPrivacy: "hide-unit" }), "440 Albert Cuypstraat, Amsterdam, Netherlands");
   assert.equal(publicAddress({ address: "12 Main St Apt 3, Austin, TX", neighborhood: "x", addressPrivacy: "hide-unit" }), "12 Main St, Austin, TX");
+});
+
+test("publicPoint blurs the pin unless the lister published the full address", () => {
+  assert.deepEqual(publicPoint(40.67891, -73.94412, "full"), { lat: 40.67891, lng: -73.94412 });
+  assert.deepEqual(publicPoint(40.67891, -73.94412, "street-only"), { lat: 40.679, lng: -73.944 });
+  assert.deepEqual(publicPoint(40.67891, -73.94412, "hidden"), { lat: 40.68, lng: -73.94 });
 });
 
 /* --- composer: edit round-trip ------------------------------------------ */

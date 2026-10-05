@@ -35,7 +35,6 @@ export async function GET(req: NextRequest) {
       OR: [
         { title: { contains: q, mode: "insensitive" } },
         { neighborhood: { contains: q, mode: "insensitive" } },
-        { address: { contains: q, mode: "insensitive" } },
         { city: { is: { name: { contains: q, mode: "insensitive" } } } },
       ],
     });

@@ -185,7 +185,12 @@ ${escapeHtml(footer.reason)}<br>${escapeHtml(footer.address)}${
 /* --- unsubscribe tokens -------------------------------------------------- */
 
 function secret() {
-  return process.env.UNSUBSCRIBE_SECRET || process.env.CRON_SECRET || "rentleaks-dev-unsubscribe";
+  const configured = process.env.UNSUBSCRIBE_SECRET || process.env.CRON_SECRET;
+  if (configured) return configured;
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("UNSUBSCRIBE_SECRET is not set");
+  }
+  return "rentleaks-dev-unsubscribe";
 }
 
 function b64url(buf: Buffer) {

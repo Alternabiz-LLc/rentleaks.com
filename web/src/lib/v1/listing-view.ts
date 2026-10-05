@@ -37,6 +37,17 @@ function gallery(row: CardRow, origin: string) {
   }));
 }
 
+/** Map pin a renter may see. Exact coordinates undo a hidden or street-only address. */
+export function publicPoint(lat: number, lng: number, privacy: string) {
+  if (privacy === "full") return { lat, lng };
+  const places = privacy === "hidden" ? 2 : 3;
+  const scale = 10 ** places;
+  return {
+    lat: Math.round(lat * scale) / scale,
+    lng: Math.round(lng * scale) / scale,
+  };
+}
+
 /**
  * The address a renter is allowed to see. The composer lets a lister choose
  * how much of it is public; the API honours that rather than shipping the full
@@ -65,6 +76,7 @@ function stripUnit(address: string) {
 export function toCard(row: CardRow, origin: string) {
   const g = gallery(row, origin);
   const photos = g.filter((x) => x.kind === "photo").slice(0, 5).map((x) => x.src);
+  const point = publicPoint(row.lat, row.lng, row.addressPrivacy);
   return {
     id: row.id,
     title: row.title,
@@ -82,8 +94,8 @@ export function toCard(row: CardRow, origin: string) {
     beds: row.beds,
     baths: row.baths,
     sqft: row.sqft,
-    lat: row.lat,
-    lng: row.lng,
+    lat: point.lat,
+    lng: point.lng,
     image: photos[0] || absolute(origin, row.image),
     photos,
     availableFrom: row.availableFrom,

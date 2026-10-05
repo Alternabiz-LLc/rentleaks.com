@@ -9,6 +9,7 @@
  */
 import type { NextRequest } from "next/server";
 import type { City, Listing, Operator } from "@prisma/client";
+import { publicAddress, publicPoint } from "@/lib/v1/listing-view";
 
 const ALLOWED = (process.env.API_ALLOWED_ORIGINS ||
   "https://rentleaks.com,https://www.rentleaks.com,https://alternabiz-llc.github.io,https://altech237.github.io,http://localhost:8123,http://localhost:8080,http://localhost:8765")
@@ -57,12 +58,13 @@ export type ListingRow = Listing & { city?: City | null; operator?: Operator | n
 export function serializeListing(l: ListingRow) {
   const d = ((l.detail as unknown) as Detail) || {};
   const city = (l.city || {}) as Partial<City>;
+  const point = publicPoint(l.lat, l.lng, l.addressPrivacy);
   return {
     id: l.id,
     type: "rent",
     housingType: l.housingType,
     title: l.title,
-    address: l.address,
+    address: publicAddress(l),
     neighborhood: l.neighborhood,
     cityId: l.cityId,
     cityName: city.name ?? d.cityName ?? "",
@@ -80,8 +82,8 @@ export function serializeListing(l: ListingRow) {
     beds: l.beds,
     baths: l.baths,
     sqft: l.sqft,
-    lat: l.lat,
-    lng: l.lng,
+    lat: point.lat,
+    lng: point.lng,
     specs: (d.specs as string) ?? "",
     privateBath: l.privateBath,
     roommates: (d.roommates as number) ?? 0,

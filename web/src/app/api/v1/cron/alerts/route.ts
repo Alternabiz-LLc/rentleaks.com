@@ -3,6 +3,7 @@ import { liveListingWhere } from "@/lib/billing";
 import { fail, handle, ok } from "@/lib/v1/http";
 import { pushToUsers } from "@/lib/v1/push";
 import { coerceSearch, searchWhere } from "@/lib/v1/search";
+import { bearerMatches } from "@/lib/security/bearer";
 import { setSetting, SETTING_KEYS } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +16,7 @@ export const dynamic = "force-dynamic";
  */
 export const GET = handle(async (req: Request) => {
   const secret = process.env.CRON_SECRET;
-  if (!secret || req.headers.get("authorization") !== `Bearer ${secret}`) {
+  if (!secret || !bearerMatches(req.headers.get("authorization"), secret)) {
     return fail(401, "unauthorized", "Missing or wrong cron secret.");
   }
 

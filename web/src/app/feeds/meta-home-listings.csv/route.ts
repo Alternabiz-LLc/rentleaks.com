@@ -14,16 +14,17 @@
  *    would be exactly the scam signature the product exists to fight, so if
  *    the sample IDs cannot be loaded the feed refuses to serve.
  *  - Addresses respect the lister's privacy choice (street name only by
- *    default); the map point is the listing's stored lat/lng.
+ *    default); the map point is blurred the same way.
  *  - Rows without a postal code are skipped (Meta requires one) and counted
  *    in the X-RentLeaks-Skipped header, so the gap is visible.
  */
+import { timingSafeEqual } from "crypto";
 import { liveListingWhere } from "@/lib/billing";
 import { mediaFromDetail } from "@/lib/media";
 import { prisma } from "@/lib/prisma";
 import { sampleCatalogIds } from "@/lib/sample-catalog";
 import { appUrl } from "@/lib/site";
-import { absolute, publicAddress } from "@/lib/v1/listing-view";
+import { absolute, publicAddress, publicPoint } from "@/lib/v1/listing-view";
 
 export const dynamic = "force-dynamic";
 
@@ -92,9 +93,17 @@ const PROPERTY: Record<string, string> = {
 const FURNISH: Record<string, string> = { fully: "furnished", partly: "semi-furnished", unfurnished: "unfurnished" };
 const PETS: Record<string, string> = { none: "none", cats: "cat", dogs: "dog", "cats-dogs": "all" };
 
+function feedKeyOk(presented: string | null, expected: string | undefined) {
+  if (!expected) return process.env.NODE_ENV !== "production";
+  if (!presented) return false;
+  const got = Buffer.from(presented);
+  const want = Buffer.from(expected);
+  return got.length === want.length && timingSafeEqual(got, want);
+}
+
 export async function GET(req: Request) {
   const expected = process.env.META_FEED_KEY;
-  if (expected && new URL(req.url).searchParams.get("key") !== expected) {
+  if (!feedKeyOk(new URL(req.url).searchParams.get("key"), expected)) {
     return new Response("Not found", { status: 404 });
   }
 
@@ -136,8 +145,8 @@ export async function GET(req: Request) {
       "address.region": r.city.state || r.city.name,
       "address.country": r.city.countryName,
       "address.postal_code": zip,
-      latitude: r.lat,
-      longitude: r.lng,
+      latitude: publicPoint(r.lat, r.lng, r.addressPrivacy).lat,
+      longitude: publicPoint(r.lat, r.lng, r.addressPrivacy).lng,
       "neighborhood[0]": r.neighborhood,
       price: `${r.allIn.toLocaleString("en-US")} ${r.currency}`,
       url: `${origin}/listings/${encodeURIComponent(r.id)}?utm_source=facebook&utm_medium=catalog`,

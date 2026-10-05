@@ -8,8 +8,10 @@ import { ListingEvidence } from "@/components/evidence/ListingEvidence";
 import { listingGallery } from "@/lib/catalog";
 import { evidenceFor, type EvidenceListing } from "@/lib/listing-evidence";
 import { mediaFromDetail } from "@/lib/media";
+import { getCurrentUser } from "@/lib/auth";
+import { liveListingWhere } from "@/lib/billing";
 import { toBrowseListing, toMapPin } from "@/lib/listings";
-import { publicAddress } from "@/lib/v1/listing-view";
+import { publicAddress, publicPoint } from "@/lib/v1/listing-view";
 import { prisma } from "@/lib/prisma";
 import { catalogOrigin, fmtMoney, typeLabel } from "@/lib/site";
 
@@ -25,8 +27,16 @@ export default async function ListingPage({
   });
   if (!listing) notFound();
 
+  const viewer = await getCurrentUser();
+  const owner = viewer?.id === listing.hostId;
+  if (!owner) {
+    const gate = await liveListingWhere();
+    if (listing.status === "paused") notFound();
+    if ("moderation" in gate && listing.moderation !== "approved") notFound();
+  }
+
   const nearby = await prisma.listing.findMany({
-    where: { cityId: listing.cityId, id: { not: listing.id } },
+    where: { AND: [await liveListingWhere(), { cityId: listing.cityId, id: { not: listing.id } }] },
     include: { city: true },
     orderBy: [{ featured: "desc" }, { createdAt: "desc" }],
     take: 4,
@@ -154,12 +164,15 @@ export default async function ListingPage({
             </p>
           </div>
           <ListingMap
-            pins={[toMapPin(listing), ...nearby.map(toMapPin)]}
+            pins={[listing, ...nearby].map((row) => {
+              const point = publicPoint(row.lat, row.lng, row.addressPrivacy);
+              return toMapPin({ ...row, lat: point.lat, lng: point.lng });
+            })}
             selectedId={listing.id}
             className="rl-map--detail"
           />
         </div>
-        <ListingEvidence evidence={evidence} listing={subject} />
+        <ListingEvidence evidence={evidence} listing={{ ...subject, address: publicAddress(listing) }} />
         {nearby.length ? (
           <section className="rl-listing__more">
             <h2>More in {listing.city.name}</h2>

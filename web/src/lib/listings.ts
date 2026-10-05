@@ -3,6 +3,7 @@ import { listingGallery } from "./catalog";
 import type { BrowseListing } from "./listing-shapes";
 import { mediaFromDetail } from "./media";
 import { prisma } from "./prisma";
+import { publicAddress, publicPoint } from "./v1/listing-view";
 
 export { heroSlidePicks, toMapPin } from "./listing-shapes";
 export type { BrowseListing, GalleryItem, MapPin } from "./listing-shapes";
@@ -38,24 +39,31 @@ export function toBrowseListing(listing: {
   amenitiesJson: string;
   cityId: string;
   city: { name: string; state: string };
+  addressPrivacy?: string;
   featured?: boolean;
   /** Paid placement; the web marks both flags as "Sponsored", like the app. */
   sponsored?: boolean;
   detail?: unknown;
 }): BrowseListing {
   const media = mediaFromDetail(listing.detail);
+  const privacy = listing.addressPrivacy || "street-only";
+  const point = publicPoint(listing.lat, listing.lng, privacy);
   return {
     id: listing.id,
     title: listing.title,
-    address: listing.address,
+    address: publicAddress({
+      address: listing.address,
+      neighborhood: listing.neighborhood,
+      addressPrivacy: privacy,
+    }),
     neighborhood: listing.neighborhood,
     allIn: listing.allIn,
     price: listing.price,
     beds: listing.beds,
     baths: listing.baths,
     sqft: listing.sqft,
-    lat: listing.lat,
-    lng: listing.lng,
+    lat: point.lat,
+    lng: point.lng,
     image: listing.image,
     housingType: listing.housingType,
     availableFrom: listing.availableFrom,
@@ -152,7 +160,6 @@ export async function publicListings(filters?: ListingFilters) {
                 OR: [
                   { neighborhood: { contains: q, mode: "insensitive" as const } },
                   { title: { contains: q, mode: "insensitive" as const } },
-                  { address: { contains: q, mode: "insensitive" as const } },
                 ],
               }
             : {}),

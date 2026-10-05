@@ -7,7 +7,12 @@ import { createHmac, timingSafeEqual } from "crypto";
 import { appUrl } from "@/lib/site";
 
 function key() {
-  return process.env.AUTH_SECRET || process.env.UNSUBSCRIBE_SECRET || process.env.CRON_SECRET || "rentleaks-dev-links";
+  const configured = process.env.AUTH_SECRET || process.env.UNSUBSCRIBE_SECRET || process.env.CRON_SECRET;
+  if (configured) return configured;
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("AUTH_SECRET is not set");
+  }
+  return "rentleaks-dev-links";
 }
 
 function b64(buf: Buffer) {
