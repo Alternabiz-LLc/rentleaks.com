@@ -113,8 +113,8 @@ RentLeaks never charges renters. Stripe Checkout collects **listing** and **spon
 |---|---|---|
 | Listing weekly | $14 | `price_1UIJavL7FHqV7UTB2g0XoMjq` |
 | Listing monthly | $60 | `price_1UIJavL7FHqV7UTBXJXpjpg2` |
-| Sponsored weekly | +$30 | `price_1UIJhJL7FHqV7UTBma8oNVSH` |
-| Sponsored monthly | +$120 | `price_1UIJjBL7FHqV7UTB44mXwMFO` |
+| Sponsored weekly | +$35 | charged from the app amount |
+| Sponsored monthly | +$130 | charged from the app amount |
 
 Local:
 

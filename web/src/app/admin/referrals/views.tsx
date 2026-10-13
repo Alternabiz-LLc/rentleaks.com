@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { Agreement, AgreementEvent, AgreementSigner, GuideLead, NetworkDeal, NetworkOffer, NetworkPartner, NetworkSearch } from "@prisma/client";
+import type { AdminAction, Agreement, AgreementEvent, AgreementSigner, NotificationDelivery, GuideLead, NetworkDeal, NetworkOffer, NetworkPartner, NetworkSearch } from "@prisma/client";
 import { agreementAction, dealAction, guideAction, invitePartner, networkSettingsAction, partnerAction, searchAction } from "@/app/admin/_actions/referrals";
 import { Icon } from "@/components/admin/desk/Icon";
 import { RouteDrawer } from "@/components/admin/desk/RouteDrawer";
@@ -487,6 +487,8 @@ export function PartnerDrawer({
   me,
   referrerOk,
   events,
+  history,
+  deliveries,
 }: {
   p: PartnerRow;
   self: Self;
@@ -496,6 +498,8 @@ export function PartnerDrawer({
   me: { name: string };
   referrerOk: boolean;
   events: AgreementEvent[];
+  history: AdminAction[];
+  deliveries: Array<Pick<NotificationDelivery, "id" | "status" | "attempts" | "lastError" | "transport" | "providerId" | "createdAt">>;
 }) {
   const back = self();
   const lookup = licenseLookupUrl(p.licenseState);
@@ -570,6 +574,31 @@ export function PartnerDrawer({
           </div>
         </dl>
         {p.bio ? <pre className="dk-dossier__summary">{p.bio}</pre> : null}
+
+        <Panel kicker="Application review" title="Verification and access">
+          <p>{p.emailVerifiedAt ? `Work email access confirmed ${when(p.emailVerifiedAt, false)}.` : "Work email access has not been confirmed under the current verification flow."}</p>
+          {p.suspendedAt ? <p>Suspended by the team {when(p.suspendedAt, false)}. The partner cannot resume themselves.</p> : null}
+          {["applied", "under_review", "verifying"].includes(p.status) ? <form action={partnerAction}><Hidden values={{ id: p.id, returnTo: back, op: "review" }} /><button className="dk-btn">Mark under review</button></form> : null}
+          <form action={partnerAction} className="dk-form">
+            <Hidden values={{ id: p.id, returnTo: back, op: "expiry" }} />
+            <label className="dk-field"><span>Renewed licence expires</span><input name="licenseExpires" type="date" required defaultValue={p.licenseExpires ?? ""} /></label>
+            <label className="dk-field"><span>Official verification evidence</span><input name="verifyNote" required minLength={6} placeholder="State lookup date, current status and broker affiliation" /></label>
+            <label className="dk-check dk-field--wide"><input name="verified" type="checkbox" required /> I checked the renewal with the state.</label>
+            <button className="dk-btn">Save verified renewal</button>
+          </form>
+          <form action={partnerAction} className="dk-form">
+            <Hidden values={{ id: p.id, returnTo: back, op: "revoke-links" }} />
+            <label className="dk-check dk-field--wide"><input name="confirm" type="checkbox" required /> Revoke existing portal and signing links; send fresh ones separately.</label>
+            <button className="dk-btn">Revoke private links</button>
+          </form>
+        </Panel>
+        <Panel kicker="Notifications" title="Email delivery history">
+          {deliveries.length ? <ul>{deliveries.map((d) => <li key={d.id}>{when(d.createdAt, false)} · {d.status.replaceAll("_", " ")} · {d.attempts} attempt{d.attempts === 1 ? "" : "s"}{d.transport ? ` · ${d.transport}` : ""}{d.lastError ? " · needs attention" : ""}</li>)}</ul> : <p>No recorded queued notifications. Historical messages may predate delivery tracking.</p>}
+          <p>Accepted means the transport accepted the email. Delivered requires a provider delivery event.</p>
+        </Panel>
+        <Panel kicker="Audit history" title="Partner changes">
+          {history.length ? <ul>{history.map((h) => <li key={h.id}>{when(h.createdAt, false)} · {h.action.replace("network.partner.", "").replaceAll(".", " ")} · {h.actorId.startsWith("partner:") ? "partner" : "authorized team"}</li>)}</ul> : <p>No recorded administrative changes.</p>}
+        </Panel>
 
         {env ? (
           <Panel kicker="Referral partner agreement" title="Signatures">

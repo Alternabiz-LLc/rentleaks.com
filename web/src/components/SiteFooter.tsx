@@ -42,7 +42,7 @@ const HOST_MODALS: Array<{ id: InfoId; label: string }> = [
   { id: "verify", label: "Get verified" },
   { id: "operators", label: "For operators" },
   { id: "agents", label: "For agents and brokers" },
-  { id: "leasebreak", label: "Lease-breaks post free" },
+  { id: "leasebreak", label: "Lease-breaks: $15/week or $60/month" },
 ];
 
 const COMPANY_MODALS: Array<{ id: InfoId; label: string }> = [
@@ -91,7 +91,7 @@ function titleFor(id: InfoId) {
     case "agents":
       return "For agents and brokers";
     case "leasebreak":
-      return "Lease-breaks post free";
+      return "Lease-breaks: $15/week or $60/month";
     case "contact":
       return "Contact";
     case "works":
@@ -220,8 +220,8 @@ function InfoBody({
     case "operators":
       return (
         <>
-          <p>Co-living buildings, furnished portfolios, and room hosts list from the same form. Listing fee is {WEEKLY_PLAN.label} or {MONTHLY_PLAN.label}. Sponsored placement is extra — {FEATURED_WEEKLY.label} or {FEATURED_MONTHLY.label} — and shows under the homepage hero and in stay results.</p>
-          <p>Lease-break posts stay free. RentLeaks never collects rent. Fair Housing applies to every listing.</p>
+          <p>Co-living buildings, furnished portfolios, and room hosts list from the same form. Listing fee is {WEEKLY_PLAN.label} or {MONTHLY_PLAN.label}. Sponsored placement is extra — {FEATURED_WEEKLY.label} or {FEATURED_MONTHLY.label} — and shows under the homepage hero and in stay results. The listing fee and sponsored placement are 20% off the first listing, 15% off the second, and 12% off the third.</p>
+          <p>Lease-break posts cost $15/week or $60/month. RentLeaks never collects rent. Fair Housing applies to every listing.</p>
           <Link className="rl-cta" href="/list" onClick={onClose}>
             List a place
           </Link>
@@ -240,7 +240,7 @@ function InfoBody({
     case "leasebreak":
       return (
         <>
-          <p>If you need to leave before the lease ends, post the remaining term for free. The card shows a lease clock, remaining months, and All-in rent.</p>
+          <p>If you need to leave before the lease ends, post the remaining term for $15/week or $60/month. The card shows a lease clock, remaining months, and All-in rent.</p>
           <p>Confirm assignment vs sublet with your landlord. Rent and deposit go to them, not to RentLeaks.</p>
           <Link className="rl-cta" href="/list" onClick={onClose}>
             Post a lease-break
@@ -369,9 +369,9 @@ export function SiteFooter() {
             lease-breaks. Every price is all-in. Every stay starts at 30 days.
           </p>
           <p className="rl-foot__claim">
-            <b>RentLeaks never handles your money.</b> No deposit, no booking fee, no application fee — there is
-            nothing to pay us, ever. Deposits and rent go direct to the landlord against a signed lease. Anyone asking
-            you to pay RentLeaks is running a scam.
+            <b>Renters browse free.</b> Rent and deposits go directly to the landlord against a signed lease.
+            Hosts pay the published listing and sponsored-placement fees through secure billing. Broker fees go
+            to the licensed brokerage under a signed agreement.
           </p>
         </div>
 

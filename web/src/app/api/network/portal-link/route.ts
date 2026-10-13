@@ -16,8 +16,9 @@ export async function POST(req: NextRequest) {
   try {
     await rateLimit(`netlink:${clientKey(req)}`, 5, 10 * 60_000);
     const body = await readJson(req);
-    const email = typeof body.email === "string" ? body.email.slice(0, 200) : "";
-    if (/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) await emailPortalLink(email).catch((e) => console.error("[portal-link]", e));
+    const email = typeof body.email === "string" ? body.email.trim().toLowerCase().slice(0, 200) : "";
+    if (email) await rateLimit(`netlink-email:${email}`, 3, 60 * 60_000);
+    if (/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) await emailPortalLink(email).catch(() => console.error("[portal-link] delivery queue unavailable"));
     return reply(200, { ok: true });
   } catch (err) {
     return fromError(err, "api/network/portal-link");

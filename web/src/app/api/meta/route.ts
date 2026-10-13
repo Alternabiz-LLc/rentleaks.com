@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { json, preflight } from "@/lib/api";
+import { liveListingWhere } from "@/lib/billing";
 
 export const dynamic = "force-dynamic";
 
@@ -11,17 +12,18 @@ export function OPTIONS(req: NextRequest) {
 /** Powers the homepage Market Pulse panel and the stat rail. */
 export async function GET(req: NextRequest) {
   try {
+    const live = await liveListingWhere();
     const [listings, cities, noFee, rooms, breaks] = await Promise.all([
-      prisma.listing.count(),
+      prisma.listing.count({ where: live }),
       prisma.city.count(),
-      prisma.listing.count({ where: { noFee: true } }),
+      prisma.listing.count({ where: { AND: [live, { noFee: true }] } }),
       prisma.listing.aggregate({
-        where: { housingType: { in: ["room", "coliving"] } },
+        where: { AND: [live, { housingType: { in: ["room", "coliving"] } }] },
         _avg: { allInUsd: true },
         _count: true,
       }),
       prisma.listing.aggregate({
-        where: { housingType: "lease-break" },
+        where: { AND: [live, { housingType: "lease-break" }] },
         _avg: { remainingMonths: true },
         _count: true,
       }),

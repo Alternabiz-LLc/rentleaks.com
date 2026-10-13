@@ -11,11 +11,11 @@
  *    are stricter and disappear entirely until there is a real profile.
  * 2. Listing pages: a share row under the title (Facebook share dialog,
  *    Messenger on phones, copy link) with UTM tags so shares are countable.
- * 3. Meta Pixel — OFF unless a page carries <meta name="rl-meta-pixel">,
- *    and even then it loads only after the visitor accepts. Housing is a
- *    Special Ad Category on Meta: the pixel sends page views, listing views
- *    and contact clicks only — never search filters, budgets or anything a
- *    person typed.
+ * 3. Meta Pixel — pixel 1160152193109694. A page may override it with
+ *    <meta name="rl-meta-pixel">. It loads only after the visitor accepts.
+ *    Housing is a Special Ad Category on Meta: the pixel sends page views,
+ *    listing views and contact clicks only — never search filters, budgets
+ *    or anything a person typed.
  *
  * Applied to every page by tools/apply-facebook.py.
  */
@@ -32,6 +32,7 @@
      them). A footer button falls back to one of these until its handle is set. */
   var LANDING_PAGES = ["instagram.html", "tiktok.html", "linkedin.html"];
   var CONSENT_KEY = "rl_meta_consent";
+  var PIXEL_ID = "1160152193109694";
 
   function ready(fn) {
     if (document.readyState !== "loading") fn();
@@ -270,8 +271,9 @@
 
   function setupPixel() {
     var m = document.querySelector('meta[name="rl-meta-pixel"]');
-    pixelId = m && /^\d{6,20}$/.test(m.getAttribute("content") || "") ? m.getAttribute("content") : null;
-    if (!pixelId) return;
+    var fromPage = m && /^\d{6,20}$/.test(m.getAttribute("content") || "") ? m.getAttribute("content") : "";
+    pixelId = fromPage || PIXEL_ID;
+    if (!/^\d{6,20}$/.test(pixelId)) return;
     /* Global Privacy Control is treated as a "no". */
     if (navigator.globalPrivacyControl) return;
     var c = readConsent();

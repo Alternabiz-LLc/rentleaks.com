@@ -8,7 +8,11 @@
  * link at once. Nothing secret is stored in plain text.
  */
 import { createHash, randomBytes } from "crypto";
+import type { Prisma } from "@prisma/client";
+import { enqueueMail } from "@/lib/notifications";
+import { trustedClientIp } from "@/lib/security/request";
 import { canAccess } from "@/lib/access";
+import { requireAdminAction } from "@/lib/admin/guard";
 import { booksSettings, booksToday, nextInvoiceNumber } from "@/lib/books/data";
 import { invoiceTotals } from "@/lib/books/core";
 import { logActivity, upsertContact } from "@/lib/crm";
@@ -18,7 +22,6 @@ import { readLink, signLink } from "@/lib/ops/links";
 import { prisma } from "@/lib/prisma";
 import { getSettings, SETTING_KEYS } from "@/lib/settings";
 import { appUrl } from "@/lib/site";
-import { sendMail } from "@/lib/v1/mail";
 import {
   briefLines,
   canonicalDocument,
@@ -27,8 +30,10 @@ import {
   feeEstimateCents,
   feeLabel,
   isFeeType,
+  licenseCurrent,
   median,
   partnerAgreement,
+  partnerLicenseComplete,
   rankPartners,
   referralDue,
   searchScore,
@@ -109,7 +114,9 @@ export async function partnerFromToken(token: string) {
   const p = readLink(token);
   if (!p || p[0] !== "p") return null;
   const partner = await prisma.networkPartner.findUnique({ where: { id: p[1] } });
-  return partner && partner.portalTokenHash && partner.portalTokenHash === p[2] ? partner : null;
+  if (!partner || !["applied", "active", "paused", "under_review", "verifying"].includes(partner.status) || !partner.portalTokenHash || partner.portalTokenHash !== p[2]) return null;
+  if (partner.mailboxGateAt && !partner.emailVerifiedAt) return prisma.networkPartner.update({ where: { id: partner.id }, data: { emailVerifiedAt: new Date() } });
+  return partner;
 }
 export async function signerFromToken(token: string) {
   const p = readLink(token);
@@ -134,18 +141,19 @@ function matchSearchOf(s: { city: string; state: string; neighborhoods: string; 
   return { city: s.city, state: s.state, neighborhoods: json<string[]>(s.neighborhoods, []), homeType: s.homeType, buildingAge: s.buildingAge, term: s.term, language: s.language, budgetMax: s.budgetMax };
 }
 
-async function networkTeam() {
-  const users = await prisma.user.findMany({ where: { role: { in: ["admin", "staff"] }, suspendedAt: null, NOT: { passwordHash: "" } }, select: { email: true, role: true, staffAccess: true } });
+async function networkTeam(store: Pick<Prisma.TransactionClient, "user"> = prisma) {
+  const users = await store.user.findMany({ where: { role: { in: ["admin", "staff"] }, suspendedAt: null, NOT: { passwordHash: "" } }, select: { email: true, role: true, staffAccess: true } });
   return users.filter((u) => canAccess(u, "network"));
 }
 
-export async function alertNetworkTeam(subject: string, text: string) {
-  const team = await networkTeam();
-  await Promise.allSettled(team.map((u) => sendMail({ to: u.email, subject, text })));
+export async function alertNetworkTeam(subject: string, text: string, store: Pick<Prisma.TransactionClient, "user" | "notificationDelivery"> = prisma) {
+  const team = await networkTeam(store);
+  await Promise.all(team.map((u) => enqueueMail({ to: u.email, subject, text }, { audience: "network_admin", targetType: "network" }, store)));
 }
 
 async function mail(to: string, subject: string, text: string, purpose: "transactional" | "personal" = "transactional") {
-  return sendMail({ to, subject, text: `${text}\n\nRentLeaks broker network`, purpose }).catch(() => null);
+  await enqueueMail({ to, subject, text: `${text}\n\nRentLeaks broker network`, purpose }, { targetType: "network" });
+  return { delivered: false, transport: "queued" as const };
 }
 
 async function crmNote(email: string, subject: string, body = "") {
@@ -159,7 +167,7 @@ async function crmNote(email: string, subject: string, body = "") {
 
 export async function partnerStats(ids?: string[]): Promise<Array<MatchPartner & { name: string; brokerage: string }>> {
   const partners = await prisma.networkPartner.findMany({
-    where: ids ? { id: { in: ids } } : { status: "active" },
+    where: { ...(ids ? { id: { in: ids } } : { status: "active" }), verifiedAt: { not: null }, suspendedAt: null },
     include: { offers: { select: { status: true, offeredAt: true, respondedAt: true, searchId: true } } },
   });
   const pids = partners.map((p) => p.id);
@@ -169,7 +177,7 @@ export async function partnerStats(ids?: string[]): Promise<Array<MatchPartner &
   ]);
   const openBy = new Map(open.map((o) => [o.chosenPartnerId, o._count._all]));
   const winsBy = new Map(wins.map((w) => [w.partnerId, w._count._all]));
-  return partners.map((p) => {
+  return partners.filter((p) => partnerLicenseComplete(p) && (!p.mailboxGateAt || !!p.emailVerifiedAt) && licenseCurrent(p.licenseExpires, booksToday())).map((p) => {
     const answered = p.offers.filter((o) => o.respondedAt);
     const pending = p.offers.filter((o) => o.status === "offered" || o.status === "proposed").length;
     return {
@@ -200,36 +208,27 @@ export async function partnerStats(ids?: string[]): Promise<Array<MatchPartner &
 export async function createSearch(input: SearchInput, now = new Date()) {
   const settings = await networkSettings();
   if (!settings.open) fail("Broker matching is paused for a moment. Please try again later.");
-  const dupe = await prisma.networkSearch.findFirst({ where: { email: input.email, city: input.city, createdAt: { gte: new Date(now.getTime() - 10 * 60_000) } } });
-  if (dupe) return { search: dupe, duplicate: true };
-  const search = await prisma.networkSearch.create({
-    data: {
-      ...input,
-      neighborhoods: JSON.stringify(input.neighborhoods),
-      mustHaves: JSON.stringify(input.mustHaves),
-      consent: true,
-      score: searchScore(input, booksToday(now)),
-      roomTokenHash: nonce(),
-      status: "matching",
-      stageAt: now,
-    },
-  });
+  const result = await prisma.$transaction(async (tx) => {
+    const dupe = await tx.networkSearch.findFirst({ where: { email: input.email, city: input.city, createdAt: { gte: new Date(now.getTime() - 10 * 60_000) } } });
+    if (dupe) return { search: dupe, duplicate: true };
+    const search = await tx.networkSearch.create({ data: {
+      ...input, neighborhoods: JSON.stringify(input.neighborhoods), mustHaves: JSON.stringify(input.mustHaves),
+      consent: true, score: searchScore(input, booksToday(now)), roomTokenHash: nonce(), status: "new", stageAt: now,
+    } });
+    await enqueueMail({ to: input.email, subject: "Your broker search was received — RentLeaks", text: `Hi ${input.name.split(" ")[0]},\n\nWe've received your brief. Proposals and your agreement will appear in your private search room:\n${roomLink(search)}\n\n${SAFETY}` }, { key: `search-room:${search.id}`, targetType: "networkSearch", targetId: search.id }, tx);
+    return { search, duplicate: false };
+  }, { isolationLevel: "Serializable" });
+  if (result.duplicate) return result;
+  const { search } = result;
   try {
     const c = await upsertContact({ email: input.email, name: input.name, phone: input.phone, kind: "renter", source: "lead", tags: ["broker-network", input.campaign ? `campaign:${input.campaign}` : ""].filter(Boolean) });
     await logActivity(c.id, "lead", "Wants to hire a broker", searchBrief(search).map(([k, v]) => `${k}: ${v}`).join("\n"));
   } catch {
     /* the CRM is best effort */
   }
-  const made = await matchSearch(search.id, now);
-  const first = input.name.split(" ")[0];
-  await mail(
-    input.email,
-    "Your broker search is live — RentLeaks",
-    `Hi ${first},\n\nWe've sent your brief to ${made ? `${made} verified broker${made === 1 ? "" : "s"} who work` : "the verified brokers who work"} ${input.city}. ` +
-      `Their proposals — each with a short pitch and a fee at or under your cap — appear in your search room:\n\n${roomLink(search)}\n\n` +
-      "Pick one when you're ready (or none). You'll sign one clear agreement in the app, and nothing is owed unless you sign a lease for a home your broker found for you.\n\n" +
-      SAFETY,
-  );
+  let made = 0;
+  try { made = await matchSearch(search.id, now); }
+  catch { console.error("[network] matching deferred to protected cron retry"); }
   await alertNetworkTeam(
     `Broker search: ${input.city} · up to $${input.budgetMax.toLocaleString("en-US")} (${made} offer${made === 1 ? "" : "s"} sent)`,
     `${searchBrief(search).map(([k, v]) => `${k}: ${v}`).join("\n")}\n\n${made ? "" : "No partner matched yet — recruit one or offer it by hand.\n\n"}Open: ${base()}/admin/referrals?open=${search.id}`,
@@ -255,22 +254,29 @@ export async function matchSearch(searchId: string, now = new Date(), onlyPartne
   }
   let made = 0;
   for (const { p, m } of picks) {
-    const offer = await prisma.networkOffer
-      .create({ data: { searchId, partnerId: p.id, matchScore: m.score, reasons: JSON.stringify(m.reasons), expiresAt: new Date(now.getTime() + settings.offerHours * HOUR) } })
-      .catch(() => null);
-    if (!offer) continue;
-    made++;
-    const partner = await prisma.networkPartner.update({ where: { id: p.id }, data: { lastOfferedAt: now } });
-    await mail(
-      partner.email,
-      `New tenant lead: ${search.city} · up to $${search.budgetMax.toLocaleString("en-US")}/mo`,
-      `Hi ${partner.name.split(" ")[0]},\n\nA tenant who wants to hire a broker matches your markets:\n\n${searchBrief(search)
+    // The offer and its notification commit together. Recheck eligibility and capacity
+    // inside the transaction so a concurrent suspension or match cannot bypass them.
+    const created = await prisma.$transaction(async (tx) => {
+      const current = await tx.networkSearch.findUnique({ where: { id: searchId }, include: { offers: true } });
+      const partner = await tx.networkPartner.findUnique({ where: { id: p.id } });
+      if (!current || !["new", "matching", "proposals"].includes(current.status) || !partner || partner.status !== "active" || partner.suspendedAt || !partner.verifiedAt || !partnerLicenseComplete(partner) || (partner.mailboxGateAt && !partner.emailVerifiedAt) || (partner.licenseExpires && partner.licenseExpires < booksToday(now))) return false;
+      if (current.offers.some((o) => o.partnerId === p.id) || current.offers.filter((o) => ["offered", "proposed"].includes(o.status)).length >= settings.offersPerSearch) return false;
+      const offer = await tx.networkOffer.create({ data: { searchId, partnerId: p.id, matchScore: m.score, reasons: JSON.stringify(m.reasons), expiresAt: new Date(now.getTime() + settings.offerHours * HOUR) } });
+      await tx.networkPartner.update({ where: { id: p.id }, data: { lastOfferedAt: now } });
+      await enqueueMail({
+        to: partner.email,
+        subject: `New tenant lead: ${search.city} · up to $${search.budgetMax.toLocaleString("en-US")}/mo`,
+        text: `Hi ${partner.name.split(" ")[0]},\n\nA tenant who wants to hire a broker matches your markets:\n\n${searchBrief(search)
         .map(([k, v]) => `${k}: ${v}`)
         .join("\n")}\n\nWhy you: ${m.reasons.join(" · ") || "your markets"}\n\n` +
         `Accept with your fee and a short pitch within ${settings.offerHours} hours — the tenant picks from up to ${settings.offersPerSearch} brokers:\n${portalLink(partner)}`,
-    );
+      }, { key: `offer:${offer.id}`, targetType: "networkOffer", targetId: offer.id }, tx);
+      if (current.status === "new") await tx.networkSearch.update({ where: { id: searchId }, data: { status: "matching" } });
+      return true;
+    }, { isolationLevel: "Serializable" });
+    if (created) made++;
   }
-  if (made && search.status === "new") await prisma.networkSearch.update({ where: { id: searchId }, data: { status: "matching" } });
+  if (search.status === "new") await prisma.networkSearch.update({ where: { id: searchId }, data: { status: "matching" } });
   return made;
 }
 
@@ -283,7 +289,8 @@ export async function answerOffer(partnerId: string, offerId: string, a: { accep
   if (!offer || offer.partnerId !== partnerId) fail("That lead isn't yours.");
   if (offer!.status !== "offered") fail("You've already answered this lead.");
   if (offer!.expiresAt < now) fail("This lead has expired.");
-  if (offer!.partner.status !== "active") fail("Your partner account isn't active.");
+  if (offer!.partner.status !== "active" || offer!.partner.suspendedAt || !offer!.partner.verifiedAt) fail("Your partner account isn't active.");
+  if (!licenseCurrent(offer!.partner.licenseExpires, booksToday(now))) fail("Renew your licence before accepting a new referral.");
   const s = offer!.search;
   if (!["matching", "proposals"].includes(s.status)) fail("The tenant has already chosen a broker.");
   if (!a.accept) {
@@ -401,27 +408,43 @@ export async function createEnvelope(o: {
   return env;
 }
 
+function invitation(env: { id: string; title: string; expiresAt: Date }, s: { id: string; name: string; email: string; tokenHash: string }, reminder = false) {
+  return { to: s.email, queueGuard: { signerId: s.id, tokenHash: s.tokenHash }, subject: `${reminder ? "Reminder: " : ""}Please review and sign — ${env.title}`,
+    text: `Hi ${s.name.split(" ")[0]},\n\n${reminder ? "This agreement is still waiting for your signature" : "An agreement is ready for your signature"}:\n${env.title}\n\n` +
+      `Review and sign (open until ${env.expiresAt.toISOString().slice(0, 10)}):\n${signerLink(s)}\n\nYou can ask for a paper copy by replying.\n\nRentLeaks broker network` };
+}
+
 async function inviteSigner(env: { id: string; title: string; expiresAt: Date }, s: { id: string; name: string; email: string; tokenHash: string; role: string }, reminder = false) {
   if (s.role === "rentleaks") {
     await alertNetworkTeam(`Countersign needed: ${env.title}`, `Verify the licence and countersign in the desk: ${base()}/admin/referrals?tab=partners`);
     return;
   }
-  await mail(
-    s.email,
-    `${reminder ? "Reminder: " : ""}Please review and sign — ${env.title}`,
-    `Hi ${s.name.split(" ")[0]},\n\n${reminder ? "This agreement is still waiting for your signature" : "An agreement is ready for your signature"}:\n${env.title}\n\n` +
-      `Review and sign (it takes a minute; open until ${env.expiresAt.toISOString().slice(0, 10)}):\n${signerLink(s)}\n\nYou can ask for a paper copy at any time by replying to this email.`,
-  );
-  await prisma.agreementEvent.create({ data: { agreementId: env.id, signerId: s.id, type: reminder ? "reminded" : "sent", detail: s.email } });
+  await prisma.$transaction((tx) => enqueueInvite(tx, env, s, reminder));
+}
+
+async function enqueueInvite(tx: Prisma.TransactionClient, env: { id: string; title: string; expiresAt: Date }, s: { id: string; name: string; email: string; tokenHash: string; role: string }, reminder = false) {
+  if (s.role === "rentleaks") {
+    await alertNetworkTeam(`Countersign needed: ${env.title}`, `Verify the licence and countersign in the desk: ${base()}/admin/referrals?tab=partners`, tx);
+    return;
+  }
+  await enqueueMail(invitation(env, s, reminder), { key: `signer:${s.id}:${s.tokenHash}`, targetType: "agreement", targetId: env.id }, tx);
+  await tx.agreementEvent.create({ data: { agreementId: env.id, signerId: s.id, type: "notification_queued", detail: reminder ? "Signing reminder queued" : "Signing invitation queued" } });
 }
 
 type Ctx = { ip: string | null; ua: string | null };
 
 export async function recordView(signerId: string, ctx: Ctx) {
-  const s = await prisma.agreementSigner.findUnique({ where: { id: signerId } });
-  if (!s || s.viewedAt) return;
-  await prisma.agreementSigner.update({ where: { id: signerId }, data: { viewedAt: new Date(), status: s.status === "pending" ? "viewed" : s.status } });
-  await prisma.agreementEvent.create({ data: { agreementId: s.agreementId, signerId, type: "viewed", ip: ctx.ip, userAgent: ctx.ua?.slice(0, 300) } });
+  await prisma.$transaction(async (tx) => {
+    const s = await tx.agreementSigner.findUnique({ where: { id: signerId }, include: { agreement: true } });
+    if (!s || s.viewedAt) return;
+    const now = new Date();
+    const changed = await tx.agreementSigner.updateMany({ where: { id: signerId, viewedAt: null }, data: { viewedAt: now, status: s.status === "pending" ? "viewed" : s.status } });
+    if (!changed.count) return;
+    await tx.agreementEvent.create({ data: { agreementId: s.agreementId, signerId, type: "viewed", ip: ctx.ip, userAgent: ctx.ua?.slice(0, 300) } });
+    if (s.role === "partner" && s.agreement.kind === "partner_referral" && s.agreement.partnerId) {
+      await tx.networkPartner.updateMany({ where: { id: s.agreement.partnerId, agreementId: s.agreement.id, mailboxGateAt: { not: null }, emailVerifiedAt: null }, data: { emailVerifiedAt: now } });
+    }
+  });
 }
 
 /** Rotates a signer's link (so an in-app "Sign now" never needs a stored secret) and returns it. */
@@ -432,77 +455,79 @@ export async function freshSignerLink(signerId: string) {
 
 const PNG = /^data:image\/png;base64,[A-Za-z0-9+/=]+$/;
 
-export async function signEnvelope(signerId: string, input: { typedName: string; drawn: string | null; consent: boolean; readIt: boolean; actorId?: string | null }, ctx: Ctx, now = new Date()) {
-  const s = await prisma.agreementSigner.findUnique({ where: { id: signerId }, include: { agreement: { include: { signers: true } } } });
-  if (!s) fail("This signing link is no longer valid.");
-  const env = s!.agreement;
-  if (env.status === "voided" || env.status === "expired" || env.status === "declined") fail(`This agreement is ${env.status}.`);
-  if (env.expiresAt < now) fail("This agreement has expired. Ask for a new one.");
-  if (s!.status === "signed") fail("You've already signed.");
-  if (!canSignNow(env.signers, s!.id)) fail("It isn't your turn to sign yet — you'll get an email when it is.");
-  if (!input.consent) fail("Please agree to sign electronically.");
-  if (!input.readIt) fail("Please confirm you've read the agreement.");
-  if (!signatureMatches(input.typedName, s!.name)) fail(`Type your full name as it appears here: ${s!.name}.`);
-  const drawn = input.drawn && PNG.test(input.drawn) && input.drawn.length < 180_000 ? input.drawn : null;
-  // Tamper check before anyone signs: the stored text must still hash to the stored fingerprint.
-  const doc = { title: env.title, sections: json<Section[]>(env.sections, []), terms: json<Record<string, unknown>>(env.terms, {}) };
-  if (sha256(canonicalDocument(doc)) !== env.docHash) fail("This document failed its integrity check and can't be signed. We've been alerted.");
-  await prisma.agreementSigner.update({
-    where: { id: s!.id },
-    data: {
-      status: "signed",
-      consentAt: now,
-      signedAt: now,
-      viewedAt: s!.viewedAt ?? now,
-      signatureKind: drawn ? "drawn" : "typed",
-      signedName: input.typedName.replace(/\s+/g, " ").trim().slice(0, 120),
-      signatureImage: drawn,
-      ip: ctx.ip,
-      userAgent: ctx.ua?.slice(0, 300) ?? null,
-      signedById: input.actorId ?? null,
-    },
-  });
-  await prisma.agreementEvent.createMany({
-    data: [
-      { agreementId: env.id, signerId: s!.id, type: "consented", detail: "Agreed to electronic records and signatures", ip: ctx.ip, userAgent: ctx.ua?.slice(0, 300) },
-      { agreementId: env.id, signerId: s!.id, type: "signed", detail: `${s!.role} · ${drawn ? "drawn + typed" : "typed"} signature · doc ${env.docHash.slice(0, 12)}`, ip: ctx.ip, userAgent: ctx.ua?.slice(0, 300) },
-    ],
-  });
-  const signers = await prisma.agreementSigner.findMany({ where: { agreementId: env.id }, orderBy: { order: "asc" } });
-  const status = envelopeStatus(signers, env.status);
-  await prisma.agreement.update({ where: { id: env.id }, data: { status, completedAt: status === "completed" ? now : null } });
-  if (status === "completed") {
-    await prisma.agreementEvent.create({ data: { agreementId: env.id, type: "completed", detail: `All ${signers.length} parties signed` } });
-    await onCompleted(env.id, now);
-  } else {
-    const next = signers.find((x) => x.status !== "signed");
-    if (next) await inviteSigner(env, next);
-    if (env.kind === "partner_referral" && next?.role === "rentleaks" && env.partnerId) {
-      await prisma.networkPartner.update({ where: { id: env.partnerId }, data: { status: "verifying" } });
+export async function signEnvelope(signerId: string, input: { typedName: string; drawn: string | null; consent: boolean; readIt: boolean; actorId?: string | null; verificationNote?: string }, ctx: Ctx, now = new Date()) {
+  const guard = input.actorId ? await requireAdminAction("network") : null;
+  return prisma.$transaction(async (tx) => {
+    const s = await tx.agreementSigner.findUnique({ where: { id: signerId }, include: { agreement: { include: { signers: true } } } });
+    if (!s) fail("This signing link is no longer valid.");
+    const env = s!.agreement;
+    if (["voided", "expired", "declined", "completed"].includes(env.status)) fail(`This agreement is ${env.status}.`);
+    if (env.expiresAt < now) fail("This agreement has expired. Ask for a new one.");
+    if (s!.status === "signed") fail("You've already signed.");
+    if (!canSignNow(env.signers, s!.id)) fail("It isn't your turn to sign yet.");
+    if (!input.consent || !input.readIt) fail("Read the agreement and consent to electronic signatures first.");
+    let signerName = s!.name;
+    let signerEmail = s!.email;
+    if (s!.role === "rentleaks") {
+      if (!guard?.ok || guard.user.id !== input.actorId) fail("Sign for RentLeaks from the authorized admin desk.");
+      signerName = guard.user.name;
+      signerEmail = guard.user.email.toLowerCase();
+      if (env.kind === "partner_referral") {
+        const note = input.verificationNote?.trim().slice(0, 300) ?? "";
+        if (note.length < 6 || !env.partnerId) fail("Record the state licence verification before countersigning.");
+        if (!(await referrer()).complete) fail("Configure the licensed RentLeaks brokerage before countersigning.");
+        const partner = await tx.networkPartner.findUnique({ where: { id: env.partnerId! } });
+        if (!partner || partner.agreementId !== env.id || partner.status === "rejected" || partner.suspendedAt || !partnerLicenseComplete(partner) || (partner.mailboxGateAt && !partner.emailVerifiedAt) || !licenseCurrent(partner.licenseExpires, booksToday(now))) fail("This partner needs a current licence and the current agreement.");
+        await tx.networkPartner.update({ where: { id: partner.id }, data: { verifiedAt: now, verifiedById: guard.user.id, verifyNote: note } });
+        await tx.adminAction.create({ data: { actorId: guard.user.id, action: "network.partner.countersign", targetType: "networkPartner", targetId: partner.id, detail: { note, agreementId: env.id } } });
+      }
     }
-  }
-  return { status };
+    if (!signatureMatches(input.typedName, signerName)) fail(`Type your full name as it appears here: ${signerName}.`);
+    const doc = { title: env.title, sections: json<Section[]>(env.sections, []), terms: json<Record<string, unknown>>(env.terms, {}) };
+    if (sha256(canonicalDocument(doc)) !== env.docHash) fail("This document failed its integrity check and cannot be signed.");
+    const drawn = input.drawn && PNG.test(input.drawn) && input.drawn.length < 180_000 ? input.drawn : null;
+    await tx.agreementSigner.update({ where: { id: s!.id }, data: {
+      name: signerName, email: signerEmail, status: "signed", consentAt: now, signedAt: now,
+      viewedAt: s!.viewedAt ?? now, signatureKind: drawn ? "drawn" : "typed",
+      signedName: input.typedName.replace(/\s+/g, " ").trim().slice(0, 120), signatureImage: drawn,
+      ip: ctx.ip, userAgent: ctx.ua?.slice(0, 300) ?? null, signedById: input.actorId ?? null,
+    } });
+    await tx.agreementEvent.createMany({ data: [
+      { agreementId: env.id, signerId: s!.id, type: "consented", detail: "Agreed to electronic records and signatures", ip: ctx.ip, userAgent: ctx.ua?.slice(0, 300) },
+      { agreementId: env.id, signerId: s!.id, type: "signed", detail: `${s!.role} · ${drawn ? "drawn + typed" : "typed"} · doc ${env.docHash.slice(0, 12)}`, ip: ctx.ip, userAgent: ctx.ua?.slice(0, 300) },
+    ] });
+    const signers = await tx.agreementSigner.findMany({ where: { agreementId: env.id }, orderBy: { order: "asc" } });
+    const status = envelopeStatus(signers, env.status);
+    await tx.agreement.update({ where: { id: env.id }, data: { status, completedAt: status === "completed" ? now : null } });
+    if (status === "completed") {
+      await tx.agreementEvent.create({ data: { agreementId: env.id, type: "completed", detail: `All ${signers.length} parties signed` } });
+      await onCompleted(tx, env.id, now);
+    } else {
+      const next = signers.find((x) => x.status !== "signed");
+      if (next) await enqueueInvite(tx, env, next);
+      if (env.kind === "partner_referral" && next?.role === "rentleaks" && env.partnerId) {
+        await tx.networkPartner.update({ where: { id: env.partnerId }, data: { status: "verifying" } });
+      }
+    }
+    return { status };
+  }, { isolationLevel: "Serializable" });
 }
 
-async function onCompleted(agreementId: string, now: Date) {
-  const env = await prisma.agreement.findUnique({ where: { id: agreementId }, include: { signers: true } });
+async function onCompleted(tx: Prisma.TransactionClient, agreementId: string, now: Date) {
+  const env = await tx.agreement.findUnique({ where: { id: agreementId }, include: { signers: true } });
   if (!env) return;
   for (const s of env.signers.filter((x) => x.role !== "rentleaks")) {
-    await mail(s.email, `Signed by everyone — ${env.title}`, `Hi ${s.name.split(" ")[0]},\n\nEveryone has signed. Your copy, with the signature certificate, is here (save it as PDF from your browser):\n${signerLink(s)}\n\nDocument fingerprint (SHA-256): ${env.docHash}`);
+    await enqueueMail({ to: s.email, subject: `Signed by everyone — ${env.title}`, text: `Hi ${s.name.split(" ")[0]},\n\nEveryone has signed. Your copy is here:\n${signerLink(s)}\n\nDocument fingerprint (SHA-256): ${env.docHash}` }, { key: `completed:${env.id}:${s.id}`, targetType: "agreement", targetId: env.id }, tx);
   }
   if (env.kind === "tenant_rep" && env.searchId) {
-    const s = await prisma.networkSearch.update({ where: { id: env.searchId }, data: { status: "signed", stageAt: now } });
-    await crmNote(s.email, "Signed the tenant representation agreement", env.title);
-    await alertNetworkTeam(`Signed: ${env.title}`, `${base()}/admin/referrals?open=${s.id}`);
+    const s = await tx.networkSearch.update({ where: { id: env.searchId }, data: { status: "signed", stageAt: now } });
+    await alertNetworkTeam(`Signed: ${env.title}`, `${base()}/admin/referrals?open=${s.id}`, tx);
   }
   if (env.kind === "partner_referral" && env.partnerId) {
-    const p = await prisma.networkPartner.update({ where: { id: env.partnerId }, data: { status: "active", agreementId: env.id, portalTokenHash: nonce() } });
-    await mail(
-      p.email,
-      "You're in — RentLeaks broker network",
-      `Hi ${p.name.split(" ")[0]},\n\nYour licence is verified and your referral agreement is signed. Leads in ${json<string[]>(p.markets, []).join(", ")} will arrive by email; ` +
-        `answer them from your portal (bookmark it — you can always ask for a fresh link):\n${portalLink(p)}`,
-    );
+    const p = await tx.networkPartner.findUnique({ where: { id: env.partnerId } });
+    if (!p || !p.verifiedAt || p.agreementId !== env.id || p.status === "rejected" || p.suspendedAt || !partnerLicenseComplete(p) || (p.mailboxGateAt && !p.emailVerifiedAt) || !licenseCurrent(p.licenseExpires, booksToday(now))) fail("Partner verification is required before activation.");
+    const partner = await tx.networkPartner.update({ where: { id: p.id }, data: { status: "active", portalTokenHash: nonce() } });
+    await enqueueMail({ to: partner.email, subject: "You're in — RentLeaks broker network", text: `Hi ${partner.name.split(" ")[0]},\n\nYour licence is verified and the referral agreement is signed. Your partner portal:\n${portalLink(partner)}` }, { key: `activation:${p.id}:${env.id}`, targetType: "networkPartner", targetId: p.id }, tx);
   }
 }
 
@@ -548,42 +573,86 @@ export async function voidEnvelope(id: string, reason: string, actorId: string, 
    ------------------------------------------------------------------------ */
 
 export async function applyPartner(input: PartnerInput, source: string, now = new Date()) {
+  // Validate the trusted origin before persisting anything.
+  base();
   const settings = await networkSettings();
-  const existing = await prisma.networkPartner.findUnique({ where: { email: input.email } });
-  if (existing && existing.status !== "rejected" && existing.status !== "applied") fail("You're already in the network — ask for your portal link instead.");
-  const data = {
-    ...input,
-    markets: JSON.stringify(input.markets),
-    specialties: JSON.stringify(input.specialties),
-    languages: JSON.stringify(input.languages),
-    status: "applied",
-    referralPctBp: settings.referralPctBp,
-    source,
-  };
-  const partner = existing ? await prisma.networkPartner.update({ where: { id: existing.id }, data }) : await prisma.networkPartner.create({ data });
-  if (existing?.agreementId) await prisma.agreement.updateMany({ where: { id: existing.agreementId, status: { in: ["sent", "partial"] } }, data: { status: "voided", voidedAt: now, voidReason: "Replaced by a new application" } });
   const ref = await referrer();
-  const doc = partnerAgreement({ date: booksToday(now), partner: input, referralPctBp: settings.referralPctBp, offerHours: settings.offerHours, referrer: ref });
   const team = await prisma.user.findFirst({ where: { role: "admin", suspendedAt: null }, orderBy: { createdAt: "asc" }, select: { name: true, email: true } });
+  const doc = partnerLicenseComplete(input) ? partnerAgreement({ date: booksToday(now), partner: input, referralPctBp: settings.referralPctBp, offerHours: settings.offerHours, referrer: ref }) : null;
   const signers = [
     { role: "partner", name: input.name, email: input.email },
     ...(input.supervisorEmail && input.supervisorName ? [{ role: "supervisor", name: input.supervisorName, email: input.supervisorEmail }] : []),
     { role: "rentleaks", name: team?.name ?? ref.name, email: team?.email ?? "desk@rentleaks.com" },
   ];
-  const env = await createEnvelope({ kind: "partner_referral", doc, signers, partnerId: partner.id, days: 30, now, notifyFrom: 1 });
-  await prisma.networkPartner.update({ where: { id: partner.id }, data: { agreementId: env.id } });
+  const recipients = await networkTeam();
+  const result = await prisma.$transaction(async (tx) => {
+    // Unauthenticated intake must never overwrite a record or disclose its signing token.
+    const existing = await tx.networkPartner.findUnique({ where: { email: input.email } });
+    if (existing) return null;
+    const duplicateLicense = input.licenseNumber ? await tx.networkPartner.findFirst({ where: { licenseState: input.licenseState, licenseNumber: input.licenseNumber, status: { not: "rejected" } }, select: { id: true } }) : null;
+    if (duplicateLicense) fail("An application with this licence is already on file. Contact the RentLeaks team.");
+    const partner = await tx.networkPartner.create({ data: {
+      ...input, markets: JSON.stringify(input.markets), specialties: JSON.stringify(input.specialties),
+      languages: JSON.stringify(input.languages), status: "applied", mailboxGateAt: now, portalTokenHash: nonce(), referralPctBp: settings.referralPctBp, source,
+    } });
+    if (!doc) {
+      await enqueueMail({ to: input.email, subject: "Your RentLeaks partner application", text: `Hi ${input.name.split(" ")[0]},\n\nYour application was received. Licence details are optional now; add them in your private application workspace when ready:\n${portalLink(partner)}\n\nWe will verify your licence and complete the referral agreement before approval or referrals. Questions? Contact https://rentleaks.com/contact.html` }, { key: `application-workspace:${partner.id}`, targetType: "networkPartner", targetId: partner.id }, tx);
+      for (const recipient of recipients) await enqueueMail({ to: recipient.email, subject: `Partner application: ${input.name} (${input.brokerage})`, text: `Licence details pending — collect later.\nMarkets: ${input.markets.join(", ")}\n\nReview: ${base()}/admin/referrals?tab=partners&partner=${partner.id}` }, { key: `application:${partner.id}:${recipient.email}`, audience: "network_admin", targetType: "networkPartner", targetId: partner.id }, tx);
+      return { partner, env: null };
+    }
+    const env = await tx.agreement.create({ data: {
+      kind: "partner_referral", version: String(doc.terms.version ?? ""), title: doc.title,
+      sections: JSON.stringify(doc.sections), terms: JSON.stringify(doc.terms), docHash: sha256(canonicalDocument(doc)),
+      partnerId: partner.id, expiresAt: new Date(now.getTime() + 30 * DAY),
+      signers: { create: signers.map((s, order) => ({ ...s, email: s.email.toLowerCase(), order, tokenHash: nonce() })) },
+      events: { create: [{ type: "created", detail: JSON.stringify({ environment: process.env.NODE_ENV ?? "development", origin: base(), source, signers: signers.length }) }] },
+    }, include: { signers: { orderBy: { order: "asc" } } } });
+    const linked = await tx.networkPartner.update({ where: { id: partner.id }, data: { agreementId: env.id } });
+    const first = env.signers.find((s) => s.role === "partner")!;
+    await enqueueMail(invitation(env, first), { key: `signer:${first.id}:${first.tokenHash}`, targetType: "agreement", targetId: env.id }, tx);
+    await tx.agreementEvent.create({ data: { agreementId: env.id, signerId: first.id, type: "notification_queued", detail: "Signing invitation queued with application" } });
+    for (const recipient of recipients) await enqueueMail({ to: recipient.email,
+      subject: `Partner application: ${input.name} (${input.brokerage})`,
+      text: `${input.licenseType} ${input.licenseNumber} · ${input.licenseState}\nMarkets: ${input.markets.join(", ")}\n\nVerify: ${base()}/admin/referrals?tab=partners&partner=${partner.id}`,
+    }, { key: `application:${partner.id}:${recipient.email}`, audience: "network_admin", targetType: "networkPartner", targetId: partner.id }, tx);
+    return { partner: linked, env };
+  }, { isolationLevel: "Serializable" });
+  if (!result) return { signLink: null };
   try {
     const c = await upsertContact({ email: input.email, name: input.name, phone: input.phone, company: input.brokerage, kind: "partner", source: "lead", tags: ["broker-network", `licence:${input.licenseState}`] });
     await logActivity(c.id, "lead", "Applied to the broker referral network", `${input.brokerage} · ${input.licenseType} ${input.licenseNumber} (${input.licenseState})`);
   } catch {
     /* best effort */
   }
-  await alertNetworkTeam(
-    `Partner application: ${input.name} (${input.brokerage})`,
-    `${input.licenseType} ${input.licenseNumber} · ${input.licenseState}\nMarkets: ${input.markets.join(", ")}\n\nVerify: ${base()}/admin/referrals?tab=partners&partner=${partner.id}`,
-  );
-  const first = env.signers.find((s) => s.role === "partner")!;
-  return { partner, signLink: signerLink(first) };
+  return { signLink: null };
+}
+
+/** Only a private workspace may supply deferred licence details; approval remains an admin decision. */
+export async function providePartnerLicense(partnerId: string, input: PartnerInput, now = new Date()) {
+  if (!partnerLicenseComplete(input) || !licenseCurrent(input.licenseExpires, booksToday(now))) fail("Add a complete, current licence and supervising broker where required.");
+  const settings = await networkSettings();
+  const ref = await referrer();
+  const team = await prisma.user.findFirst({ where: { role: "admin", suspendedAt: null }, orderBy: { createdAt: "asc" }, select: { name: true, email: true } });
+  return prisma.$transaction(async (tx) => {
+    const p = await tx.networkPartner.findUnique({ where: { id: partnerId } });
+    if (!p || !["applied", "under_review", "verifying"].includes(p.status) || p.suspendedAt || p.email !== input.email || p.name !== input.name) fail("Ask the team to review any change to an approved or suspended licence.");
+    const existing = p!.agreementId ? await tx.agreement.findUnique({ where: { id: p!.agreementId } }) : null;
+    if (existing?.status === "completed") fail("The signed agreement fixes your licence identity; ask the team to review changes.");
+    if (existing) {
+      await tx.agreement.update({ where: { id: existing.id }, data: { status: "voided", voidedAt: now, voidReason: "Licence details updated in private workspace" } });
+      await tx.agreementEvent.create({ data: { agreementId: existing.id, type: "voided", detail: "Replaced after applicant supplied licence details" } });
+      await tx.notificationDelivery.updateMany({ where: { targetType: "agreement", targetId: existing.id, status: "queued" }, data: { status: "cancelled", lastError: "agreement_replaced" } });
+    }
+    await tx.networkPartner.update({ where: { id: partnerId }, data: { licenseType: input.licenseType, licenseNumber: input.licenseNumber, licenseState: input.licenseState, licenseExpires: input.licenseExpires, supervisorName: input.supervisorName, supervisorEmail: input.supervisorEmail, status: "under_review", verifiedAt: null, verifiedById: null } });
+    const doc = partnerAgreement({ date: booksToday(now), partner: input, referralPctBp: p!.referralPctBp, offerHours: settings.offerHours, referrer: ref });
+    const signers = [{ role: "partner", name: p!.name, email: p!.email }, ...(input.supervisorName && input.supervisorEmail ? [{ role: "supervisor", name: input.supervisorName, email: input.supervisorEmail }] : []), { role: "rentleaks", name: team?.name ?? ref.name, email: team?.email ?? "desk@rentleaks.com" }];
+    const env = await tx.agreement.create({ data: { kind: "partner_referral", version: String(doc.terms.version ?? ""), title: doc.title, sections: JSON.stringify(doc.sections), terms: JSON.stringify(doc.terms), docHash: sha256(canonicalDocument(doc)), partnerId, expiresAt: new Date(now.getTime() + 30 * DAY), signers: { create: signers.map((s, order) => ({ ...s, order, tokenHash: nonce() })) }, events: { create: [{ type: "created", detail: "Created after deferred licence submission" }] } }, include: { signers: { orderBy: { order: "asc" } } } });
+    await tx.networkPartner.update({ where: { id: partnerId }, data: { agreementId: env.id } });
+    await enqueueInvite(tx, env, env.signers[0]);
+    await tx.adminAction.create({ data: { actorId: `partner:${partnerId}`, action: "network.partner.license.submitted", targetType: "networkPartner", targetId: partnerId, detail: { agreementId: env.id } } });
+    await alertNetworkTeam("Partner licence details ready for review", `${base()}/admin/referrals?tab=partners&partner=${partnerId}`, tx);
+    return { agreementId: env.id };
+  }, { isolationLevel: "Serializable" });
 }
 
 export async function emailPortalLink(email: string) {
@@ -592,6 +661,9 @@ export async function emailPortalLink(email: string) {
   if (p.status === "active" || p.status === "paused") {
     const fresh = p.portalTokenHash ? p : await prisma.networkPartner.update({ where: { id: p.id }, data: { portalTokenHash: nonce() } });
     await mail(p.email, "Your RentLeaks partner portal", `Here's your portal link (valid 30 days):\n${portalLink(fresh)}`);
+  } else if (!p.agreementId && ["applied", "under_review", "verifying"].includes(p.status)) {
+    const fresh = p.portalTokenHash ? p : await prisma.networkPartner.update({ where: { id: p.id }, data: { portalTokenHash: nonce() } });
+    await mail(p.email, "Your RentLeaks application workspace", `Add your licence details when ready:\n${portalLink(fresh)}\n\nContact us: https://rentleaks.com/contact.html`);
   } else if (p.agreementId) {
     const signer = await prisma.agreementSigner.findFirst({ where: { agreementId: p.agreementId, role: "partner", status: { not: "signed" } } });
     if (signer) await mail(p.email, "Finish your RentLeaks partner agreement", `Sign here to finish joining:\n${await freshSignerLink(signer.id)}`);
@@ -703,6 +775,8 @@ export async function cancelSearch(searchId: string, why: string, now = new Date
 
 export async function runNetwork(now = new Date()) {
   const out = { expired: 0, refilled: 0, noMatch: 0, reminded: 0, envelopesExpired: 0, nudged: 0, stale: 0 };
+  const firstMatches = await prisma.networkSearch.findMany({ where: { status: "new" }, orderBy: { createdAt: "asc" }, select: { id: true }, take: 100 });
+  for (const search of firstMatches) out.refilled += await matchSearch(search.id, now);
   // 1. Lead offers nobody answered in time.
   const late = await prisma.networkOffer.findMany({ where: { status: "offered", expiresAt: { lt: now } }, take: 200, select: { id: true, searchId: true } });
   if (late.length) {
@@ -781,5 +855,5 @@ export async function networkFacts(now = new Date()) {
 }
 
 export function clientIp(h: Headers) {
-  return h.get("cf-connecting-ip") || (h.get("x-forwarded-for") || "").split(",")[0].trim() || null;
+  return trustedClientIp(h);
 }

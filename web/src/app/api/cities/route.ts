@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { json, preflight, serializeCity, bool } from "@/lib/api";
+import { liveListingWhere } from "@/lib/billing";
 
 export const dynamic = "force-dynamic";
 
@@ -11,10 +12,11 @@ export function OPTIONS(req: NextRequest) {
 export async function GET(req: NextRequest) {
   const featuredOnly = bool(req.nextUrl.searchParams.get("featured"));
   try {
+    const live = await liveListingWhere();
     const cities = await prisma.city.findMany({
       where: featuredOnly ? { featured: true } : undefined,
       orderBy: [{ rank: "asc" }, { name: "asc" }],
-      include: { _count: { select: { listings: true } } },
+      include: { _count: { select: { listings: { where: live } } } },
     });
     return json(req, {
       items: cities.map((c) => ({ ...serializeCity(c), listingCount: c._count.listings })),

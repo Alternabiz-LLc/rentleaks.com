@@ -1,3 +1,4 @@
+import { processNotifications } from "@/lib/notifications";
 import { processOutbox } from "@/lib/outbox";
 import { runOps } from "@/lib/ops/cron";
 import { bearerMatches } from "@/lib/security/bearer";
@@ -14,6 +15,7 @@ async function run(req: Request) {
   if (!secret || !bearerMatches(req.headers.get("authorization"), secret)) {
     return fail(401, "unauthorized", "Missing or wrong cron secret.");
   }
+  const notifications = await processNotifications();
   const outbox = await processOutbox();
   let ops: Record<string, unknown> = {};
   try {
@@ -22,7 +24,7 @@ async function run(req: Request) {
     console.error("[cron] ops", err instanceof Error ? err.message : err);
     ops = { error: true };
   }
-  return ok({ ...outbox, ops });
+  return ok({ ...outbox, notifications, ops });
 }
 
 export const POST = handle(run);

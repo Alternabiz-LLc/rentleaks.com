@@ -3,13 +3,14 @@
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { canAccess } from "@/lib/access";
-import { audit, requireAdminAction } from "@/lib/admin/guard";
+import { audit, auditedMutation, requireAdminAction } from "@/lib/admin/guard";
 import { back, field, returnTo } from "@/lib/admin/flash";
 import { parseMoney } from "@/lib/books/core";
 import { booksToday } from "@/lib/books/data";
 import { logActivity } from "@/lib/crm";
 import { GUIDE, PARTNER_STATUS, ROSTER_SLOTS, SEARCH_STAGE, signatureMatches, usd, type PartnerStatus, type SearchStage } from "@/lib/network/core";
-import { clearHeadshot, guideLink } from "@/lib/network/guides";
+import { licenseCurrent } from "@/lib/network/core";
+import { guideLink } from "@/lib/network/guides";
 import {
   alertNetworkTeam,
   clientIp,
@@ -19,6 +20,8 @@ import {
   matchSearch,
   NetworkError,
   networkSettings,
+  nonce,
+  signerLink,
   partnerMove,
   referrer,
   reportLease,
@@ -26,6 +29,7 @@ import {
   signEnvelope,
   voidEnvelope,
 } from "@/lib/network/engine";
+import { enqueueMail } from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
 import { setSetting, SETTING_KEYS } from "@/lib/settings";
 import { sendMail } from "@/lib/v1/mail";
@@ -206,7 +210,33 @@ export async function partnerAction(fd: FormData) {
   const p = await prisma.networkPartner.findUnique({ where: { id } });
   if (!p) back(path, "err", "That broker no longer exists.");
   switch (op) {
+    case "expiry": {
+      const expiry = field(fd, "licenseExpires", 10);
+      const note = field(fd, "verifyNote", 300);
+      if (!expiry || !licenseCurrent(expiry, booksToday()) || note.length < 6 || field(fd, "verified", 3) !== "on") back(path, "err", "Provide a current expiry, verification note and state lookup confirmation.");
+      await auditedMutation(me.id, "network.partner.license.renewed", "networkPartner", id, { previous: p.licenseExpires, expiry, note }, (tx) => tx.networkPartner.update({ where: { id, updatedAt: p.updatedAt }, data: { licenseExpires: expiry, verifyNote: note, verifiedAt: new Date(), verifiedById: me.id } }));
+      revalidatePath(PATH);
+      return back(path, "ok", "Licence renewal evidence saved. Account status and agreement terms are unchanged.");
+    }
+    case "review": {
+      if (!["applied", "under_review", "verifying"].includes(p.status)) back(path, "err", "Only pending applications can enter review.");
+      await auditedMutation(me.id, "network.partner.review", "networkPartner", id, { from: p.status }, (tx) => tx.networkPartner.update({ where: { id, updatedAt: p.updatedAt }, data: { status: "under_review" } }));
+      revalidatePath(PATH);
+      return back(path, "ok", "Application is under review.");
+    }
+    case "revoke-links": {
+      if (field(fd, "confirm", 3) !== "on") back(path, "err", "Confirm that existing private links should stop working.");
+      await auditedMutation(me.id, "network.partner.links.revoked", "networkPartner", id, {}, async (tx) => {
+        await tx.networkPartner.update({ where: { id, updatedAt: p.updatedAt }, data: { portalTokenHash: nonce() } });
+        const signers = await tx.agreementSigner.findMany({ where: { agreement: { partnerId: id }, role: { not: "rentleaks" } }, select: { id: true } });
+        for (const signer of signers) await tx.agreementSigner.update({ where: { id: signer.id }, data: { tokenHash: nonce() } });
+        await tx.notificationDelivery.updateMany({ where: { status: "queued", OR: [{ targetType: "networkPartner", targetId: id }, { targetType: "agreement", targetId: p.agreementId ?? "" }] }, data: { status: "cancelled", lastError: "links_revoked" } });
+      });
+      revalidatePath(PATH);
+      return back(path, "ok", "Old private links revoked. Send fresh links separately if appropriate.");
+    }
     case "countersign": {
+      if (!licenseCurrent(p.licenseExpires, booksToday())) back(path, "err", "Update the expired licence before countersigning.");
       if (!guard.founder && !canAccess(me, "network")) back(path, "err", "You can't sign for RentLeaks.");
       const ref = await referrer();
       if (!ref.complete) back(path, "err", "Add the RentLeaks broker name, licence, states and a phone or address (Enterprise → Packages & licence) before countersigning.");
@@ -219,48 +249,42 @@ export async function partnerAction(fd: FormData) {
       const typed = field(fd, "typedName", 120);
       // Whoever countersigns is the person on the RentLeaks line.
       if (!signatureMatches(typed, me.name)) back(path, "err", `Type your full name as it appears on your account: ${me.name}.`);
-      if (signer!.status !== "signed" && (signer!.email !== me.email.toLowerCase() || signer!.name !== me.name)) {
-        await prisma.agreementSigner.update({ where: { id: signer!.id }, data: { name: me.name, email: me.email.toLowerCase() } });
-      }
-      const r = await attempt(async () => signEnvelope(signer!.id, { typedName: typed, drawn: field(fd, "drawn", 180_000) || null, consent: field(fd, "consent", 3) === "on", readIt: true, actorId: me.id }, await ctx()));
+      const r = await attempt(async () => signEnvelope(signer!.id, { typedName: typed, drawn: field(fd, "drawn", 180_000) || null, consent: field(fd, "consent", 3) === "on", readIt: true, actorId: me.id, verificationNote: note }, await ctx()));
       if (!r.ok) back(path, "err", r.error);
-      await prisma.networkPartner.update({ where: { id }, data: { verifiedAt: new Date(), verifiedById: me.id, verifyNote: note } });
-      await audit(me.id, "network.partner.countersign", "networkPartner", id, { note, status: r.ok ? r.v.status : "" });
       revalidatePath(PATH);
       return back(path, "ok", r.ok && r.v.status === "completed" ? `${p.name} is verified and active — their portal link is on its way.` : "Signed — waiting on the other signers.");
     }
     case "pause":
       if (p.status !== "active") back(path, "err", "Only an active broker can be paused.");
-      await prisma.networkPartner.update({ where: { id }, data: { status: "paused" } });
-      await prisma.networkOffer.updateMany({ where: { partnerId: id, status: "offered" }, data: { status: "withdrawn" } });
-      await audit(me.id, "network.partner.pause", "networkPartner", id);
+      await auditedMutation(me.id, "network.partner.pause", "networkPartner", id, { from: p.status }, async (tx) => {
+        await tx.networkPartner.update({ where: { id, updatedAt: p.updatedAt }, data: { status: "paused", suspendedAt: new Date(), suspendedById: me.id } });
+        await tx.networkOffer.updateMany({ where: { partnerId: id, status: "offered" }, data: { status: "withdrawn" } });
+      });
       revalidatePath(PATH);
       return back(path, "ok", "Paused — no new leads until you resume.");
     case "activate": {
+      if (!licenseCurrent(p.licenseExpires, booksToday())) back(path, "err", "Update the expired licence before reactivating.");
       if (p.status !== "paused") back(path, "err", "Only a paused broker can be resumed — new brokers become active when their agreement is countersigned.");
       const env = p.agreementId ? await prisma.agreement.findUnique({ where: { id: p.agreementId } }) : null;
-      if (env?.status !== "completed") back(path, "err", "Their referral agreement isn't fully signed.");
-      await prisma.networkPartner.update({ where: { id }, data: { status: "active" } });
-      await audit(me.id, "network.partner.activate", "networkPartner", id);
+      if (env?.status !== "completed" || !p.verifiedAt || (p.mailboxGateAt && !p.emailVerifiedAt)) back(path, "err", "Their verification and referral agreement must be complete.");
+      await auditedMutation(me.id, "network.partner.activate", "networkPartner", id, { from: p.status }, (tx) => tx.networkPartner.update({ where: { id, updatedAt: p.updatedAt }, data: { status: "active", suspendedAt: null, suspendedById: null } }));
       revalidatePath(PATH);
       return back(path, "ok", "Active again.");
     }
     case "reject": {
       const reason = field(fd, "reason", 300);
       if (reason.length < 4) back(path, "err", "Say why (it goes in the email).");
-      if (p.agreementId) await prisma.agreement.updateMany({ where: { id: p.agreementId, status: { in: ["sent", "partial"] } }, data: { status: "voided", voidedAt: new Date(), voidReason: `Application declined: ${reason}` } });
-      await prisma.networkPartner.update({ where: { id }, data: { status: "rejected", verifyNote: reason, portalTokenHash: null } });
-      await prisma.networkOffer.updateMany({ where: { partnerId: id, status: { in: ["offered", "proposed"] } }, data: { status: "withdrawn" } });
-      await sendMail({
-        to: p.email,
-        subject: "Your RentLeaks broker network application",
-        text: `Hi ${p.name.split(" ")[0]},\n\nThanks for applying. We can't add you to the network right now: ${reason}\n\nIf something changes, reply to this email or apply again.\n\n${me.name}\nRentLeaks`,
-        replyTo: me.email,
-        purpose: "personal",
-      }).catch(() => null);
-      await audit(me.id, "network.partner.reject", "networkPartner", id, { reason });
+      await auditedMutation(me.id, "network.partner.reject", "networkPartner", id, { reason, from: p.status }, async (tx) => {
+        if (p.agreementId) {
+          const changed = await tx.agreement.updateMany({ where: { id: p.agreementId, status: { in: ["sent", "partial"] } }, data: { status: "voided", voidedAt: new Date(), voidReason: `Application declined: ${reason}` } });
+          if (changed.count) await tx.agreementEvent.create({ data: { agreementId: p.agreementId, type: "voided", detail: "Application declined by authorized desk" } });
+        }
+        await tx.networkPartner.update({ where: { id, updatedAt: p.updatedAt }, data: { status: "rejected", verifyNote: reason, portalTokenHash: null } });
+        await tx.networkOffer.updateMany({ where: { partnerId: id, status: { in: ["offered", "proposed"] } }, data: { status: "withdrawn" } });
+        await enqueueMail({ to: p.email, subject: "Your RentLeaks broker network application", text: `Hi ${p.name.split(" ")[0]},\n\nWe can't add you to the network right now: ${reason}\n\nIf something changes, reply to the team.\n\n${me.name}\nRentLeaks`, replyTo: me.email, purpose: "personal" }, { key: `rejection:${id}:${p.updatedAt.toISOString()}`, targetType: "networkPartner", targetId: id }, tx);
+      });
       revalidatePath(PATH);
-      return back(path, "ok", "Declined and told.");
+      return back(path, "ok", "Declined — notification queued.");
     }
     case "terms": {
       const pct = Number(field(fd, "pct", 6));
@@ -271,61 +295,61 @@ export async function partnerAction(fd: FormData) {
       // A signed agreement fixes the referral %: changing it needs a new agreement, so only capacity changes then.
       const env = p.agreementId ? await prisma.agreement.findUnique({ where: { id: p.agreementId }, select: { status: true } }) : null;
       if (bp !== p.referralPctBp && env?.status === "completed") back(path, "err", "The referral % is fixed by their signed agreement. Capacity can change; for a new %, void and re-send the agreement.");
-      await prisma.networkPartner.update({ where: { id }, data: { referralPctBp: bp, capacity: cap } });
-      await audit(me.id, "network.partner.terms", "networkPartner", id, { bp, cap });
+      await auditedMutation(me.id, "network.partner.terms", "networkPartner", id, { bp, cap }, (tx) => tx.networkPartner.update({ where: { id, updatedAt: p.updatedAt }, data: { referralPctBp: bp, capacity: cap } }));
       revalidatePath(PATH);
       return back(path, "ok", "Saved.");
     }
     case "note":
-      await prisma.networkPartner.update({ where: { id }, data: { verifyNote: field(fd, "verifyNote", 300) || null } });
+      await auditedMutation(me.id, "network.partner.note", "networkPartner", id, {}, (tx) => tx.networkPartner.update({ where: { id, updatedAt: p.updatedAt }, data: { verifyNote: field(fd, "verifyNote", 300) || null } }));
       return back(path, "ok", "Note saved.");
     case "feature": {
       if (p.status !== "active") back(path, "err", "Only an active broker can appear on the public page.");
       if (!p.photoAt) back(path, "err", "They need a headshot first — ask them to add one in their portal.");
       const featured = await prisma.networkPartner.count({ where: { status: "active", featuredAt: { not: null }, photoAt: { not: null }, NOT: { id } } });
       if (featured >= ROSTER_SLOTS) back(path, "err", `All ${ROSTER_SLOTS} pinned slots are taken — unpin someone first.`);
-      await prisma.networkPartner.update({ where: { id }, data: { featuredAt: new Date() } });
-      await audit(me.id, "network.partner.feature", "networkPartner", id);
+      await auditedMutation(me.id, "network.partner.feature", "networkPartner", id, {}, (tx) => tx.networkPartner.update({ where: { id, updatedAt: p.updatedAt }, data: { featuredAt: new Date() } }));
       revalidatePath(PATH);
       return back(path, "ok", `${p.name} is pinned to the public roster.`);
     }
     case "unfeature":
-      await prisma.networkPartner.update({ where: { id }, data: { featuredAt: null } });
-      await audit(me.id, "network.partner.unfeature", "networkPartner", id);
+      await auditedMutation(me.id, "network.partner.unfeature", "networkPartner", id, {}, (tx) => tx.networkPartner.update({ where: { id, updatedAt: p.updatedAt }, data: { featuredAt: null } }));
       revalidatePath(PATH);
       return back(path, "ok", "Unpinned — they can still appear if a slot is free.");
     case "headline":
-      await prisma.networkPartner.update({ where: { id }, data: { headline: field(fd, "headline", 140) || null } });
+      await auditedMutation(me.id, "network.partner.headline", "networkPartner", id, {}, (tx) => tx.networkPartner.update({ where: { id, updatedAt: p.updatedAt }, data: { headline: field(fd, "headline", 140) || null } }));
       revalidatePath(PATH);
       return back(path, "ok", "Headline saved.");
     case "photo-remove":
       if (!p.photoAt) back(path, "err", "They have no headshot.");
-      await clearHeadshot(id);
-      await audit(me.id, "network.partner.photo.remove", "networkPartner", id);
+      await auditedMutation(me.id, "network.partner.photo.remove", "networkPartner", id, {}, (tx) => tx.networkPartner.update({ where: { id, updatedAt: p.updatedAt }, data: { photoData: null, photoType: null, photoAt: null, featuredAt: null } }));
       revalidatePath(PATH);
       return back(path, "ok", "Headshot removed from the public page.");
     case "portal":
       if (p.status !== "active" && p.status !== "paused") back(path, "err", "The portal opens once they're verified.");
       await emailPortalLink(p.email);
       await audit(me.id, "network.partner.portal", "networkPartner", id);
-      return back(path, "ok", `Portal link sent to ${p.email}.`);
+      return back(path, "ok", `Portal link queued for ${p.email}.`);
     case "resign": {
       if (!p.agreementId) back(path, "err", "No agreement to sign.");
       const next = await prisma.agreementSigner.findFirst({ where: { agreementId: p.agreementId!, status: { in: ["pending", "viewed"] }, role: { not: "rentleaks" } }, orderBy: { order: "asc" } });
       if (!next) back(path, "err", "Nobody outside RentLeaks is waiting to sign.");
-      const link = await freshSignerLink(next!.id);
-      await sendMail({ to: next!.email, subject: "Please sign — RentLeaks referral partner agreement", text: `Hi ${next!.name.split(" ")[0]},\n\nHere's a fresh link to review and sign the agreement:\n${link}\n\n${me.name}\nRentLeaks`, replyTo: me.email, purpose: "personal" }).catch(() => null);
-      await prisma.agreementEvent.create({ data: { agreementId: p.agreementId!, signerId: next!.id, type: "reminded", detail: `${next!.email} (from the desk)` } });
-      return back(path, "ok", `Fresh signing link sent to ${next!.email}.`);
+      await auditedMutation(me.id, "network.partner.resend", "networkPartner", id, {}, async (tx) => {
+        const signer = await tx.agreementSigner.update({ where: { id: next!.id }, data: { tokenHash: nonce() } });
+        await enqueueMail({ to: signer.email, subject: "Please sign — RentLeaks referral partner agreement", text: `Hi ${signer.name.split(" ")[0]},\n\nYour fresh signing link:\n${signerLink(signer)}\n\n${me.name}\nRentLeaks`, replyTo: me.email, purpose: "personal" }, { key: `signer:${signer.id}:${signer.tokenHash}`, targetType: "agreement", targetId: p.agreementId! }, tx);
+        await tx.agreementEvent.create({ data: { agreementId: p.agreementId!, signerId: signer.id, type: "notification_queued", detail: "Fresh signing invitation queued by desk" } });
+      });
+      return back(path, "ok", "Fresh signing link queued for email.");
     }
     case "delete": {
       if (!guard.founder) back(path, "err", "Only the account owner can delete a broker.");
       const deals = await prisma.networkDeal.count({ where: { partnerId: id } });
       const signed = await prisma.agreement.count({ where: { partnerId: id, status: "completed" } });
       if (deals || signed) back(path, "err", "This broker has signed agreements or deals — keep the record and decline or pause them instead.");
-      await prisma.agreement.deleteMany({ where: { partnerId: id } });
-      await prisma.networkPartner.delete({ where: { id } });
-      await audit(me.id, "network.partner.delete", "networkPartner", id);
+      await auditedMutation(me.id, "network.partner.delete", "networkPartner", id, {}, async (tx) => {
+        if (await tx.networkDeal.count({ where: { partnerId: id } }) || await tx.agreement.count({ where: { partnerId: id, status: "completed" } })) throw new NetworkError("This record now has signed agreements or deals; keep it.");
+        await tx.agreement.deleteMany({ where: { partnerId: id } });
+        await tx.networkPartner.delete({ where: { id, updatedAt: p.updatedAt } });
+      });
       revalidatePath(PATH);
       return back(`${PATH}?tab=partners`, "ok", "Deleted.");
     }
@@ -436,16 +460,18 @@ export async function dealAction(fd: FormData) {
       const fee = parseMoney(field(fd, "fee", 20));
       if (fee === null || fee < 0) back(path, "err", "Add the fee the brokerage collected.");
       const due = Math.round((fee! * d!.referralPctBp) / 10_000);
-      await prisma.networkDeal.update({ where: { id }, data: { grossFeeCents: fee!, referralDueCents: due, status: "reported", note: `${d!.note}\nCorrected by ${me.name} on ${booksToday()}: fee ${usd(d!.grossFeeCents)} → ${usd(fee!)}`.trim().slice(0, 500) } });
-      await audit(me.id, "network.deal.fix", "networkDeal", id, { from: d!.grossFeeCents, to: fee });
+      await auditedMutation(me.id, "network.deal.fix", "networkDeal", id, { from: d!.grossFeeCents, to: fee }, async (tx) => {
+        await tx.networkDeal.update({ where: { id, updatedAt: d!.updatedAt }, data: { grossFeeCents: fee!, referralDueCents: due, status: "reported", note: `${d!.note}\nCorrected by ${me.name} on ${booksToday()}: fee ${usd(d!.grossFeeCents)} → ${usd(fee!)}`.trim().slice(0, 500) } });
+      });
       revalidatePath(PATH);
       return back(path, "ok", `Corrected — referral due is now ${usd(due)}.`);
     }
     case "dispute": {
       const reason = field(fd, "reason", 300);
       if (!reason) back(path, "err", "Say what's in dispute.");
-      await prisma.networkDeal.update({ where: { id }, data: { status: "disputed", note: `${d!.note}\nDisputed: ${reason}`.trim().slice(0, 500) } });
-      await audit(me.id, "network.deal.dispute", "networkDeal", id, { reason });
+      await auditedMutation(me.id, "network.deal.dispute", "networkDeal", id, { reason }, async (tx) => {
+        await tx.networkDeal.update({ where: { id, updatedAt: d!.updatedAt }, data: { status: "disputed", note: `${d!.note}\nDisputed: ${reason}`.trim().slice(0, 500) } });
+      });
       await alertNetworkTeam("Referral fee disputed", `${reason}\n/admin/referrals?tab=fees`);
       revalidatePath(PATH);
       return back(path, "ok", "Marked disputed.");
@@ -455,9 +481,14 @@ export async function dealAction(fd: FormData) {
       const reason = field(fd, "reason", 300);
       if (!reason) back(path, "err", "Say why it's waived.");
       if (d!.status === "paid") back(path, "err", "It's already paid.");
-      await prisma.networkDeal.update({ where: { id }, data: { status: "waived", note: `${d!.note}\nWaived: ${reason}`.trim().slice(0, 500) } });
-      if (d!.invoiceId) await prisma.invoice.updateMany({ where: { id: d!.invoiceId, status: { in: ["draft", "sent", "overdue"] } }, data: { status: "void" } });
-      await audit(me.id, "network.deal.waive", "networkDeal", id, { reason });
+      await auditedMutation(me.id, "network.deal.waive", "networkDeal", id, { reason }, async (tx) => {
+        if (d!.invoiceId) {
+          const invoice = await tx.invoice.findUnique({ where: { id: d!.invoiceId } });
+          if (invoice?.status === "paid") throw new Error("The invoice is already paid; reconcile it in Books before waiving this fee.");
+          await tx.invoice.updateMany({ where: { id: d!.invoiceId, status: { in: ["draft", "sent", "overdue"] } }, data: { status: "void" } });
+        }
+        await tx.networkDeal.update({ where: { id, updatedAt: d!.updatedAt }, data: { status: "waived", note: `${d!.note}\nWaived: ${reason}`.trim().slice(0, 500) } });
+      });
       revalidatePath(PATH);
       return back(path, "ok", "Waived.");
     }

@@ -22,6 +22,8 @@ import {
   matchScore,
   parseFeeValue,
   parsePartner,
+  licenseCurrent,
+  partnerLicenseComplete,
   parseSearch,
   partnerAgreement,
   rankPartners,
@@ -146,7 +148,14 @@ test("matching: licence state, market and capacity gate; reasons explain the sco
 });
 
 test("partner application: licence, supervising broker, markets", () => {
+  assert.equal(licenseCurrent("2026-01-01", TODAY), false);
+  assert.equal(licenseCurrent("2027-02-30", TODAY), false);
+  assert.equal(licenseCurrent("2027-01-01", TODAY), true);
+  assert.equal(licenseCurrent(null, TODAY), true);
   const app = { name: "Sam Rivera", email: "sam@brokerage.test", phone: "212 555 0199", brokerage: "Rivera Realty", licenseType: "salesperson", licenseNumber: "10401234567", licenseState: "ny", markets: "Brooklyn, Queens", specialties: ["apartments"], supervisorName: "Dana Park", supervisorEmail: "dana@brokerage.test", consent: "on" };
+  const deferred = parsePartner({ ...app, licenseType: "", licenseNumber: "", licenseState: "", supervisorName: "", supervisorEmail: "" }, TODAY);
+  assert.ok(deferred.ok);
+  if (deferred.ok) assert.equal(partnerLicenseComplete(deferred.value), false);
   const r = parsePartner(app, TODAY);
   assert.ok(r.ok);
   if (!r.ok) return;
@@ -162,6 +171,8 @@ test("partner application: licence, supervising broker, markets", () => {
   bad({ supervisorEmail: "sam@brokerage.test" }, "supervisorEmail");
   bad({ licenseNumber: "x" }, "licenseNumber");
   bad({ licenseExpires: "2026-01-01" }, "licenseExpires");
+  bad({ licenseExpires: "2027-02-30" }, "licenseExpires");
+  bad({ licenseState: "ZZ" }, "licenseState");
   bad({ markets: "" }, "markets");
   bad({ specialties: ["nope"] }, "specialties");
   bad({ consent: false }, "consent");

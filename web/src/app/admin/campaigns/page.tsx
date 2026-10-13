@@ -45,7 +45,7 @@ export default async function CampaignsPage({ searchParams }: { searchParams: SP
   ]);
   const presets: AudiencePreset[] = presetDefs.map((d, i) => ({ ...d, reach: reaches[i] }));
   const mail = mailStatus();
-  const providerReady = mail.resend || Boolean(mail.smtp);
+  const providerReady = mail.cloudflare || mail.resend || Boolean(mail.smtp);
   const n = (s: string) => counts.find((c) => c.status === s)?._count._all ?? 0;
   const sent = totals._sum.sent ?? 0;
   const failed = totals._sum.failed ?? 0;

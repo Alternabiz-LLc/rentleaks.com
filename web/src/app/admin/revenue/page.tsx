@@ -102,7 +102,7 @@ export default async function RevenueAdmin({ searchParams }: { searchParams: SP 
           ]}
         />
         <span className="dk-hint">
-          Posted rates: listing ${LISTING_WEEKLY}/wk or ${LISTING_MONTHLY}/mo · promotion ${PROMO_WEEKLY}/wk or ${PROMO_MONTHLY}/mo · lease-breaks list free
+          Posted rates: listing ${LISTING_WEEKLY}/wk or ${LISTING_MONTHLY}/mo · promotion ${PROMO_WEEKLY}/wk or ${PROMO_MONTHLY}/mo · lease-breaks $15/wk or $60/mo
         </span>
       </div>
 

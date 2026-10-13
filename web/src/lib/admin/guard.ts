@@ -84,3 +84,15 @@ export async function audit(
 export function errorMessage(err: unknown) {
   return err instanceof Error ? err.message : String(err);
 }
+
+/** Critical changes and their audit evidence either both commit or both roll back. */
+export async function auditedMutation<T>(
+  actorId: string, action: string, targetType: string, targetId: string,
+  detail: Record<string, unknown>, mutate: (tx: Prisma.TransactionClient) => Promise<T>,
+): Promise<T> {
+  return prisma.$transaction(async (tx) => {
+    const result = await mutate(tx);
+    await tx.adminAction.create({ data: { actorId, action, targetType, targetId, detail: detail as Prisma.InputJsonValue } });
+    return result;
+  }, { isolationLevel: "Serializable" });
+}

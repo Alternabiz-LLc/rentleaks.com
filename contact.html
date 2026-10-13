@@ -100,12 +100,14 @@
     <div id="rl-header"></div>
     <main id="main">
       <section class="container page-hero">
-        <h1>Contact</h1>
-        <p>Listings, operator onboarding, or something that failed Scam Shield.</p>
+        <h1>Contact us</h1>
+        <p>Questions about listings, partner applications or licence verification? Get in touch.</p>
       </section>
       <section class="rl-page">
         <div class="container" style="max-width:640px">
+          <p>Email <a href="mailto:hello@rentleaks.com">hello@rentleaks.com</a>, or send a message below.</p>
           <form id="contact-form" class="form form-card">
+            <input name="website" type="text" class="ent-hp" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-10000px">
             <div class="form-group"><label for="contact-name">Name</label><input id="contact-name" name="name" class="form-input" required></div>
             <div class="form-group"><label for="contact-email">Email</label><input type="email" id="contact-email" name="email" class="form-input" required></div>
             <div class="form-group"><label for="contact-topic">Topic</label>
@@ -113,11 +115,12 @@
                 <option>Renter help</option>
                 <option>Host / operator</option>
                 <option>Report a listing</option>
-                <option>Press</option>
+                <option>Partner application</option><option>Press</option><option>Other</option>
               </select>
             </div>
-            <div class="form-group"><label for="contact-msg">Message</label><textarea id="contact-msg" name="message" class="form-input" rows="5" required></textarea></div>
+            <div class="form-group"><label for="contact-msg">Message</label><textarea id="contact-msg" name="message" class="form-input" rows="5" minlength="10" maxlength="10000" required></textarea></div>
             <button type="submit" class="btn btn--primary">Send</button>
+            <p id="contact-feedback" role="status" aria-live="polite"></p>
           </form>
         </div>
       </section>

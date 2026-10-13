@@ -13,7 +13,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import { onWorkers } from "./runtime";
 
-const log: Array<"error" | "warn"> = process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"];
+const log: Array<"error" | "warn"> = process.env.NODE_ENV === "development" ? ["error", "warn"] : [];
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 

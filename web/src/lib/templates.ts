@@ -10,7 +10,7 @@ export const STARTER_TEMPLATES: Array<{ name: string; purpose: string; subject: 
 
 I run RentLeaks, a marketplace for rooms, co-living, furnished and 1-month+ homes in {{city}}. Every listing shows the all-in monthly price, so the renters who contact you already know what they'll pay.
 
-- Listings from $14/week, lease-breaks free
+- Listings from $14/week, lease-breaks $15/week or $60/month
 - Viewing and booking requests go straight to you
 - We never touch rent or deposits
 

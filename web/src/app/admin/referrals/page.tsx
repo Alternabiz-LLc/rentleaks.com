@@ -233,6 +233,12 @@ export default async function ReferralsPage({ searchParams }: { searchParams: SP
     openEnvId ? prisma.agreement.findUnique({ where: { id: openEnvId }, include: { signers: { orderBy: { order: "asc" } }, events: { orderBy: { createdAt: "asc" } } } }).catch(() => null) : null,
     openPartner?.agreementId ? prisma.agreementEvent.findMany({ where: { agreementId: openPartner.agreementId }, orderBy: { createdAt: "desc" }, take: 30 }).catch(() => []) : [],
   ]);
+  const partnerHistory = openPartner ? await prisma.adminAction.findMany({ where: { targetType: "networkPartner", targetId: openPartner.id }, orderBy: { createdAt: "desc" }, take: 30 }) : [];
+  const partnerDeliveries = openPartner ? await prisma.notificationDelivery.findMany({
+    where: { OR: [{ targetType: "networkPartner", targetId: openPartner.id }, { targetType: "agreement", targetId: openPartner.agreementId ?? "" }] },
+    orderBy: { createdAt: "desc" }, take: 30,
+    select: { id: true, status: true, attempts: true, lastError: true, transport: true, providerId: true, createdAt: true },
+  }) : [];
   const candidates: Candidate[] = openSearch
     ? active
         .filter((x) => x.licenseState === openSearch.state)
@@ -476,7 +482,7 @@ export default async function ReferralsPage({ searchParams }: { searchParams: SP
         />
       ) : null}
       {openLead ? <GuideDrawer l={openLead} self={self} now={t} founder={founder} me={{ name: me.name }} /> : null}
-      {openPartner ? <PartnerDrawer p={openPartner} self={self} now={t} offers={partnerOffers} founder={founder} me={{ name: me.name }} referrerOk={ref.complete} events={partnerEvents} /> : null}
+      {openPartner ? <PartnerDrawer p={openPartner} self={self} now={t} offers={partnerOffers} founder={founder} me={{ name: me.name }} referrerOk={ref.complete} events={partnerEvents} history={partnerHistory} deliveries={partnerDeliveries} /> : null}
       {envFull ? (
         <AgreementDrawer
           env={envFull}

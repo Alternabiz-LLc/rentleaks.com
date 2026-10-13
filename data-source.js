@@ -21,8 +21,8 @@
     var meta = document.querySelector('meta[name="rl-api"]');
     if (meta && meta.content) return meta.content.replace(/\/$/, '');
     var h = location.hostname;
-    if (h === 'localhost' || h === '127.0.0.1') return 'http://localhost:3100';
-    return '';
+    if (h === 'localhost' || h === '127.0.0.1') return `http://${h}:3100`;
+    return 'https://app.rentleaks.com';
   }
 
   var BASE = resolveBase();
@@ -140,7 +140,10 @@
     var set = function (sel, value) {
       document.querySelectorAll(sel).forEach(function (el) { el.textContent = value; });
     };
-    if (typeof m.listings === 'number') set('#trust-rent-count', m.listings.toLocaleString());
+    if (typeof m.listings === 'number') {
+      set('#trust-rent-count', m.listings.toLocaleString());
+      set('#trust-inventory-label', 'live homes');
+    }
     if (typeof m.cities === 'number') set('#trust-city-count', String(m.cities));
     document.dispatchEvent(new CustomEvent('rl:meta', { detail: m }));
   }

@@ -13,6 +13,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
+import { listingPrice } from "@/lib/plans";
 import { setListingPlan, setListingSponsored, setListingStatus } from "@/app/actions/listing-admin";
 
 export type SellerListing = {
@@ -38,8 +39,8 @@ export type SellerListing = {
 };
 
 const PLAN_COST = {
-  week: { listing: 14, sponsored: 30, per: "week" },
-  month: { listing: 60, sponsored: 120, per: "month" },
+  week: { listing: 14, sponsored: 35, per: "week" },
+  month: { listing: 60, sponsored: 130, per: "month" },
 } as const;
 
 export default function SellerListings({ listings }: { listings: SellerListing[] }) {
@@ -85,10 +86,10 @@ export default function SellerListings({ listings }: { listings: SellerListing[]
   }
 
   const monthlyTotal = rows
-    .filter((r) => r.status !== "paused" && r.housingType !== "lease-break")
+    .filter((r) => r.status !== "paused")
     .reduce((sum, r) => {
       const p = PLAN_COST[r.plan === "month" ? "month" : "week"];
-      const per = p.listing + (r.sponsored ? p.sponsored : 0);
+      const per = listingPrice(r.housingType, r.plan).amountCents / 100 + (r.sponsored ? p.sponsored : 0);
       return sum + (r.plan === "month" ? per : per * 4.33);
     }, 0);
 
@@ -110,7 +111,7 @@ export default function SellerListings({ listings }: { listings: SellerListing[]
         <div>
           <span className="s-summary__k">Roughly per month</span>
           <b>${Math.round(monthlyTotal)}</b>
-          <small>lease-breaks and paused listings cost nothing</small>
+          <small>Lease-breaks: $15/week or $60/month; paused listings excluded</small>
         </div>
       </div>
 
@@ -180,7 +181,7 @@ export default function SellerListings({ listings }: { listings: SellerListing[]
                     disabled={pending}
                     onChange={(e) => run(l.id, { plan: e.target.value }, () => setListingPlan(l.id, e.target.value))}
                   >
-                    <option value="week">Weekly — ${PLAN_COST.week.listing}</option>
+                    <option value="week">Weekly — ${listingPrice(l.housingType, "week").amountCents / 100}</option>
                     <option value="month">Monthly — ${PLAN_COST.month.listing}</option>
                   </select>
                 </label>

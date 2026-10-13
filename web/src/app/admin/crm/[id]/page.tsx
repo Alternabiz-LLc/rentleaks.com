@@ -113,7 +113,7 @@ export default async function ContactPage({ params, searchParams }: { params: Pr
       </div>
 
       <div className="dk-grid dk-grid--2">
-        <Panel kicker="Reply" title="Email" sub={`Sends ${mail.smtp ? `from your mailbox (${mail.smtp})` : mail.resend ? `through Resend as ${mail.from}` : "nowhere yet — no email provider is configured"}. Logged on the timeline.`}>
+        <Panel kicker="Reply" title="Email" sub={`Sends ${mail.cloudflare ? "from hello@rentleaks.com" : mail.smtp ? `from your mailbox (${mail.smtp})` : mail.resend ? `through Resend as ${mail.from}` : "nowhere yet — no email provider is configured"}. Logged on the timeline.`}>
           {contact.unsubscribedAt ? (
             <p className="dk-flash dk-flash--warn">This person unsubscribed on {when(contact.unsubscribedAt, false)}. A one-to-one reply to something they asked is fine; marketing is not.</p>
           ) : null}

@@ -55,7 +55,7 @@ export default async function OutreachPage({ searchParams }: { searchParams: SP 
         signals={[
           { label: "Moves ready", value: `${outreachActions.length} drafted`, tone: outreachActions.length ? "live" : "ok", href: self({ tab: undefined }) },
           { label: "Touches this week", value: `${weekTouches}`, tone: "ok" },
-          { label: "Your mailbox", value: mail.smtp ? "connected" : mail.resend ? "via Resend" : "not set", tone: mail.smtp || mail.resend ? "ok" : "warn", href: "/admin/system" },
+          { label: "Your mailbox", value: mail.cloudflare ? "hello@rentleaks.com" : mail.smtp ? "connected" : mail.resend ? "via Resend" : "not set", tone: mail.cloudflare || mail.smtp || mail.resend ? "ok" : "warn", href: "/admin/system" },
           { label: "Templates", value: `${templates.length}`, tone: "ok", href: self({ tab: "templates" }) },
         ]}
         actions={
@@ -211,7 +211,7 @@ export default async function OutreachPage({ searchParams }: { searchParams: SP 
       ) : null}
 
       <p className="dk-hint">
-        {KIND_LABEL.host} outreach goes one-to-one from {mail.smtp ? `your mailbox (${mail.smtp})` : "Resend until your mailbox is connected"}; waves go through the outbox with an unsubscribe link and your address.
+        {KIND_LABEL.host} outreach goes one-to-one from {mail.cloudflare ? "hello@rentleaks.com" : mail.smtp ? `your mailbox (${mail.smtp})` : "Resend until your mailbox is connected"}; waves go through the outbox with an unsubscribe link and your address.
       </p>
     </div>
   );

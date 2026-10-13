@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { readFile } from "node:fs/promises";
+import { resolve } from "node:path";
 import { sampleCatalogIds } from "../src/lib/sample-catalog";
 
 test("sample catalogue IDs come from the site's listings.json", async () => {
@@ -27,7 +29,8 @@ test("falls back to the repo copy when the site is unreachable", async () => {
   }) as typeof fetch;
   try {
     const ids = await sampleCatalogIds();
-    assert.ok(ids.size > 100, `expected the repo catalogue, got ${ids.size} ids`);
+    const catalog = JSON.parse(await readFile(resolve(process.cwd(), "..", "listings.json"), "utf8"));
+    assert.deepEqual([...ids].sort(), [...new Set(catalog.listings.map((l: { id: string }) => l.id))].sort());
   } finally {
     globalThis.fetch = realFetch;
   }

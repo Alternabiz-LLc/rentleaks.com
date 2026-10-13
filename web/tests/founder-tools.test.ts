@@ -70,7 +70,8 @@ test("CSV escapes quotes and formula injection, and parses quoted cells", () => 
   assert.deepEqual(objs, [{ email: "jo@x.io", first_name: 'Jo "J"' }]);
 });
 
-test("transport choice prefers SMTP only for personal mail on Workers", () => {
+test("transport choice prefers Cloudflare Email, then SMTP for personal mail", () => {
+  assert.equal(pickTransport("personal", { cloudflare: true, resend: true, smtp: true, workers: true }), "cloudflare");
   assert.equal(pickTransport("personal", { resend: true, smtp: true, workers: true }), "smtp");
   assert.equal(pickTransport("bulk", { resend: true, smtp: true, workers: true }), "resend");
   assert.equal(pickTransport("personal", { resend: true, smtp: true, workers: false }), "resend");
@@ -114,5 +115,5 @@ test("metrics: week buckets and recurring revenue", () => {
     { status: "paused", housingType: "room", plan: "month", sponsored: false },
     { status: "active", housingType: "lease-break", plan: "week", sponsored: true },
   ]);
-  assert.equal(r, 180);
+  assert.equal(r, 190 + (15 + 35) * 4.33);
 });

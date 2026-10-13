@@ -164,7 +164,7 @@ export function HomeHero({
           </form>
 
           <p className="rl-shero__hint">
-            Short-term means 30 days or more. <Link href="/list">Post a lease-break free</Link>.
+            Short-term means 30 days or more. <Link href="/list">Post a lease-break</Link>.
           </p>
         </div>
 

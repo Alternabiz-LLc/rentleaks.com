@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/site";
 import { allInOf, blockersFor, monthlyFees, rulesFor, toUsd, type Fee, type ListingDraft } from "@/lib/listing-rules";
 import { sanitiseMediaUrls } from "@/lib/media";
+import { billableListingCount } from "@/lib/billing";
 import { createListingCheckoutSession, hostCheckoutLines } from "@/lib/checkout";
 import { stripeEnabled } from "@/lib/stripe";
 
@@ -215,11 +216,13 @@ export async function createListingFromComposer(payload: string): Promise<{ erro
 
   const plan = raw.plan === "month" ? "month" : "week";
   const wantSponsored = raw.sponsored === true;
+  const priorListings = await billableListingCount(user.id);
   const chargeLines = hostCheckoutLines({
     housingType,
     plan,
     sponsored: wantSponsored,
     trialEndsAt: user.trialEndsAt,
+    priorListings,
   });
   const chargeNow = stripeEnabled() && chargeLines.length > 0;
 

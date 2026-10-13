@@ -55,8 +55,8 @@ export default async function SystemAdmin({ searchParams }: { searchParams: SP }
     { name: "Database", ok: dbOk, detail: dbOk ? `${dbMs} ms · latest migration ${migrations[0]?.migration_name ?? "?"}` : "not reachable", fix: "Check the Hyperdrive binding (DEPLOY.md §2)." },
     {
       name: "Email",
-      ok: mail.resend || Boolean(mail.smtp),
-      detail: [mail.resend ? "Resend ✓" : "Resend –", mail.smtp ? `SMTP ✓ ${mail.smtp}` : "SMTP –", `from ${mail.from}`].join(" · "),
+      ok: mail.cloudflare || mail.resend || Boolean(mail.smtp),
+      detail: [mail.cloudflare ? "Cloudflare Email ✓" : "Cloudflare Email –", mail.resend ? "Resend ✓" : "Resend –", mail.smtp ? `SMTP ✓ ${mail.smtp}` : "SMTP –", `from ${mail.from}`].join(" · "),
       fix: "Run: bash tools/deploy-cloudflare.sh --secrets",
     },
     {
@@ -87,7 +87,7 @@ export default async function SystemAdmin({ searchParams }: { searchParams: SP }
         signals={[
           { label: "Health", value: `${okCount} of ${checks.length} OK`, tone: okCount === checks.length ? "live" : "warn" },
           { label: "Database", value: dbOk ? `${dbMs} ms` : "unreachable", tone: dbOk ? "live" : "critical" },
-          { label: "Email", value: mail.resend ? "Resend" : mail.smtp ? "SMTP" : "not set up", tone: mail.resend || mail.smtp ? "ok" : "critical", href: "#test-email" },
+          { label: "Email", value: mail.cloudflare ? "Cloudflare" : mail.resend ? "Resend" : mail.smtp ? "SMTP" : "not set up", tone: mail.cloudflare || mail.resend || mail.smtp ? "ok" : "critical", href: "#test-email" },
           { label: "Outbox", value: outboxAge === null ? "never ran" : `${outboxAge} min ago · ${queued} queued`, tone: outboxAge !== null && outboxAge < 15 ? "ok" : "warn" },
         ]}
         actions={

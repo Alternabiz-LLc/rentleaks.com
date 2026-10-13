@@ -62,6 +62,7 @@ export default async function AccountPage() {
         </p>
         <p style={{ display: "flex", gap: "var(--s-3)", flexWrap: "wrap" }}>
           <Link className="btn btn--primary" href="/list">List a place</Link>
+          <Link className="btn btn--outline" href="/billing">Billing</Link>
           {isStaffRole(user) && (
             <Link className="btn btn--outline" href="/admin">
               {isAdmin(user) ? "Founder desk" : "Team desk"}

@@ -44,6 +44,8 @@ async function ownedListing(id: string): Promise<Owned> {
   if (listing.hostId !== user.id) {
     return { ok: false, error: "That listing belongs to another account." };
   }
+  const bank = await prisma.bankSubscription.findUnique({ where: { listingId: id } });
+  if (bank && bank.status !== "checkout_pending") return { ok: false, error: "This listing uses a bank subscription. Manage billing there before changing its publication or paid features." };
   return { ok: true, userId: user.id, listing };
 }
 

@@ -256,7 +256,7 @@
     document.body.classList.toggle('rl-live', !!isLive);
     const dot = $('#rl-live-badge');
     if (dot) {
-      dot.textContent = isLive ? 'Live' : 'Cached';
+      dot.textContent = pageName() === 'home' ? 'Sample catalog' : (isLive ? 'Live' : 'Cached');
       dot.classList.toggle('is-stale', !isLive);
     }
   }
@@ -2202,12 +2202,14 @@
     const cc = $('#trust-city-count');
     if (rc) rc.textContent = listings.length.toLocaleString();
     if (cc) cc.textContent = String(cities.length);
+    const marketCount = $('#featured-market-count');
+    if (marketCount) marketCount.textContent = String(cities.length);
 
     const types = $('#rl-types');
     if (types) {
       types.innerHTML = (DATA.housingTypes || []).map((t) => {
         const n = listings.filter((l) => l.housingType === t.id).length;
-        return `<a class="rl-type-card" href="${t.href}"><span class="rl-type-card__kicker">${n} live</span><h3>${t.label}</h3><p>${t.blurb}</p><span class="rl-type-card__cta">Browse ${t.short}</span></a>`;
+        return `<a class="rl-type-card" href="${t.href}"><span class="rl-type-card__kicker">${n} in catalog</span><h3>${t.label}</h3><p>${t.blurb}</p><span class="rl-type-card__cta">Browse ${t.short}</span></a>`;
       }).join('');
     }
 
@@ -2234,7 +2236,7 @@
     const pulse = $('#rl-pulse');
     if (pulse) {
       pulse.innerHTML = `
-        <article class="rl-stat"><span>Live inventory <b id="rl-live-badge" class="rl-live-tag">Cached</b></span><strong>${listings.length.toLocaleString()}</strong><em>across ${cities.length} markets</em></article>
+        <article class="rl-stat"><span>Catalog inventory <b id="rl-live-badge" class="rl-live-tag">Sample catalog</b></span><strong>${listings.length.toLocaleString()}</strong><em>across ${cities.length} markets</em></article>
         <article class="rl-stat"><span>Typical room all-in</span><strong>${money(avgRoom)}</strong><em>fees already counted</em></article>
         <article class="rl-stat"><span>Lease Clock</span><strong>${avgBreak} mo</strong><em>average time left on takeovers</em></article>
         <article class="rl-stat"><span>No broker fee</span><strong>${noFeePct}%</strong><em>of every home we list</em></article>`;
@@ -3041,7 +3043,31 @@
         }, 500);
       });
     }
-    handleFormSubmit($('#contact-form'), 'Thanks — a human will reply within a day.');
+    const contactForm = $('#contact-form');
+    if (contactForm) contactForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!contactForm.checkValidity()) { contactForm.reportValidity(); return; }
+      const button = contactForm.querySelector('button[type="submit"]');
+      const feedback = $('#contact-feedback');
+      button.disabled = true;
+      button.textContent = 'Sending…';
+      try {
+        const values = Object.fromEntries(new FormData(contactForm));
+        const api = window.RLData?.base || (['localhost', '127.0.0.1'].includes(location.hostname) ? `http://${location.hostname}:3100` : 'https://app.rentleaks.com');
+        const response = await fetch(`${api}/api/contact`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(values), mode: 'cors', credentials: 'omit', signal: AbortSignal.timeout(15000) });
+        const result = await response.json();
+        if (!response.ok || !result.ok) throw new Error(result.error?.message || 'Your message could not be saved. Please retry.');
+        contactForm.reset();
+        if (feedback) feedback.textContent = 'Your message was received and queued for the RentLeaks team.';
+      } catch (error) {
+        if (feedback) feedback.textContent = error instanceof TypeError || error.name === 'TimeoutError' || error.name === 'AbortError'
+          ? 'We could not connect. Your message is still here. Please retry or email hello@rentleaks.com.'
+          : error.message || 'Your message could not be saved. Please retry or email hello@rentleaks.com.';
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Send';
+      }
+    });
     handleFormSubmit($('#profile-form'), 'Alerts are on for this browser.');
     handleFormSubmit($('#sales-form'), 'Received. Operator onboarding will follow up.');
     $$('.newsletter__form').forEach((f) => {

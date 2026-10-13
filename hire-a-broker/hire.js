@@ -5,7 +5,7 @@
  *   come from the app (/api/network), so the founder changes them in the desk.
  * - A three-step form (tenant brief, or partner application) that checks each
  *   step before moving on, then posts JSON and opens the private link the app
- *   returns: the tenant's search room, or the partner's signing page.
+ *   returns for tenants; partners receive signing access only by email.
  * - "Email my portal link" for existing partners.
  *
  * Plain ES2017, no dependencies. Without JavaScript every step shows at once
@@ -30,7 +30,7 @@
   function apiBase() {
     if (typeof window.RL_API_URL === 'string') return window.RL_API_URL.replace(/\/$/, '');
     var h = location.hostname;
-    if (h === 'localhost' || h === '127.0.0.1') return 'http://localhost:3100';
+    if (h === 'localhost' || h === '127.0.0.1') return `http://${h}:3100`;
     var meta = $('meta[name="rl-api"]');
     return meta && meta.content ? meta.content.replace(/\/$/, '') : 'https://app.rentleaks.com';
   }
@@ -378,10 +378,11 @@
   var NEEDS_BROKER = { salesperson: true, associate_broker: true };
   function superHint() {
     var box = $('[data-super]', form);
-    if (box) box.hidden = !NEEDS_BROKER[el.licenseType.value];
+    if (box) box.hidden = !el.licenseNumber.value.trim() || !NEEDS_BROKER[el.licenseType.value];
   }
   if (WHO === 'partner') {
     el.licenseType.addEventListener('change', superHint);
+    el.licenseNumber.addEventListener('input', superHint);
     el.licenseState.addEventListener('input', function () { el.licenseState.value = el.licenseState.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2); });
     el.licenseExpires.min = today;
     superHint();
@@ -419,6 +420,8 @@
         if (el.site.value && !/^https?:\/\/\S+\.\S+$/.test(el.site.value.trim())) return ['The website should start with https://', 'site'];
       }
       if (i === 1) {
+        if (!el.licenseNumber.value.trim()) return null;
+        if (!el.licenseType.value) return ['Choose the licence type, or leave the licence number blank for later.', 'licenseType'];
         if (!/^[A-Za-z0-9-]{5,30}$/.test(el.licenseNumber.value.trim())) return ['Add your licence number.', 'licenseNumber'];
         if (!/^[A-Z]{2}$/.test(el.licenseState.value.trim())) return ['Add the two-letter state that issued your licence.', 'licenseState'];
         if (el.licenseExpires.value && el.licenseExpires.value <= today) return ['That licence has expired — renew it first.', 'licenseExpires'];
@@ -431,7 +434,7 @@
       if (i === 2) {
         if (!splitList(el.markets.value).length) return ['Add at least one city or neighborhood you cover.', 'markets'];
         if (!checked('specialties').length) return ['Pick at least one specialty.', 'specialties'];
-        if (!el.consent.checked) return ['Please confirm your licence is active.', 'consent'];
+        if (!el.consent.checked) return ['Please confirm the application details are correct.', 'consent'];
       }
     }
     return null;
@@ -514,6 +517,11 @@
         var a = done && $('[data-room]', done);
         if (done) { done.hidden = false; done.focus(); }
         try { if (window.fbq) window.fbq('track', WHO === 'tenant' ? 'Lead' : 'SubmitApplication', { content_category: 'broker-network' }); } catch (err) { /* optional */ }
+        if (r.json.checkEmail && done) {
+          var confirmation = $('[data-done-text]', done);
+          if (confirmation) confirmation.textContent = WHO === 'tenant' ? 'Thank you. For a new search, check your email for the private search-room link. If you already submitted, use the link in your earlier email.' : 'Thank you. For a new application, check your work email for the next step. Licence details can be added later. For an existing application, use the portal link form or contact RentLeaks.';
+          if (a) a.hidden = true;
+        }
         if (link && a) {
           a.href = link;
           a.hidden = false;

@@ -224,12 +224,13 @@ export const BOARD_STAGES: SearchStage[] = ["new", "matching", "proposals", "cho
 /** Stages a partner may move their own client to. */
 export const PARTNER_MOVES: SearchStage[] = ["touring", "applied", "leased", "lost"];
 
-export const PARTNER_STATUSES = ["applied", "verifying", "active", "paused", "rejected"] as const;
+export const PARTNER_STATUSES = ["applied", "under_review", "verifying", "active", "paused", "rejected"] as const;
 export type PartnerStatus = (typeof PARTNER_STATUSES)[number];
 export const PARTNER_STATUS: Record<PartnerStatus, { label: string; tone: "brand" | "warn" | "value" | "good" | "bad" | "ink" }> = {
-  applied: { label: "Signing", tone: "warn" },
-  verifying: { label: "To verify", tone: "value" },
-  active: { label: "Active", tone: "good" },
+  applied: { label: "Submitted", tone: "warn" },
+  under_review: { label: "Under review", tone: "value" },
+  verifying: { label: "Verification pending", tone: "value" },
+  active: { label: "Approved", tone: "good" },
   paused: { label: "Paused", tone: "ink" },
   rejected: { label: "Declined", tone: "bad" },
 };
@@ -296,7 +297,7 @@ export type Parse<T> = { ok: true; value: T; spam: boolean } | { ok: false; fiel
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
-const STATE = /^[A-Z]{2}$/;
+const STATE = /^(?:AL|AK|AZ|AR|CA|CO|CT|DE|DC|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY|PR|VI|GU|AS|MP)$/;
 
 function text(v: unknown, max: number) {
   return typeof v === "string" ? v.replace(/\s+/g, " ").trim().slice(0, max) : typeof v === "number" ? String(v) : "";
@@ -481,18 +482,19 @@ export function parsePartner(body: Record<string, unknown>, today: string): Pars
   if (!/^\+?[\d\s().-]{7,}$/.test(phone)) return { ok: false, field: "phone", message: "Add a phone number tenants can reach." };
   const brokerage = text(body.brokerage, 120);
   if (brokerage.length < 2) return { ok: false, field: "brokerage", message: "Add your brokerage (the broker of record)." };
-  const licenseType = text(body.licenseType, 20);
+  const licenseType = text(body.licenseType, 20) || "pending";
   const lt = LICENSE_TYPES.find((x) => x.id === licenseType);
-  if (!lt) return { ok: false, field: "licenseType", message: "Pick your licence type." };
+  if (!lt && licenseType !== "pending") return { ok: false, field: "licenseType", message: "Pick your licence type." };
   const licenseNumber = text(body.licenseNumber, 30).toUpperCase();
-  if (!/^[A-Z0-9-]{5,30}$/.test(licenseNumber)) return { ok: false, field: "licenseNumber", message: "Add your licence number." };
+  if (licenseNumber && !/^[A-Z0-9-]{5,30}$/.test(licenseNumber)) return { ok: false, field: "licenseNumber", message: "Add your licence number." };
   const licenseState = text(body.licenseState, 2).toUpperCase();
-  if (!STATE.test(licenseState)) return { ok: false, field: "licenseState", message: "Add the state that issued your licence (two letters)." };
+  if (licenseState && !STATE.test(licenseState)) return { ok: false, field: "licenseState", message: "Add the state that issued your licence (two letters)." };
+  if (licenseNumber && (!lt || !licenseState)) return { ok: false, field: !lt ? "licenseType" : "licenseState", message: "Include the licence type and issuing state with a licence number, or leave licence details for later." };
   const licenseExpires = text(body.licenseExpires, 10);
-  if (licenseExpires && (!ISO.test(licenseExpires) || licenseExpires <= today)) return { ok: false, field: "licenseExpires", message: "That licence has expired — renew it first." };
+  if (licenseExpires && (!ISO.test(licenseExpires) || !Number.isFinite(Date.parse(licenseExpires)) || new Date(licenseExpires).toISOString().slice(0, 10) !== licenseExpires || licenseExpires <= today)) return { ok: false, field: "licenseExpires", message: "That licence has expired — renew it first." };
   const supervisorName = text(body.supervisorName, 120) || null;
   const supervisorEmail = text(body.supervisorEmail, 200).toLowerCase() || null;
-  if (lt.needsBroker) {
+  if (licenseNumber && lt?.needsBroker) {
     if (!supervisorName || !supervisorEmail || !EMAIL.test(supervisorEmail)) return { ok: false, field: "supervisorEmail", message: "Add your supervising broker's name and email — they sign the referral agreement too." };
     if (supervisorEmail === email) return { ok: false, field: "supervisorEmail", message: "Your supervising broker needs their own email." };
   }
@@ -504,7 +506,7 @@ export function parsePartner(body: Record<string, unknown>, today: string): Pars
   const capacity = int(body.capacity, 1, 50);
   const site = text(body.site, 200);
   if (site && !/^https?:\/\/[^\s]+\.[^\s]+$/.test(site)) return { ok: false, field: "site", message: "The website should start with https://" };
-  if (body.consent !== true && body.consent !== "on" && body.consent !== "true") return { ok: false, field: "consent", message: "Please confirm your licence is active and the details are correct." };
+  if (body.consent !== true && body.consent !== "on" && body.consent !== "true") return { ok: false, field: "consent", message: "Please confirm these details are correct and may be verified." };
   return {
     ok: true,
     spam: text(body.website, 200) !== "",
@@ -517,8 +519,8 @@ export function parsePartner(body: Record<string, unknown>, today: string): Pars
       licenseNumber,
       licenseState,
       licenseExpires: licenseExpires || null,
-      supervisorName: lt.needsBroker ? supervisorName : null,
-      supervisorEmail: lt.needsBroker ? supervisorEmail : null,
+      supervisorName: lt?.needsBroker ? supervisorName : null,
+      supervisorEmail: lt?.needsBroker ? supervisorEmail : null,
       markets,
       specialties,
       languages: languages.length ? languages : ["English"],
@@ -529,8 +531,17 @@ export function parsePartner(body: Record<string, unknown>, today: string): Pars
   };
 }
 
+export function partnerLicenseComplete(p: Pick<PartnerInput, "licenseType" | "licenseNumber" | "licenseState" | "supervisorName" | "supervisorEmail">) {
+  const type = LICENSE_TYPES.find((t) => t.id === p.licenseType);
+  return !!type && /^[A-Z0-9-]{5,30}$/.test(p.licenseNumber) && STATE.test(p.licenseState) && (!type.needsBroker || (!!p.supervisorName && !!p.supervisorEmail && EMAIL.test(p.supervisorEmail)));
+}
+
 export function licenseLookupUrl(state: string) {
-  return state === "NY" ? "https://appext20.dos.ny.gov/lcns_public/chk_load" : null;
+  return state === "NY" ? "https://appext20.dos.ny.gov/lcns_public/chk_load" : state === "RI" ? "https://dbr.ri.gov/about-dbr/lookup-license" : null;
+}
+
+export function licenseCurrent(expires: string | null, today: string): boolean {
+  return !expires || (ISO.test(expires) && Number.isFinite(Date.parse(expires)) && new Date(expires).toISOString().slice(0, 10) === expires && expires > today);
 }
 
 /* ------------------------------------------------------------------------

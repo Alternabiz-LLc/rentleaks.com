@@ -2,6 +2,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { Shell } from "@/components/Shell";
 import ListingComposer from "@/components/ListingComposer";
 import { createListingFromComposer } from "@/app/actions/listings";
+import { billableListingCount } from "@/lib/billing";
 import { prisma } from "@/lib/prisma";
 
 /* Cities come from the database: render per request, never at build time. */
@@ -25,6 +26,7 @@ const HOUSING_TYPES = [
 export default async function ListPage() {
   const user = await getCurrentUser();
   const onTrial = user?.trialEndsAt && user.trialEndsAt > new Date() ? user.trialEndsAt : null;
+  const priorListings = user ? await billableListingCount(user.id) : 0;
   const cities = await prisma.city.findMany({
     orderBy: [{ rank: "asc" }, { name: "asc" }],
     select: { id: true, slug: true, name: true, state: true, country: true, currency: true },
@@ -48,7 +50,7 @@ export default async function ListPage() {
       </section>
       <section className="rl-page">
         <div className="container">
-          <ListingComposer cities={cities} housingTypes={HOUSING_TYPES} action={createListingFromComposer} />
+          <ListingComposer cities={cities} housingTypes={HOUSING_TYPES} action={createListingFromComposer} priorListings={priorListings} feesWaived={Boolean(onTrial)} />
         </div>
       </section>
     </Shell>

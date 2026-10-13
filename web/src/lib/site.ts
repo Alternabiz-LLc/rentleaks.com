@@ -1,3 +1,5 @@
+import { applicationOrigin } from "./origin";
+
 export function catalogOrigin() {
   return (
     process.env.NEXT_PUBLIC_CATALOG_ORIGIN ||
@@ -7,7 +9,7 @@ export function catalogOrigin() {
 }
 
 export function appUrl() {
-  return process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || "http://localhost:3100";
+  return applicationOrigin();
 }
 
 export function typeLabel(type: string) {

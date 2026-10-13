@@ -7,6 +7,7 @@ import {
   pickBillingPlan,
   type BillingPlanId,
 } from "@/lib/billing";
+import { discountedCents, introOffPercent, listingPrice } from "@/lib/plans";
 import { getStripe, stripeEnabled } from "@/lib/stripe";
 import { appUrl } from "@/lib/site";
 
@@ -23,19 +24,22 @@ export function hostCheckoutLines(input: {
   plan: string;
   sponsored: boolean;
   trialEndsAt?: Date | null;
+  /** How many billable listings this host already has, not counting the one being charged. */
+  priorListings?: number;
 }): CheckoutLine[] {
-  if (input.housingType === "lease-break") return [];
   if (listingFeeWaived({ trialEndsAt: input.trialEndsAt })) return [];
 
   const planId = pickBillingPlan(input.plan);
-  const listing = planId === MONTHLY_PLAN.id ? MONTHLY_PLAN : WEEKLY_PLAN;
+  const listing = listingPrice(input.housingType, planId);
+  const off = input.housingType === "lease-break" ? 0 : introOffPercent(input.priorListings ?? 0);
+  const offNote = off > 0 ? ` (${off}% off)` : "";
   const lines: CheckoutLine[] = [
     {
       planId: listing.id,
       kind: "listing",
-      label: `Listing · ${listing.label}`,
-      amountCents: listing.amountCents,
-      priceId: priceEnv(listing.id),
+      label: `Listing · ${listing.label}${offNote}`,
+      amountCents: discountedCents(listing.amountCents, off),
+      priceId: off > 0 ? undefined : priceEnv(listing.id),
     },
   ];
 
@@ -44,9 +48,9 @@ export function hostCheckoutLines(input: {
     lines.push({
       planId: promo.id,
       kind: "sponsored",
-      label: `Sponsored · ${promo.label}`,
-      amountCents: promo.amountCents,
-      priceId: priceEnv(promo.id),
+      label: `Sponsored · ${promo.label}${offNote}`,
+      amountCents: discountedCents(promo.amountCents, off),
+      priceId: off > 0 ? undefined : priceEnv(promo.id),
     });
   }
 
@@ -55,6 +59,10 @@ export function hostCheckoutLines(input: {
 
 function priceEnv(planId: string) {
   switch (planId) {
+    case "lease-break-week":
+      return process.env.STRIPE_PRICE_LEASE_BREAK_WEEK || undefined;
+    case "lease-break-month":
+      return process.env.STRIPE_PRICE_LEASE_BREAK_MONTH || undefined;
     case WEEKLY_PLAN.id:
       return process.env.STRIPE_PRICE_LISTING_WEEK || undefined;
     case MONTHLY_PLAN.id:
@@ -115,7 +123,7 @@ export function billingPlanFromCheckout(planCsv: string | null | undefined): Bil
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
-  if (ids.includes(MONTHLY_PLAN.id) || ids.includes(FEATURED_MONTHLY.id)) return MONTHLY_PLAN.id;
+  if (ids.includes(MONTHLY_PLAN.id) || ids.includes("lease-break-month") || ids.includes(FEATURED_MONTHLY.id)) return MONTHLY_PLAN.id;
   return WEEKLY_PLAN.id;
 }
 

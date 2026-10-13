@@ -41,8 +41,13 @@
      (→ /api/cron/outbox). See worker.ts. */
   "triggers": { "crons": ["0 * * * *", "*/5 * * * *"] },
 
+  /* Domain mail (hello@rentleaks.com) is Namecheap forwarding, which cannot SMTP-auth.
+     Outbound mail uses Cloudflare Email Sending. Replies still arrive via forwarding. */
+  "send_email": [{ "name": "EMAIL" }],
+
   /* Plain settings. Secrets go in the dashboard, never here. */
   "vars": {
+    "CHARGEBEE_BANK_ENABLED": "false",
     "APP_URL": "https://app.rentleaks.com",
     "NEXT_PUBLIC_APP_URL": "https://app.rentleaks.com",
     "CATALOG_ORIGIN": "https://rentleaks.com",

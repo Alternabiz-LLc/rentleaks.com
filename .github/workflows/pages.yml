@@ -39,6 +39,9 @@ jobs:
             --exclude='/web/' --exclude='/mobile/' --exclude='/tools/' \
             --exclude='/marketing/' --exclude='/outreach/' --exclude='/Claude outputs/' \
             --exclude='*.md' --exclude='*.zip' --exclude='*.command' \
+            --exclude='*.tgz' --exclude='*.tar' --exclude='*.gz' \
+            --exclude='.env*' --exclude='.neon/' --exclude='/docs/' \
+            --exclude='package.json' --exclude='package-lock.json' \
             --exclude='*.pre-dynamic' --exclude='docker-compose.yml' \
             --exclude='.gitignore'
           # Fail the deploy if anything private slipped through.

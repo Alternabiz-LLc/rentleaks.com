@@ -246,6 +246,7 @@ model Listing {
   conversations Conversation[]
   leases        Lease[]
   payments      Payment[]
+  bankSubscription BankSubscription?
   savedBy       SavedListing[]
   reports       Report[]
   leads         Lead[]
@@ -341,6 +342,43 @@ model Payment {
   updatedAt       DateTime @updatedAt
 
   @@index([userId])
+}
+
+/// Bank billing is separate from Stripe payments. Never store bank account details.
+model BankSubscription {
+  id                String   @id @default(cuid())
+  userId            String
+  listingId         String   @unique
+  listing           Listing  @relation(fields: [listingId], references: [id], onDelete: Restrict)
+  providerId        String   @unique
+  customerId        String?
+  planId            String
+  sponsored         Boolean  @default(false)
+  quote             Json
+  amountCents       Int
+  hostedPageId      String?
+  hostedUrl         String?
+  checkoutExpiresAt DateTime?
+  status            String   @default("checkout_pending")
+  access            String   @default("basic")
+  paidThrough       DateTime?
+  invoiceId         String?
+  snapshotVersion   BigInt   @default(0)
+  lastEventAt       DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model BankBillingEvent {
+  id           String   @id
+  type         String
+  providerId   String
+  occurredAt   DateTime
+  receivedAt   DateTime @default(now())
+
+  @@index([providerId])
 }
 
 model Lease {
@@ -718,6 +756,54 @@ model AppSetting {
   key       String   @id
   value     String
   updatedAt DateTime @updatedAt
+}
+
+/// Shared fixed-window counters; keys are hashed to avoid retaining contact/IP data.
+model RateLimitBucket {
+  key     String   @id
+  count   Int      @default(1)
+  resetAt DateTime
+
+  @@index([resetAt])
+}
+
+/// Encrypted transactional mail, persisted before business changes commit.
+model NotificationDelivery {
+  id              String   @id @default(cuid())
+  dedupeKey       String   @unique
+  payload         String
+  audience        String   @default("external")
+  targetType      String   @default("")
+  targetId        String   @default("")
+  status          String   @default("queued")
+  attempts        Int      @default(0)
+  nextAttemptAt   DateTime @default(now())
+  leaseToken      String?
+  leaseUntil      DateTime?
+  transport       String?
+  providerId      String?
+  providerEventAt DateTime?
+  lastError       String?
+  acceptedAt      DateTime?
+  deliveredAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([status, nextAttemptAt])
+  @@index([leaseUntil])
+  @@index([providerId])
+  @@index([targetType, targetId])
+}
+
+/// Retains signed delivery outcomes so early or repeated callbacks are safe.
+model EmailWebhookReceipt {
+  id         String   @id
+  providerId String
+  type       String
+  occurredAt DateTime
+  receivedAt DateTime @default(now())
+
+  @@index([providerId, occurredAt])
 }
 
 /// A renter's way from viewing to move-out, run by the team. Separate from
@@ -1121,6 +1207,10 @@ model NetworkPartner {
   portalTokenHash String?   @unique
   agreementId     String?
   verifiedAt      DateTime?
+  mailboxGateAt   DateTime?
+  emailVerifiedAt DateTime?
+  suspendedAt     DateTime?
+  suspendedById   String?
   verifiedById    String?
   verifyNote      String?
   lastOfferedAt   DateTime?

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { billableListingCount } from "@/lib/billing";
 import { createListingCheckoutSession, hostCheckoutLines } from "@/lib/checkout";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -22,11 +23,13 @@ export async function POST(request: Request) {
   }
 
   const detail = (listing.detail ?? {}) as { pendingSponsored?: boolean };
+  const priorListings = await billableListingCount(user.id, listing.id);
   const lines = hostCheckoutLines({
     housingType: listing.housingType,
     plan: listing.plan,
     sponsored: listing.sponsored || detail.pendingSponsored === true,
     trialEndsAt: user.trialEndsAt,
+    priorListings,
   });
   if (!lines.length) {
     return NextResponse.json({ url: `/listings/${listing.id}` });

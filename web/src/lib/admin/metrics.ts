@@ -5,16 +5,16 @@ export const nowMs = () => Date.now();
 
 export const LISTING_WEEKLY = 14;
 export const LISTING_MONTHLY = 60;
-export const PROMO_WEEKLY = 30;
-export const PROMO_MONTHLY = 120;
+export const PROMO_WEEKLY = 35;
+export const PROMO_MONTHLY = 130;
 
-/** Recurring revenue at posted rates. Lease-breaks publish free; paused listings are not billed. */
+/** Recurring revenue at posted rates. Includes lease-break posted prices; paused listings are excluded from this estimate. */
 export function recurringMonthly(listings: Array<{ status: string; housingType: string; plan: string; sponsored: boolean }>) {
   return listings
-    .filter((l) => l.status !== "paused" && l.housingType !== "lease-break")
+    .filter((l) => l.status !== "paused")
     .reduce((sum, l) => {
       const weekly = l.plan !== "month";
-      const listing = weekly ? LISTING_WEEKLY : LISTING_MONTHLY;
+      const listing = weekly ? l.housingType === "lease-break" ? 15 : LISTING_WEEKLY : LISTING_MONTHLY;
       const promo = l.sponsored ? (weekly ? PROMO_WEEKLY : PROMO_MONTHLY) : 0;
       return sum + (weekly ? (listing + promo) * 4.33 : listing + promo);
     }, 0);

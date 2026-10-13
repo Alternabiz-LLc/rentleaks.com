@@ -35,6 +35,11 @@ import {
   FEATURED_WEEKLY,
   MONTHLY_PLAN,
   WEEKLY_PLAN,
+  discountedCents,
+  formatUsd,
+  introOffLabel,
+  introOffPercent,
+  listingPrice,
 } from "@/lib/plans";
 
 type City = { id: string; slug: string; name: string; state: string; country: string; currency: string };
@@ -89,14 +94,14 @@ const ADDRESS_PRIVACY: Array<[string, string, string]> = [
 const PLANS = {
   week: {
     label: WEEKLY_PLAN.label,
-    listing: WEEKLY_PLAN.amountCents / 100,
-    sponsored: FEATURED_WEEKLY.amountCents / 100,
+    listingCents: WEEKLY_PLAN.amountCents,
+    sponsoredCents: FEATURED_WEEKLY.amountCents,
     per: "week" as const,
   },
   month: {
     label: MONTHLY_PLAN.label,
-    listing: MONTHLY_PLAN.amountCents / 100,
-    sponsored: FEATURED_MONTHLY.amountCents / 100,
+    listingCents: MONTHLY_PLAN.amountCents,
+    sponsoredCents: FEATURED_MONTHLY.amountCents,
     per: "month" as const,
   },
 } as const;
@@ -149,10 +154,15 @@ export default function ListingComposer({
   cities,
   housingTypes,
   action,
+  priorListings = 0,
+  feesWaived = false,
 }: {
   cities: City[];
   housingTypes: HousingType[];
   action: (payload: string) => Promise<{ error?: string } | void>;
+  /** Billable listings this host already has. Drives the 20% / 15% / 12% intro. */
+  priorListings?: number;
+  feesWaived?: boolean;
 }) {
   const [stage, setStage] = useState(0);
   const [saving, setSaving] = useState(false);
@@ -279,9 +289,10 @@ export default function ListingComposer({
 
   const cost = () => {
     const pl = PLANS[draft.plan];
-    const listing = isLeaseBreak ? 0 : pl.listing;
-    const sponsored = draft.sponsored ? pl.sponsored : 0;
-    return { pl, listing, sponsored, total: listing + sponsored };
+    const off = feesWaived || isLeaseBreak ? 0 : introOffPercent(priorListings);
+    const listing = feesWaived ? 0 : discountedCents(listingPrice(draft.housingType, draft.plan).amountCents, off);
+    const sponsored = feesWaived || !draft.sponsored ? 0 : discountedCents(pl.sponsoredCents, off);
+    return { pl, off, listing, sponsored, total: listing + sponsored };
   };
 
   async function publish() {
@@ -726,27 +737,38 @@ export default function ListingComposer({
               </article>
 
               <h3 style={{ fontSize: "var(--text-md)", margin: "var(--s-6) 0 var(--s-3)" }}>What this costs you</h3>
+              {cost().off > 0 && <p className="v-note" style={{ margin: "0 0 var(--s-3)" }}><b>{introOffLabel(priorListings)}</b> <span>on the listing fee and on sponsored placement. The fourth listing is full price.</span></p>}
               <div className="c-plans">
-                {(Object.keys(PLANS) as PlanId[]).map((k) => (
-                  <label className={`c-plan${draft.plan === k ? " is-on" : ""}`} key={k}>
-                    <input type="radio" name="plan" checked={draft.plan === k} onChange={() => set("plan", k)} />
-                    <span><b>{PLANS[k].label}</b>{isLeaseBreak ? "Free — lease-breaks always are" : `$${PLANS[k].listing} per ${PLANS[k].per}`}</span>
-                  </label>
-                ))}
+                {(Object.keys(PLANS) as PlanId[]).map((k) => {
+                  const cents = feesWaived ? 0 : discountedCents(listingPrice(draft.housingType, k).amountCents, isLeaseBreak ? 0 : introOffPercent(priorListings));
+                  return (
+                    <label className={`c-plan${draft.plan === k ? " is-on" : ""}`} key={k}>
+                      <input type="radio" name="plan" checked={draft.plan === k} onChange={() => set("plan", k)} />
+                      <span>
+                        <b>{PLANS[k].label}</b>
+                        {cents ? `${formatUsd(cents)} per ${PLANS[k].per}${cost().off ? ` (was ${formatUsd(PLANS[k].listingCents)})` : ""}` : "Free during your trial"}
+                      </span>
+                    </label>
+                  );
+                })}
               </div>
               <label className={`c-plan c-plan--addon${draft.sponsored ? " is-on" : ""}`}>
                 <input type="checkbox" checked={draft.sponsored} onChange={(e) => set("sponsored", e.target.checked)} />
                 <span>
-                  <b>Sponsored placement — +${cost().pl.sponsored} per {cost().pl.per}</b>
+                  <b>
+                    Sponsored placement — {feesWaived
+                      ? "included"
+                      : `+${formatUsd(discountedCents(cost().pl.sponsoredCents, cost().off))} per ${cost().pl.per}${cost().off ? ` (was +${formatUsd(cost().pl.sponsoredCents)})` : ""}`}
+                  </b>
                   Top of results in <b>{city?.name}</b>, and only there. A paid slot in a market the searcher is not looking at is worth nothing to you and is noise to them. It buys position, not a badge: promoted cards are labelled as sponsored, and the same verification and compliance checks apply.
                 </span>
               </label>
 
               <div className="c-review-nums" style={{ marginTop: "var(--s-4)" }}>
-                <div className="c-allin__row"><span>Listing, per {cost().pl.per}</span><span>{cost().listing ? `$${cost().listing}` : "Free"}</span></div>
-                {cost().sponsored > 0 && <div className="c-allin__row"><span>Sponsored placement</span><span>+${cost().sponsored}</span></div>}
+                <div className="c-allin__row"><span>Listing, per {cost().pl.per}</span><span>{cost().listing ? formatUsd(cost().listing) : "Free"}</span></div>
+                {draft.sponsored && !feesWaived && <div className="c-allin__row"><span>Sponsored placement</span><span>+{formatUsd(cost().sponsored)}</span></div>}
                 <div className="c-allin__row" style={{ fontWeight: 600, borderTop: "1px solid var(--x-rule)", paddingTop: "0.4rem", marginTop: "0.3rem" }}>
-                  <span>Total per {cost().pl.per}</span><span>{cost().total ? `$${cost().total}` : "Free"}</span>
+                  <span>Total per {cost().pl.per}</span><span>{cost().total ? formatUsd(cost().total) : "Free"}</span>
                 </div>
                 <div className="c-allin__row"><span>What the renter pays us</span><span>Nothing</span></div>
               </div>

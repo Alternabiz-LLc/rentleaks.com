@@ -125,23 +125,18 @@
      had a housing-type branch in it for no reason the billing could
      justify. */
   var PLANS = {
-    week:  { label: 'Weekly',  listing: 14, sponsored: 45,  per: 'week' },
-    month: { label: 'Monthly', listing: 60, sponsored: 120, per: 'month' }
+    week:  { label: 'Weekly',  listing: 14, sponsored: 35, per: 'week' },
+    month: { label: 'Monthly', listing: 60, sponsored: 130, per: 'month' }
   };
 
-  /* The first seven days of a new listing are free, on every plan and every
-     housing type. A standing trial rather than a campaign: there is no window
-     to open and close, nothing to expire, and no arrival date to remember.
-
-     It covers the LISTING FEE only. A sponsored placement is a paid promotion
-     and is charged from day one — otherwise the offer stops being "free to
-     list" and becomes "free advertising", which is a much larger promise than
-     the one being made. */
-  var FREE_TRIAL_DAYS = 7;
+  /* Intro pricing is applied at checkout on the app: 20% off the first
+     listing, 15% off the second, 12% off the third, on both the listing fee
+     and sponsored placement. This preview shows the posted rate. */
+  var FREE_TRIAL_DAYS = 0;
 
   function planCost() {
     var pl = PLANS[draft.plan] || PLANS.week;
-    var listing = pl.listing;
+    var listing = isLeaseBreak() && draft.plan !== "month" ? 15 : pl.listing;
     var sponsored = draft.sponsored ? pl.sponsored : 0;
     var trial = FREE_TRIAL_DAYS > 0;
     return {
@@ -591,14 +586,14 @@
     var cityName = (cityOf(draft.cityId) || {}).name || 'your market';
     var planBlock =
       '<h3 style="font-size:var(--text-md);margin:var(--s-6) 0 var(--s-3);color:var(--ink)">What this costs you</h3>' +
-      (cost.trial ? '<p class="v-note" style="margin:0 0 var(--s-3)"><b>Your first ' + cost.trialDays + ' days are free</b> <span>on any plan and any kind of listing. Billing starts the day after, and taking the listing down before then costs nothing.</span></p>' : '') +
+      (isLeaseBreak() ? '' : '<p class="v-note" style="margin:0 0 var(--s-3)"><b>20% off your first listing</b> <span>on the listing fee and on sponsored placement. The second listing is 15% off, the third 12% off, then the posted rate.</span></p>') +
       '<div class="c-plans">' +
         Object.keys(PLANS).map(function (k) {
           var pl = PLANS[k];
           return '<label class="c-plan' + (draft.plan === k ? ' is-on' : '') + '">' +
             '<input type="radio" name="c-plan" value="' + k + '"' + (draft.plan === k ? ' checked' : '') + '>' +
             '<span><b>' + esc(pl.label) + '</b>' +
-            '$' + pl.listing + ' per ' + pl.per +
+            '$' + (isLeaseBreak() && k === 'week' ? 15 : pl.listing) + ' per ' + pl.per +
             '</span></label>';
         }).join('') +
       '</div>' +
@@ -973,9 +968,9 @@
           (blocked.length ? blocked.length + ' thing' + (blocked.length === 1 ? '' : 's') + ' to fix' : 'Publish listing') + '</button>' +
         '<button type="button" class="btn btn--ghost btn--sm" id="c-preview">Preview as a renter</button>' +
         '<p class="v-note" style="margin-top:var(--s-2)">' +
-          (planCost().trial
-            ? 'Free for the first ' + planCost().trialDays + ' days, then $' + planCost().total + ' per ' + planCost().plan.per + (draft.sponsored ? ', sponsored included' : '') + '. Nothing is charged to renters, ever.'
-            : '$' + planCost().total + ' per ' + planCost().plan.per + (draft.sponsored ? ', sponsored included' : '') + '. Nothing is charged to renters, ever.') +
+          (isLeaseBreak()
+            ? '$' + planCost().total + ' per ' + planCost().plan.per + '. Nothing is charged to renters, ever.'
+            : '$' + planCost().total + ' per ' + planCost().plan.per + (draft.sponsored ? ', sponsored included' : '') + '. First listing is 20% off. Nothing is charged to renters, ever.') +
         '</p>' +
       '</div>';
   }

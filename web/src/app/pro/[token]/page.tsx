@@ -2,8 +2,9 @@ import { nowMs } from "@/lib/admin/metrics";
 import { redirect } from "next/navigation";
 import { Card, Facts, flashOf, NetShell, Pill, since, until, type Step } from "@/components/network/NetShell";
 import { booksToday } from "@/lib/books/data";
-import { canSignNow, FEE_TYPES, feeLabel, isFeeType, parseFeeValue, PARTNER_STATUS, SEARCH_STAGE, SPECIALTIES, usd, type PartnerStatus, type SearchStage } from "@/lib/network/core";
-import { answerOffer, freshSignerLink, json, NetworkError, partnerFromToken, partnerMove, reportLease, searchBrief } from "@/lib/network/engine";
+import { auditedMutation } from "@/lib/admin/guard";
+import { canSignNow, licenseCurrent, parsePartner, LICENSE_TYPES, FEE_TYPES, feeLabel, isFeeType, parseFeeValue, PARTNER_STATUS, SEARCH_STAGE, SPECIALTIES, usd, type PartnerStatus, type SearchStage } from "@/lib/network/core";
+import { answerOffer, freshSignerLink, json, NetworkError, partnerFromToken, partnerMove, providePartnerLicense, reportLease, searchBrief } from "@/lib/network/engine";
 import { clearHeadshot, headshotUrl, setHeadshot } from "@/lib/network/guides";
 import { sniffReceipt } from "@/lib/books/receipts";
 import { prisma } from "@/lib/prisma";
@@ -79,13 +80,29 @@ async function lease(fd: FormData) {
   back(token, "ok", "Lease recorded — congratulations. Your brokerage will get the referral invoice.", "earnings");
 }
 
+async function licence(fd: FormData) {
+  "use server";
+  const { token, p } = await guard(fd);
+  const parsed = parsePartner({ ...p, markets: json<string[]>(p.markets, []), specialties: json<string[]>(p.specialties, []), languages: json<string[]>(p.languages, []), site: p.website ?? "", website: "", consent: true,
+    licenseType: fd.get("licenseType"), licenseNumber: fd.get("licenseNumber"), licenseState: fd.get("licenseState"), licenseExpires: fd.get("licenseExpires"), supervisorName: fd.get("supervisorName"), supervisorEmail: fd.get("supervisorEmail"),
+  }, booksToday());
+  if (!parsed.ok) back(token, "err", parsed.message, "licence");
+  try { await providePartnerLicense(p.id, parsed.value); }
+  catch (error) { if (error instanceof NetworkError) back(token, "err", error.message, "licence"); throw error; }
+  back(token, "ok", "Licence details received. Review your agreement from the email we have queued; approval still requires verification.", "licence");
+}
+
 async function profile(fd: FormData) {
   "use server";
   const { token, p } = await guard(fd);
   const op = String(fd.get("op") || "");
   if (op === "pause" || op === "resume") {
     if (p.status !== "active" && p.status !== "paused") back(token, "err", "Your account isn't active yet.");
-    await prisma.networkPartner.update({ where: { id: p.id }, data: { status: op === "pause" ? "paused" : "active" } });
+    if (op === "resume") {
+      const agreement = p.agreementId ? await prisma.agreement.findUnique({ where: { id: p.agreementId } }) : null;
+      if (p.suspendedAt || !p.verifiedAt || !licenseCurrent(p.licenseExpires, booksToday()) || agreement?.status !== "completed") back(token, "err", "Ask the team to resolve verification, licence renewal or suspension before resuming.");
+    }
+    await auditedMutation(`partner:${p.id}`, "network.partner.self-status", "networkPartner", p.id, { from: p.status, to: op }, (tx) => tx.networkPartner.update({ where: { id: p.id, updatedAt: p.updatedAt }, data: { status: op === "pause" ? "paused" : "active" } }));
     back(token, "ok", op === "pause" ? "Paused — no new leads until you resume." : "You're back on — new leads will arrive by email.");
   }
   const markets = String(fd.get("markets") || "")
@@ -99,8 +116,8 @@ async function profile(fd: FormData) {
     .filter((x) => SPECIALTIES.some((s) => s.id === x));
   const capacity = Math.round(Number(fd.get("capacity")));
   if (!markets.length || !specialties.length || !(capacity >= 1 && capacity <= 50)) back(token, "err", "Keep at least one market, one specialty and a capacity between 1 and 50.", "profile");
-  await prisma.networkPartner.update({
-    where: { id: p.id },
+  await auditedMutation(`partner:${p.id}`, "network.partner.profile", "networkPartner", p.id, {}, (tx) => tx.networkPartner.update({
+    where: { id: p.id, updatedAt: p.updatedAt },
     data: {
       markets: JSON.stringify([...new Set(markets)]),
       specialties: JSON.stringify(specialties),
@@ -108,7 +125,7 @@ async function profile(fd: FormData) {
       bio: String(fd.get("bio") || "").trim().slice(0, 600),
       headline: String(fd.get("headline") || "").replace(/\s+/g, " ").trim().slice(0, 140) || null,
     },
-  });
+  }));
   back(token, "ok", "Profile saved.", "profile");
 }
 
@@ -216,10 +233,26 @@ export default async function Portal({ params, searchParams }: { params: Promise
       {status !== "active" && status !== "paused" ? (
         <Card tone="warn">
           <p style={{ margin: 0 }}>
-            {status === "verifying" ? "Thanks for signing — we're verifying your licence with the state. You'll get an email when you're live." : status === "rejected" ? "Your application wasn't approved. Reply to any of our emails for details." : "Finish signing your referral agreement to continue."}
+            {status === "verifying" ? "Thanks for signing — we're verifying your licence with the state. You'll get an email when you're live." : status === "rejected" ? "Your application wasn't approved. Reply to any of our emails for details." : p.agreementId ? "Finish signing your referral agreement to continue." : "Your application is received. Add licence details when ready; verification is required before approval or referrals."}
           </p>
         </Card>
       ) : null}
+
+      <Card title="Contact us">
+        <p>Need help with your application, licence or referral? <a href="https://rentleaks.com/contact.html">Contact the RentLeaks team</a>.</p>
+      </Card>
+      {["applied", "under_review", "verifying"].includes(status) ? <section id="licence"><Card title="Provide your licence when ready">
+        <form action={licence} className="nw-form">
+          <input name="token" type="hidden" value={token} />
+          <label>Licence type<select name="licenseType" required defaultValue={p.licenseType === "pending" ? "" : p.licenseType}><option value="">Choose type</option>{LICENSE_TYPES.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}</select></label>
+          <label>Licence number<input name="licenseNumber" required defaultValue={p.licenseNumber} /></label>
+          <label>Issuing state<input name="licenseState" required maxLength={2} defaultValue={p.licenseState} placeholder="RI" /></label>
+          <label>Expires<input name="licenseExpires" type="date" defaultValue={p.licenseExpires ?? ""} /></label>
+          <label>Supervising broker name (salespersons and associates)<input name="supervisorName" defaultValue={p.supervisorName ?? ""} /></label>
+          <label>Supervising broker email<input name="supervisorEmail" type="email" defaultValue={p.supervisorEmail ?? ""} /></label>
+          <button className="nw-btn">Submit licence for review</button>
+        </form>
+      </Card></section> : null}
 
       <div className="nw-kpis">
         <div className="nw-kpi">

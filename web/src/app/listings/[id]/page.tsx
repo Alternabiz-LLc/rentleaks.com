@@ -31,8 +31,7 @@ export default async function ListingPage({
   const owner = viewer?.id === listing.hostId;
   if (!owner) {
     const gate = await liveListingWhere();
-    if (listing.status === "paused") notFound();
-    if ("moderation" in gate && listing.moderation !== "approved") notFound();
+    if (!await prisma.listing.count({ where: { AND: [{ id }, gate] } })) notFound();
   }
 
   const nearby = await prisma.listing.findMany({

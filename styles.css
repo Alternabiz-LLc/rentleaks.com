@@ -486,7 +486,11 @@ section { position: relative; }
   .header__link.js-cmd .js-cmd__label { display: none; }
 }
 @media (max-width: 620px) {
-  .header__container { gap: var(--s-3); }
+  .header__container { gap: var(--s-2); height: auto; min-height: var(--header-h); flex-wrap: wrap; padding-block: var(--s-2); }
+  .header__actions { flex: 1 1 100%; flex-wrap: wrap; justify-content: flex-end; min-width: 0; }
+  .header__actions .rl-lang { max-width: 100%; }
+  .header__actions .rl-lang a { min-height: 38px; padding-inline: 8px; }
+  .header .nav { position: absolute; inset: 100% 0 auto; max-height: calc(100dvh - 150px); }
   .header__link.js-cmd {
     width: 34px; height: 34px; padding: 0; justify-content: center;
     background: transparent; border-color: transparent;

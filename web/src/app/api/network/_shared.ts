@@ -14,11 +14,14 @@ export function replier(req: NextRequest, cache = "no-store") {
   const fromError = (err: unknown, tag: string) => {
     if (err instanceof HttpError) return refuse(err.status, err.code, err.message);
     if (err instanceof NetworkError) return refuse(409, "rejected", err.message);
+    if (err instanceof Prisma.PrismaClientKnownRequestError && (err.code === "P2002" || err.code === "P2034")) {
+      return refuse(409, "conflict", "Another request updated this application. Please try again.");
+    }
     if (err instanceof Prisma.PrismaClientKnownRequestError && (err.code === "P2021" || err.code === "P2022")) {
-      console.error(`[${tag}] schema behind code:`, err.message);
+      console.error(`[${tag}] schema behind code:`, err.code);
       return refuse(503, "migration_pending", "This isn't available for a moment. Please try again shortly.");
     }
-    console.error(`[${tag}]`, err);
+    console.error(`[${tag}] request failed`, err instanceof Prisma.PrismaClientKnownRequestError ? err.code : "unexpected_error");
     return refuse(500, "server_error", "Something went wrong on our side. Please try again.");
   };
   return { reply, refuse, fromError };
