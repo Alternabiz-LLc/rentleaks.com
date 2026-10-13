@@ -834,6 +834,7 @@
                 ${navLink(base + 'aparthotel.html', 'Aparthotel', 'aparthotel')}
                 ${navLink(base + 'lease-break.html', 'Lease-break', 'lease-break')}
                 ${navLink(base + 'cities.html', 'Cities', 'cities')}
+                ${navLink(base + 'professionals.html', 'Pricing', 'professionals')}
                 ${navLink(base + 'operators.html', 'Operators', 'operators')}
                 ${navLink(base + 'match.html', 'Stay DNA', 'match')}
                 ${navLink(rbase + 'hire-a-broker/', 'Hire a broker', 'hire-a-broker')}
