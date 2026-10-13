@@ -1088,7 +1088,7 @@
           "badge": "",
           "title": "Subentro",
           "desc": "Inquilini che lasciano prima della scadenza",
-          "amount": "60 €",
+          "amount": "$60",
           "period": "/mese per annuncio",
           "features": [
             "Contatore del contratto + cessione o subaffitto",
@@ -1098,14 +1098,15 @@
           ],
           "cta": "Pubblica un subentro",
           "href": "list.html?kind=lease-break",
-          "style": "btn--primary"
+          "style": "btn--primary",
+          "weeklyAmount": "$15"
         },
         {
           "badge": "",
           "title": "Chi affitta stanze",
           "desc": "Camere singole in case condivise",
-          "amount": "19 €",
-          "period": "/mese",
+          "amount": "$60",
+          "period": "/mese per annuncio",
           "features": [
             "Etichette sull'atmosfera dei coinquilini",
             "Bagno privato in evidenza",
@@ -1114,14 +1115,15 @@
           ],
           "cta": "Pubblica una stanza",
           "href": "list.html?kind=room",
-          "style": "btn--outline"
+          "style": "btn--outline",
+          "weeklyAmount": "$14"
         },
         {
           "badge": "",
           "title": "Arredati / da 1 mese",
           "desc": "Gestori e proprietari",
-          "amount": "49 €",
-          "period": "/mese",
+          "amount": "$60",
+          "period": "/mese per annuncio",
           "features": [
             "Inventario dell'arredamento su ogni unità",
             "Filtri per durata del soggiorno",
@@ -1130,23 +1132,24 @@
           ],
           "cta": "Inizia",
           "href": "list.html?kind=furnished",
-          "style": "btn--outline"
+          "style": "btn--outline",
+          "weeklyAmount": "$14"
         },
         {
           "badge": "",
           "title": "Gestore di co-living",
           "desc": "Edifici gestiti stanza per stanza",
-          "amount": "149 €",
-          "period": "/mese",
+          "amount": "$149",
+          "period": "/mese per gestore",
           "features": [
-            "Disponibilità per stanza",
-            "Indicatori di comunità e pulizie",
-            "Edifici in più città",
-            "API e caricamento massivo"
+            "10 annunci di posti letto attivi inclusi",
+            "+10 $/mese per annuncio attivo aggiuntivo",
+            "50 o più annunci: preventivo personalizzato"
           ],
           "cta": "Parliamone",
           "href": "contact.html",
-          "style": "btn--outline"
+          "style": "btn--outline",
+          "weeklyAmount": null
         }
       ],
       "note": "La tua prima settimana è gratis su ogni nuovo annuncio. Disdici quando vuoi. Il divieto di discriminazione vale per ogni host. Non vendiamo notti d'albergo."

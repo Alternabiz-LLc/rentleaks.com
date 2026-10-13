@@ -2,7 +2,7 @@
 
 > Flexible housing marketplace for rooms, co-living buildings, furnished apartments, 1-month+ stays (30-day minimum), and lease-breaks in the United States and major cities across the UK, Ireland, France, Spain, the Netherlands, Switzerland, Germany, and Italy.
 
-RentLeaks is housing, not hotels. Short-term means 30 days or more. Prices are All-in (base rent plus listed utilities, wifi, and cleaning). Every listing type is priced the same, lease-breaks included, and the first week is free.
+RentLeaks is housing, not hotels. Short-term means 30 days or more. Prices are All-in (base rent plus listed utilities, wifi, and cleaning). Listings cost $14/week or $60/month. Lease-breaks cost $15/week or $60/month. Co-living operators: $149/month for 10 active bed listings, then $10/month per additional active listing; 50+ requires a custom quote. Provider sponsorship: $299/month for one market, $599/month for homepage plus three markets, custom packages from $1,499/month. All platform fees are USD; listing boosts are separate at $35/week or $130/month.
 
 ## Primary indexes
 - [Home](https://rentleaks.com/): Product overview and featured inventory

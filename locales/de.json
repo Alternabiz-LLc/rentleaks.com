@@ -1059,7 +1059,7 @@
           "badge": "",
           "title": "Nachmieter",
           "desc": "Mieter, die früher ausziehen",
-          "amount": "60 €",
+          "amount": "$60",
           "period": "/Monat pro Inserat",
           "features": [
             "Vertragsuhr + Vertragsübernahme oder Untermiete",
@@ -1069,14 +1069,15 @@
           ],
           "cta": "Nachmieter inserieren",
           "href": "list.html?kind=lease-break",
-          "style": "btn--primary"
+          "style": "btn--primary",
+          "weeklyAmount": "$15"
         },
         {
           "badge": "",
           "title": "Zimmeranbieter",
           "desc": "Eigene Zimmer in Wohngemeinschaften",
-          "amount": "19 €",
-          "period": "/Monat",
+          "amount": "$60",
+          "period": "/Monat pro Inserat",
           "features": [
             "Atmosphäre-Tags der Mitbewohner",
             "Eigenes Bad hervorheben",
@@ -1085,14 +1086,15 @@
           ],
           "cta": "Zimmer inserieren",
           "href": "list.html?kind=room",
-          "style": "btn--outline"
+          "style": "btn--outline",
+          "weeklyAmount": "$14"
         },
         {
           "badge": "",
           "title": "Möbliert / ab 1 Monat",
           "desc": "Betreiber und Vermieter",
-          "amount": "49 €",
-          "period": "/Monat",
+          "amount": "$60",
+          "period": "/Monat pro Inserat",
           "features": [
             "Möbelverzeichnis bei jeder Einheit",
             "Filter nach Mietdauer",
@@ -1101,23 +1103,24 @@
           ],
           "cta": "Loslegen",
           "href": "list.html?kind=furnished",
-          "style": "btn--outline"
+          "style": "btn--outline",
+          "weeklyAmount": "$14"
         },
         {
           "badge": "",
           "title": "Co-Living-Betreiber",
           "desc": "Häuser mit Verfügbarkeit je Zimmer",
-          "amount": "149 €",
-          "period": "/Monat",
+          "amount": "$149",
+          "period": "/Monat pro Betreiber",
           "features": [
-            "Bestand je Zimmer",
-            "Kennzeichen für Gemeinschaft und Reinigung",
-            "Häuser in mehreren Städten",
-            "API und Massenimport"
+            "10 aktive Bettinserate inklusive",
+            "+10 $/Monat je zusätzlichem aktiven Inserat",
+            "Ab 50 Inseraten: individuelles Angebot"
           ],
           "cta": "Sprechen Sie uns an",
           "href": "contact.html",
-          "style": "btn--outline"
+          "style": "btn--outline",
+          "weeklyAmount": null
         }
       ],
       "note": "Ihre erste Woche ist bei jedem neuen Inserat kostenlos. Jederzeit kündbar. Diskriminierungsfreie Vermietung gilt für jeden Anbieter. Wir verkaufen keine Hotelnächte."

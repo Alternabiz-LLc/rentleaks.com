@@ -831,8 +831,7 @@ function writeCorePages(L, out) {
       <section class="rl-page"><div class="container" id="rl-operators"></div></section>`),
   });
 
-  /* professionals.html — the plan cards, priced in euro rather than converted
-     from dollars on the fly: a published price is a commitment, not a rate. */
+  /* Published host fees use USD in every locale. */
   const PR = L.pages.professionals;
   simplePage(L, out, "professionals", {
     bodyAttrs: `data-page="professionals"`,
@@ -854,6 +853,7 @@ function writeCorePages(L, out) {
               <h3 class="plan-card__title">${esc(p.title)}</h3>
               <p class="plan-card__desc">${esc(p.desc)}</p>
               <div class="plan-card__price"><span class="plan-card__amount">${esc(p.amount)}</span>${p.period ? `<span class="plan-card__period">${esc(p.period)}</span>` : ""}</div>
+              ${p.weeklyAmount ? `<p class="plan-card__desc">${esc(p.weeklyAmount)} / week · USD</p>` : ""}
               <ul class="plan-card__features">${p.features.map((f) => `<li>${esc(f)}</li>`).join("")}</ul>
               <a href="${p.href}" class="btn ${p.style} plan-card__cta">${esc(p.cta)}</a>
             </article>`

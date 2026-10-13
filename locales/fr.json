@@ -1055,7 +1055,7 @@
           "badge": "",
           "title": "Reprise de bail",
           "desc": "Locataires qui partent avant terme",
-          "amount": "60 €",
+          "amount": "$60",
           "period": "/mois par annonce",
           "features": [
             "Compteur de bail + cession ou sous-location",
@@ -1065,14 +1065,15 @@
           ],
           "cta": "Publier une reprise de bail",
           "href": "list.html?kind=lease-break",
-          "style": "btn--primary"
+          "style": "btn--primary",
+          "weeklyAmount": "$15"
         },
         {
           "badge": "",
           "title": "Loueur de chambre",
           "desc": "Chambres privées en logement partagé",
-          "amount": "19 €",
-          "period": "/mois",
+          "amount": "$60",
+          "period": "/mois par annonce",
           "features": [
             "Étiquettes d'ambiance des colocataires",
             "Mise en avant des salles de bain privatives",
@@ -1081,14 +1082,15 @@
           ],
           "cta": "Publier une chambre",
           "href": "list.html?kind=room",
-          "style": "btn--outline"
+          "style": "btn--outline",
+          "weeklyAmount": "$14"
         },
         {
           "badge": "",
           "title": "Meublé / 1 mois et +",
           "desc": "Exploitants et propriétaires",
-          "amount": "49 €",
-          "period": "/mois",
+          "amount": "$60",
+          "period": "/mois par annonce",
           "features": [
             "Inventaire du mobilier sur chaque logement",
             "Filtres par durée de séjour",
@@ -1097,23 +1099,24 @@
           ],
           "cta": "Commencer",
           "href": "list.html?kind=furnished",
-          "style": "btn--outline"
+          "style": "btn--outline",
+          "weeklyAmount": "$14"
         },
         {
           "badge": "",
           "title": "Exploitant de coliving",
           "desc": "Résidences gérées chambre par chambre",
-          "amount": "149 €",
-          "period": "/mois",
+          "amount": "$149",
+          "period": "/mois par exploitant",
           "features": [
-            "Disponibilité chambre par chambre",
-            "Indicateurs communauté et ménage",
-            "Résidences multi-villes",
-            "API et import en masse"
+            "10 annonces de lits actives incluses",
+            "+10 $/mois par annonce active supplémentaire",
+            "50 annonces ou plus : devis personnalisé"
           ],
           "cta": "Nous contacter",
           "href": "contact.html",
-          "style": "btn--outline"
+          "style": "btn--outline",
+          "weeklyAmount": null
         }
       ],
       "note": "Votre première semaine est offerte sur chaque nouvelle annonce. Résiliable à tout moment. La non-discrimination au logement s'applique à tous les hôtes. Nous ne vendons pas de nuitées d'hôtel."
