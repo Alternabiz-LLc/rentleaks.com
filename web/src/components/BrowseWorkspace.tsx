@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { ProviderSpotlight } from "./ProviderSpotlight";
 import { useRouter } from "next/navigation";
 import { CITIES, HOUSING_TYPES } from "@/lib/catalog";
 import type { BrowseListing } from "@/lib/listing-shapes";
@@ -107,6 +108,7 @@ export function BrowseWorkspace({
   return (
     <div className="rl-browse" id="stays" data-view={view}>
       <section className="rl-browse__list" aria-label="Stay list">
+        <ProviderSpotlight city={cityId} type={housingType} />
         <header className="rl-browse__head">
           <div>
             <p className="rl-kicker">Live stays</p>

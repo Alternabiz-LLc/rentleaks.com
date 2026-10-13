@@ -1330,6 +1330,7 @@
 
     ensureBrowseLayout();
     renderChips();
+    if (window.RLProviderSponsors) window.RLProviderSponsors.render({ home: false, city: state.city, type: state.type });
     paintRail();
     grid.classList.toggle('is-list', state.view === 'list');
     $$('[data-view]').forEach((btn) => btn.classList.toggle('is-on', btn.dataset.view === state.view));
@@ -3045,6 +3046,10 @@
       });
     }
     const contactForm = $('#contact-form');
+    if (contactForm && params().get("topic") === "sponsorship") {
+      $("#contact-topic").value = "Host / operator";
+      $("#contact-msg").value = "Provider sponsorship inquiry — " + (params().get("package") || "custom") + ".\nCompany: \nMarkets: \nNumber of units or beds: \nPreferred campaign dates: ";
+    }
     if (contactForm) contactForm.addEventListener('submit', async (event) => {
       event.preventDefault();
       if (!contactForm.checkValidity()) { contactForm.reportValidity(); return; }
@@ -3146,6 +3151,10 @@
   }
 
   function init() {
+    const providerScript = document.createElement("script");
+    providerScript.src = assetBase() + "provider-sponsorships.js";
+    providerScript.defer = true;
+    document.head.appendChild(providerScript);
     const page = pageName();
     if (page === 'listing' && params().get('id')) {
       const found = listingById(params().get('id'));

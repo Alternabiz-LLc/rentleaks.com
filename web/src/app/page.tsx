@@ -1,3 +1,4 @@
+import { ProviderSpotlight } from "@/components/ProviderSpotlight";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { HomeHero } from "@/components/HomeHero";
@@ -112,6 +113,7 @@ export default async function HomePage({
         slides={slides}
       />
 
+      <ProviderSpotlight home />
       <div className="rl-home">
         {sponsored.length ? (
           <section className="rl-home__block rl-home__block--sponsored" aria-labelledby="rl-sponsored-title">

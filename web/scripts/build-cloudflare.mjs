@@ -1,4 +1,8 @@
+import { copyFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
+
+// Keep the public campaign registry and bundled app registry identical.
+copyFileSync(new URL("../../provider-sponsorships.json", import.meta.url), new URL("../src/lib/provider-sponsorships.json", import.meta.url));
 
 // Production URLs must be fixed at build time as well as in Worker bindings.
 // Explicit process values take precedence over a developer's local .env file.
